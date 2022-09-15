@@ -175,7 +175,7 @@ def get_logger(logger_name=None, create_file=False, verbose=None):
     #print (f"Fetch logger name: {logger_name} (level={loglevel})")
 
     # Return objects
-    return log, loglevel
+    return log
 
 
 # =====================================================================
