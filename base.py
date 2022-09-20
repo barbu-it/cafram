@@ -1,16 +1,9 @@
 # Pshiiit' Knackie ! Library
 
-import sys
 import logging
-import json
-import io
 import textwrap
-import inspect
 
-from pprint import pprint, pformat
-
-from cafram.utils import serialize, flatten, json_validate
-import jsonschema
+from cafram.utils import serialize
 
 log = logging.getLogger(__name__)
 
@@ -45,6 +38,10 @@ class NotImplemented(CaframException):
 
 class NotExpectedType(CaframException):
     """Raised when types mismatchs"""
+
+
+class ClassExpected(CaframException):
+    """Raised when a class was expected"""
 
 
 # =====================================================================
@@ -278,7 +275,7 @@ class Family(Base):
 # --------------------------
 
 
-class Hooks:
+class Hooks(Base):
     def __init__(self, *args, **kwargs):
 
         super(Hooks, self).__init__(*args, **kwargs)

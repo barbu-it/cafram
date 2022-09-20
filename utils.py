@@ -57,7 +57,7 @@ def addLoggingLevel(levelName, levelNum, methodName=None):
     used.
 
     To avoid accidental clobberings of existing attributes, this method will
-    raise an `AttributePaasifyError` if the level name is already an attribute of the
+    raise an `AttributeError` if the level name is already an attribute of the
     `logging` module or if the method name is already present
 
     Example
@@ -74,17 +74,11 @@ def addLoggingLevel(levelName, levelNum, methodName=None):
         methodName = levelName.lower()
 
     if hasattr(logging, levelName):
-        raise AttributePaasifyError(
-            "{} already defined in logging module".format(levelName)
-        )
+        raise AttributeError("{} already defined in logging module".format(levelName))
     if hasattr(logging, methodName):
-        raise AttributePaasifyError(
-            "{} already defined in logging module".format(methodName)
-        )
+        raise AttributeError("{} already defined in logging module".format(methodName))
     if hasattr(logging.getLoggerClass(), methodName):
-        raise AttributePaasifyError(
-            "{} already defined in logger class".format(methodName)
-        )
+        raise AttributeError("{} already defined in logger class".format(methodName))
 
     # This method was inspired by the answers to Stack Overflow post
     # http://stackoverflow.com/q/2183233/2988730, especially
@@ -148,7 +142,7 @@ def get_logger(logger_name=None, create_file=False, verbose=None):
                 2: logging.INFO,
                 3: logging.DEBUG,
             }[verbose]
-        except KeyPaasifyError:
+        except AttributeError:
             loglevel = logging.DEBUG
 
     # Create logger for prd_ci

@@ -1,9 +1,14 @@
+"""
+Config Node classes
+"""
+
 import copy
 import inspect
 import textwrap
+import jsonschema
+import json
 
-
-from cafram.base import Base
+from cafram.base import Base, DictExpected, ListExpected, NotExpectedType, ClassExpected
 from cafram.utils import serialize, flatten, json_validate
 
 from pprint import pprint, pformat
@@ -12,7 +17,7 @@ from pprint import pprint, pformat
 # =====================================
 
 
-class _unset(object):
+class _unset:
     "Represent an unset attribute"
 
     def __repr__(self):
@@ -25,7 +30,7 @@ class _unset(object):
 unset = _unset()
 
 
-class _drop(object):
+class _drop:
     """Represents a value that will be dropped from the schema if it
     is missing during *serialization* or *deserialization*.  Passed as
     a value to the `missing` or `default` keyword argument
@@ -54,10 +59,11 @@ def map_node_class(payload):
     if isinstance(payload, dict):
         return NodeMap
         # return NodeDict
-    elif isinstance(payload, list):
+
+    if isinstance(payload, list):
         return NodeList
-    else:
-        return type(payload)
+
+    return type(payload)
 
 
 def map_all_class(payload):
@@ -65,11 +71,11 @@ def map_all_class(payload):
 
     if isinstance(payload, dict):
         return NodeMap
-        return NodeDict
-    elif isinstance(payload, list):
+        # return NodeDict
+    if isinstance(payload, list):
         return NodeList
-    else:
-        return NodeVal
+
+    return NodeVal
 
 
 # Simple attributes class
@@ -159,13 +165,13 @@ class NodeVal(Base):
         "Transform object to json"
 
         if mode == "raw":
-            return self._node_conf_raw
+            value = self._node_conf_raw
         elif mode == "current":
-            return self._node_conf_current
+            value = self._node_conf_current
         elif mode == "parsed":
-            return self._node_conf_parsed
-        # else:
-        #     raise NotImplemented("Unknown mode '{mode}' for serialize()")
+            value = self._node_conf_parsed
+
+        return value
 
     # User hooks
     # -----------------
@@ -191,7 +197,9 @@ class NodeVal(Base):
 
         # Check if defaults are presents in conf_schema
         if isinstance(self.conf_schema, dict):
+            # pylint: disable=E1136,E1135
             if "default" in self.conf_schema:
+                # pylint: disable=E1135
                 default = copy.deepcopy(self.conf_schema["default"])
 
         # Check if defaults are presents in conf_default
@@ -211,7 +219,8 @@ class NodeVal(Base):
 
         old_payload = payload
 
-        if self.conf_schema and "$schema" in self.conf_schema:
+        # pylint: disable=E1135
+        if isinstance(self.conf_schema, dict) and "$schema" in self.conf_schema:
 
             try:
                 # print (f"Validate config of: {self} WITHY PAYLOAD: {payload}")
@@ -224,8 +233,8 @@ class NodeVal(Base):
                 print(f"Payload: {payload}")
                 print("Schema:")
                 # print (serialize(self.conf_schema, fmt='yml'))
-                print(traceback.format_exc())
-                sys.exit(1)
+                # print(traceback.format_exc())
+                raise Exception()
 
             except jsonschema.exceptions.SchemaError as err:
                 print("Bug in schema for ", self)
@@ -236,8 +245,8 @@ class NodeVal(Base):
                 print("SCHEMA")
                 pprint(self.conf_schema)
                 print("BBBUUUUUGGGGGGG on schema !!!")
-                print(traceback.format_exc())
-                sys.exit(1)
+                # print(traceback.format_exc())
+                raise Exception()
 
             if old_payload != payload:
                 print("OLD CONFIG WITHOUT DEFAULTS", old_payload)
@@ -274,9 +283,6 @@ class NodeVal(Base):
     # get_value
     #   - return ALL but node objects
 
-    def value(self):
-        return self._nodes
-
     def get_children(self, lvl=0, explain=False, leaves=False):
         result = None
         if leaves:
@@ -291,6 +297,7 @@ class NodeVal(Base):
         return result
 
     def get_value(self, lvl=0, explain=False):
+        """Return the _nodes value (value+children)"""
 
         return self._nodes
 
@@ -298,14 +305,17 @@ class NodeVal(Base):
     # -----------------
 
     def is_root(self):
+        """Return True if object is root"""
         if self._node_parent and self._node_parent == self:
             return True
         return False
 
     def get_parent(self):
+        """Return first parent"""
         return self._node_parent or None
 
     def get_parent_root(self):
+        """Return root parent object"""
         return self._node_root
 
     def get_parents(self):
@@ -326,6 +336,7 @@ class NodeVal(Base):
     # -----------------
 
     def dump(self, explain=True, all=False, **kwargs):
+        """Output a dump of the object, helpful for troubleshooting prupose"""
 
         super(NodeVal, self).dump(**kwargs)
 
@@ -400,6 +411,8 @@ class NodeList(NodeVal):
     # -------------------
 
     def _node_conf_defaults(self, payload):
+        """Generate default configuration for NodeList"""
+
         result = super(NodeList, self)._node_conf_defaults(payload)
         if not result:
             result = []
@@ -495,6 +508,8 @@ class NodeList(NodeVal):
 
 
 class NodeDictItem:
+    """Children configuration for NodeDict"""
+
     def __init__(self, *args, key=None, cls=None, default=None, attr=None, **kwargs):
 
         self.key = key
