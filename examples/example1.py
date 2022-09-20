@@ -1,4 +1,3 @@
-
 import sys
 
 import yaml
@@ -37,7 +36,6 @@ filters:
 config = yaml.safe_load(yaml_config)
 
 
-
 # App definition
 #######################
 
@@ -61,6 +59,7 @@ class Filter(ConfAttr):
     "A filter configuration"
     pass
 
+
 class Filters(ConfAttr):
     "Filter manager"
     conf_struct2 = Filter
@@ -71,6 +70,7 @@ class Filters(ConfAttr):
 class FileFilters(ConfList):
     "Applied filters to file"
     conf_struct2 = ConfVal
+
 
 class File(ConfAttr):
     "File to process"
@@ -86,13 +86,14 @@ class File(ConfAttr):
         },
     ]
 
+
 class Files(ConfList):
     "File manager"
     conf_struct2 = File
 
 
 class MyAppV2(ConfAttr):
-#class MyAppV2(ConfAuto):
+    # class MyAppV2(ConfAuto):
     "Root application"
 
     conf_struct2 = [
@@ -108,9 +109,7 @@ class MyAppV2(ConfAttr):
             "key": "files",
             "cls": Files,
         },
-        
     ]
-
 
 
 # App instance
@@ -118,12 +117,12 @@ class MyAppV2(ConfAttr):
 
 app2 = MyAppV2(ident="app", payload=config, autoconf=-1)
 app2 = ConfAuto(ident="app", payload=config, autoconf=-1)
-#app2 = MyAppV2(ident="app", payload=config, autoconf=-1)
-#app2 = ConfAuto(ident="app", payload=config, autoconf=1)
+# app2 = MyAppV2(ident="app", payload=config, autoconf=-1)
+# app2 = ConfAuto(ident="app", payload=config, autoconf=1)
 
 pprint(app2.get_nodes())
 
-print (str(app2.value))
+print(str(app2.value))
 
 # App tests
 #######################
@@ -136,30 +135,29 @@ print (str(app2.value))
 # pprint (app2.files._nodes)
 
 
+print("\n\nApp nodes:")
+pprint(app2.get_nodes(explain=False))
+print("---")
+print(serialize(app2.get_nodes(explain=False)))
 
-print ("\n\nApp nodes:")
-pprint ( app2.get_nodes(explain=False))
-print ("---")
-print ( serialize(app2.get_nodes(explain=False)))
-
-print ("\nApp nodes: EXPLICIT")
-pprint ( app2.get_nodes(explain=True))
-print ("---")
-print ( serialize(app2.get_nodes(explain=True)))
+print("\nApp nodes: EXPLICIT")
+pprint(app2.get_nodes(explain=True))
+print("---")
+print(serialize(app2.get_nodes(explain=True)))
 
 
 sys.exit()
 
 
 #  print ("===================")
-#  
+#
 #  print ("\n\nApp config: ")
 #  pprint ( app2.get_config(explain=False))
 #  print ("---")
 #  print ( serialize(app2.get_config(explain=False)))
-#  
+#
 #  print ("\nApp config Explicit: ")
 #  pprint ( app2.get_config(explain=True))
 #  print ("---")
 #  print ( serialize(app2.get_config(explain=True)))
-#  
+#

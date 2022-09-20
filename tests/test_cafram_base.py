@@ -1,13 +1,13 @@
-
 import sys
 import unittest
-from pprint import pprint 
+from pprint import pprint
 import pytest
-import logging 
+import logging
 
 from cafram.base import MissingIdent
 from cafram.nodes import *
-#from cafram.nodes_conf import *
+
+# from cafram.nodes_conf import *
 
 log = logging.getLogger()
 
@@ -15,9 +15,9 @@ log = logging.getLogger()
 # Testing bases
 # =====================================
 
+
 class Test01_ConfVal(unittest.TestCase):
     "Test base objects"
-
 
     def test_ident_is_correctly_set(self):
         """
@@ -26,7 +26,6 @@ class Test01_ConfVal(unittest.TestCase):
 
         node = Base(ident="My App")
         self.assertEqual(node.ident, "My App")
-
 
     def test_fail_without_ident_arg(self):
         """
@@ -61,7 +60,6 @@ class Test01_ConfVal(unittest.TestCase):
         # self.assertEqual(node._node_parent, node._node_root)
         # self.assertEqual(node._node_parent, None)
 
-
     def test_dump_method(self):
         """
         Ensure the dump method works correctly
@@ -71,19 +69,14 @@ class Test01_ConfVal(unittest.TestCase):
         node.dump2()
 
 
-
-
-
-
-
 # ConfMixed Testing
 # ================================
 
 payload_keydict = {
-        "subkey2": "val2",
-        "subkey3": 1234,
-        "subkey4": None,
-    }
+    "subkey2": "val2",
+    "subkey3": 1234,
+    "subkey4": None,
+}
 payload_keylist = ["item1", "item2"]
 payload_value = "MyValue"
 payload = {
@@ -107,10 +100,11 @@ def node_inst(request):
         if isinstance(params, tuple):
             payload = params[0]
             cls = params[1] if len(params) > 1 else map_all_class(payload)
-        
-    print ("Create new obj:", cls, payload)
+
+    print("Create new obj:", cls, payload)
+
     class MyConfig(cls):
-        ident="ConfigTest"
+        ident = "ConfigTest"
 
         def node_hook_pre(self, payload):
 
@@ -131,54 +125,65 @@ def node_inst(request):
     return inst
 
 
-
-
 # Simple tests
 # ------------------------
 
-@pytest.mark.parametrize("node_inst", [
+
+@pytest.mark.parametrize(
+    "node_inst",
+    [
         (payload_keydict),
         (payload_keylist),
         (payload_value),
         (payload),
-        ],
-        indirect=["node_inst"])
+    ],
+    indirect=["node_inst"],
+)
 def test_is_root_method(node_inst):
     "All instances should be root"
     assert node_inst.is_root() == True
 
 
-@pytest.mark.parametrize("node_inst", [
+@pytest.mark.parametrize(
+    "node_inst",
+    [
         (payload_keydict),
         (payload_keylist),
         (payload_value),
         (payload),
-        ],
-        indirect=["node_inst"])
+    ],
+    indirect=["node_inst"],
+)
 def test_get_parent_method(node_inst):
     "Parent should be self"
     assert node_inst.get_parent() == node_inst
 
 
-@pytest.mark.parametrize("node_inst", [
+@pytest.mark.parametrize(
+    "node_inst",
+    [
         (payload_keydict),
         (payload_keylist),
         (payload_value),
         (payload),
-        ],
-        indirect=["node_inst"])
+    ],
+    indirect=["node_inst"],
+)
 def test_get_parent_root_method(node_inst):
     "Should return empty things"
     assert node_inst.get_parent_root() == node_inst
 
 
-@pytest.mark.parametrize("node_inst", [
+@pytest.mark.parametrize(
+    "node_inst",
+    [
         (payload_keydict),
         (payload_keylist),
         (payload_value),
         (payload),
-        ],
-        indirect=["node_inst"])
+    ],
+    indirect=["node_inst"],
+)
 def test_get_parents_method(node_inst):
     "Should return empty things"
 
@@ -188,72 +193,90 @@ def test_get_parents_method(node_inst):
 # Data tests
 # ------------------------
 
-@pytest.mark.parametrize("node_inst,result", [
+
+@pytest.mark.parametrize(
+    "node_inst,result",
+    [
         (payload_keydict, payload_keydict),
         (payload_keylist, payload_keylist),
         (payload_value, payload_value),
         ((payload, NodeDict), payload),
-        ],
-        indirect=["node_inst"])
+    ],
+    indirect=["node_inst"],
+)
 def test_node_get_value_method(node_inst, result):
-    #pprint (self.__dict__)
+    # pprint (self.__dict__)
     assert node_inst.get_value() == result
 
 
-@pytest.mark.parametrize("node_inst,result", [
+@pytest.mark.parametrize(
+    "node_inst,result",
+    [
         (payload_keydict, {}),
         (payload_keylist, []),
         (payload_value, None),
-
         ((payload, NodeDict), {}),
-        ],
-        indirect=["node_inst"])
+    ],
+    indirect=["node_inst"],
+)
 def test_get_children_method(node_inst, result):
     "Should return empty things"
     assert node_inst.get_children() == result
 
 
-@pytest.mark.parametrize("node_inst,result", [
+@pytest.mark.parametrize(
+    "node_inst,result",
+    [
         (payload_keydict, payload_keydict),
         (payload_keylist, payload_keylist),
         (payload_value, payload_value),
         (payload, payload),
-        ],
-        indirect=["node_inst"])
+    ],
+    indirect=["node_inst"],
+)
 def test_get_value_method(node_inst, result):
     assert node_inst.get_value() == result
 
 
-@pytest.mark.parametrize("node_inst,result", [
+@pytest.mark.parametrize(
+    "node_inst,result",
+    [
         (payload_keydict, payload_keydict),
         (payload_keylist, payload_keylist),
         (payload_value, payload_value),
         (payload, payload),
-        ],
-        indirect=["node_inst"])
+    ],
+    indirect=["node_inst"],
+)
 def test_is_root_method(node_inst, result):
     assert node_inst.serialize() == result
 
 
-@pytest.mark.parametrize("node_inst,result", [
+@pytest.mark.parametrize(
+    "node_inst,result",
+    [
         (payload_keydict, payload_keydict),
         (payload_keylist, payload_keylist),
         (payload_value, payload_value),
         (payload, payload),
-        ],
-        indirect=["node_inst"])
+    ],
+    indirect=["node_inst"],
+)
 def test_deserialize_method(node_inst, result):
     node_inst.deserialize(result)
     assert node_inst.serialize() == result
 
 
-@pytest.mark.parametrize("node_inst,result", [
+@pytest.mark.parametrize(
+    "node_inst,result",
+    [
         (payload_keydict, payload_keydict),
         (payload_keylist, payload_keylist),
         (payload_value, payload_value),
         (payload, payload),
-        ],
-        indirect=["node_inst"])
+    ],
+    indirect=["node_inst"],
+)
 def test_serialize_method(node_inst, result):
     assert node_inst.serialize() == result
 
@@ -261,5 +284,5 @@ def test_serialize_method(node_inst, result):
 # Main run
 # ------------------------
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

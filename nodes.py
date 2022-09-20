@@ -1,5 +1,3 @@
-
-
 import copy
 import inspect
 import textwrap
@@ -13,16 +11,19 @@ from pprint import pprint, pformat
 # Types
 # =====================================
 
+
 class _unset(object):
     "Represent an unset attribute"
 
     def __repr__(self):
-        return '<cafram.unset>'
+        return "<cafram.unset>"
 
     def __reduce__(self):
-        return 'unset'  # when unpickled, refers to "unset" below (singleton)
+        return "unset"  # when unpickled, refers to "unset" below (singleton)
+
 
 unset = _unset()
+
 
 class _drop(object):
     """Represents a value that will be dropped from the schema if it
@@ -32,17 +33,18 @@ class _drop(object):
     """
 
     def __repr__(self):
-        return '<cafram.drop>'
+        return "<cafram.drop>"
 
     def __reduce__(self):
-        return 'drop'  # when unpickled, refers to "drop" below (singleton)
+        return "drop"  # when unpickled, refers to "drop" below (singleton)
+
 
 drop = _drop()
 
 
-
 # Functions
 # =====================================
+
 
 def map_node_class(payload):
     "Map list or dict to cafram classes, otherwise keep value as is"
@@ -51,7 +53,7 @@ def map_node_class(payload):
     #     return NodeVal
     if isinstance(payload, dict):
         return NodeMap
-        #return NodeDict
+        # return NodeDict
     elif isinstance(payload, list):
         return NodeList
     else:
@@ -72,6 +74,7 @@ def map_all_class(payload):
 
 # Simple attributes class
 # =====================================
+
 
 class NodeVal(Base):
     """
@@ -100,7 +103,6 @@ class NodeVal(Base):
     _node_conf_parsed = None
     _node_autoconf = 0
 
-
     def __init__(self, *args, parent=None, payload=None, autoconf=None, **kwargs):
 
         # Call parents
@@ -118,8 +120,6 @@ class NodeVal(Base):
 
         # Auto init object
         self.deserialize(payload)
-
-
 
     # Serialization
     # -----------------
@@ -155,9 +155,6 @@ class NodeVal(Base):
         # Post hook
         self.node_hook_post()
 
-
-        
-
     def serialize(self, mode="parsed"):
         "Transform object to json"
 
@@ -180,7 +177,6 @@ class NodeVal(Base):
     def node_hook_post(self):
         "Placeholder to transform object once onfig has been done"
         pass
-
 
     # Configuration parser
     # -----------------
@@ -265,7 +261,6 @@ class NodeVal(Base):
         payload = json.loads(payload)
         return self.deserialize(payload)
 
-
     # Node management
     # -----------------
 
@@ -279,10 +274,8 @@ class NodeVal(Base):
     # get_value
     #   - return ALL but node objects
 
-
     def value(self):
         return self._nodes
-
 
     def get_children(self, lvl=0, explain=False, leaves=False):
         result = None
@@ -301,7 +294,6 @@ class NodeVal(Base):
 
         return self._nodes
 
-
     # Sibling management
     # -----------------
 
@@ -316,7 +308,6 @@ class NodeVal(Base):
     def get_parent_root(self):
         return self._node_root
 
-
     def get_parents(self):
         "Return all parent of the object"
 
@@ -330,7 +321,6 @@ class NodeVal(Base):
                 parent = getattr(current, "_node_parent")
 
         return parents
-
 
     # Dumper
     # -----------------
@@ -362,7 +352,7 @@ class NodeVal(Base):
             print("  -----------------")
             children = self.get_children(lvl=-1, explain=False, leaves=True)
             out = serialize(children)
-            #out = pformat(children, indent=2, width=5)
+            # out = pformat(children, indent=2, width=5)
             print(textwrap.indent(out, "    "))
 
         print("  Config:")
@@ -380,9 +370,10 @@ class NodeVal(Base):
 # Test Class Data
 # =====================================
 
+
 class NodeListIterator:
     "NodeList iterator"
-    
+
     def __init__(self, conf_inst):
 
         self._nodes = conf_inst._nodes
@@ -412,7 +403,7 @@ class NodeList(NodeVal):
         result = super(NodeList, self)._node_conf_defaults(payload)
         if not result:
             result = []
-        
+
         if not isinstance(result, list):
             raise ListExpected(
                 f"A list was expected for {self}, got {type(result)}: {result}"
@@ -456,10 +447,8 @@ class NodeList(NodeVal):
 
         self._nodes = result
 
-
     def __iter__(self):
         return NodeListIterator(self)
-
 
     def get_children(self, lvl=0, explain=False, leaves=False):
         "Return NodeList childs"
@@ -467,7 +456,9 @@ class NodeList(NodeVal):
         for child in self._nodes:
             if isinstance(child, NodeVal):
                 if lvl != 0:
-                    value = child.get_children(lvl=lvl-1, explain=explain, leaves=leaves)
+                    value = child.get_children(
+                        lvl=lvl - 1, explain=explain, leaves=leaves
+                    )
                 else:
                     value = child
 
@@ -475,7 +466,7 @@ class NodeList(NodeVal):
                     value = value or child
 
                 result.append(value)
-                
+
         if explain:
             return {
                 "obj": self,
@@ -486,7 +477,6 @@ class NodeList(NodeVal):
 
         return result
 
-
     def get_value(self, lvl=0, explain=False):
         "Return NodeList value"
         result = []
@@ -495,14 +485,14 @@ class NodeList(NodeVal):
                 result.append(child)
             else:
                 if lvl != 0:
-                    result.append(child.get_value(lvl=lvl-1, explain=explain))
-        
-        return result
+                    result.append(child.get_value(lvl=lvl - 1, explain=explain))
 
+        return result
 
 
 # NodeDict
 # =====================================
+
 
 class NodeDictItem:
     def __init__(self, *args, key=None, cls=None, default=None, attr=None, **kwargs):
@@ -530,12 +520,11 @@ class NodeDict(NodeVal):
 
     def __init__(self, *args, **kwargs):
 
-        # Build conf_children 
+        # Build conf_children
         if isinstance(self.conf_children, list):
             self.conf_children = [NodeDictItem(**conf) for conf in self.conf_children]
 
         super(NodeDict, self).__init__(*args, **kwargs)
-
 
     # # TODO: https://www.pythonlikeyoumeanit.com/Module4_OOP/Special_Methods.html
     # __len__
@@ -544,7 +533,6 @@ class NodeDict(NodeVal):
     # __contains__(self, item)
     # __iter__(self)
     # __next__(self)
-
 
     # Overrides
     # -------------------
@@ -555,7 +543,9 @@ class NodeDict(NodeVal):
         for name, child in self._nodes.items():
             if isinstance(child, NodeVal):
                 if lvl != 0:
-                    value = child.get_children(lvl=lvl-1, explain=explain, leaves=leaves)
+                    value = child.get_children(
+                        lvl=lvl - 1, explain=explain, leaves=leaves
+                    )
                 else:
                     value = child
 
@@ -563,7 +553,7 @@ class NodeDict(NodeVal):
                     value = value or child
 
                 result[name] = value
-        
+
         if explain:
             return {
                 "obj": self,
@@ -581,10 +571,9 @@ class NodeDict(NodeVal):
                 result[name] = child
             else:
                 if lvl != 0:
-                    result[name] = child.get_value(lvl=lvl-1)
-        
-        return result
+                    result[name] = child.get_value(lvl=lvl - 1)
 
+        return result
 
     def _node_conf_defaults(self, payload):
         "For NodeDict"
@@ -595,10 +584,8 @@ class NodeDict(NodeVal):
         if not result:
             result = {}
         if not isinstance(result, dict):
-            raise DictExpected(
-                f"A dict was expected for {self}, got: {result}"
-            )
-        
+            raise DictExpected(f"A dict was expected for {self}, got: {result}")
+
         # Overrides dict defaults
         result.update(payload)
         return result
@@ -691,7 +678,7 @@ class NodeDict(NodeVal):
 
                 if cls:
                     if issubclass(cls, NodeVal):
-                        #print (f"    > Instanciate Node object: {attr}={cls}(payload={value})")
+                        # print (f"    > Instanciate Node object: {attr}={cls}(payload={value})")
                         value = cls(parent=self, ident=item_def.ident, payload=value)
                     else:
                         if not value:
@@ -727,7 +714,6 @@ class NodeDict(NodeVal):
 
     def add_child(self, ident, obj):
         self._nodes[ident] = obj
-
 
 
 # NodeMap
@@ -778,13 +764,11 @@ def makemap(cls):
     return Class
 
 
-
-
-
 # Test Class Data
 # =====================================
 
-class NodeAuto():
+
+class NodeAuto:
     """
     Autoconfiguration Configuration
 
@@ -794,10 +778,8 @@ class NodeAuto():
 
     def __init__(self, *args, ident=None, payload=None, autoconf=-1, **kwargs):
 
-        
-
         self.__class__ = map_all_class(payload)
-        #print ("Found class", self.__class__, payload)
+        # print ("Found class", self.__class__, payload)
         # # classes = "-> ".join([x.__name__ for x in self.__class__.__mro__])
         # # print(f"    MRO: {classes}")
         # print ("INIT AUTO", args, ident, payload, autoconf, kwargs)
@@ -808,10 +790,9 @@ class NodeAuto():
         #     *args, ident=ident, payload=payload, autoconf=autoconf, **kwargs
         # )
 
-
         # super(self.__class__, self).__init__(
         #     *args, ident=ident, payload=payload, autoconf=autoconf, **kwargs
         # )
 
 
-#def confauto()
+# def confauto()

@@ -4,7 +4,8 @@ import sys
 
 import logging
 import json
-#import re
+
+# import re
 import sh
 
 from pprint import pprint
@@ -13,7 +14,6 @@ from pathlib import Path
 import ruamel.yaml
 import jsonschema
 from jsonschema import Draft202012Validator, validators
-
 
 
 # =====================================================================
@@ -35,7 +35,7 @@ log = logging.getLogger(__name__)
 yaml = ruamel.yaml.YAML()
 yaml.version = (1, 1)
 yaml.default_flow_style = False
-#yaml.indent(mapping=3, sequence=2, offset=0)
+# yaml.indent(mapping=3, sequence=2, offset=0)
 yaml.allow_duplicate_keys = True
 yaml.explicit_start = True
 
@@ -58,7 +58,7 @@ def addLoggingLevel(levelName, levelNum, methodName=None):
 
     To avoid accidental clobberings of existing attributes, this method will
     raise an `AttributePaasifyError` if the level name is already an attribute of the
-    `logging` module or if the method name is already present 
+    `logging` module or if the method name is already present
 
     Example
     -------
@@ -74,11 +74,17 @@ def addLoggingLevel(levelName, levelNum, methodName=None):
         methodName = levelName.lower()
 
     if hasattr(logging, levelName):
-       raise AttributePaasifyError('{} already defined in logging module'.format(levelName))
+        raise AttributePaasifyError(
+            "{} already defined in logging module".format(levelName)
+        )
     if hasattr(logging, methodName):
-       raise AttributePaasifyError('{} already defined in logging module'.format(methodName))
+        raise AttributePaasifyError(
+            "{} already defined in logging module".format(methodName)
+        )
     if hasattr(logging.getLoggerClass(), methodName):
-       raise AttributePaasifyError('{} already defined in logger class'.format(methodName))
+        raise AttributePaasifyError(
+            "{} already defined in logger class".format(methodName)
+        )
 
     # This method was inspired by the answers to Stack Overflow post
     # http://stackoverflow.com/q/2183233/2988730, especially
@@ -101,21 +107,28 @@ def addLoggingLevel(levelName, levelNum, methodName=None):
 
 class MultiLineFormatter(logging.Formatter):
     """Multi-line formatter."""
+
     def get_header_length(self, record):
         """Get the header length of a given record."""
-        return len(super().format(logging.LogRecord(
-            name=record.name,
-            level=record.levelno,
-            pathname=record.pathname,
-            lineno=record.lineno,
-            msg='', args=(), exc_info=None
-        )))
+        return len(
+            super().format(
+                logging.LogRecord(
+                    name=record.name,
+                    level=record.levelno,
+                    pathname=record.pathname,
+                    lineno=record.lineno,
+                    msg="",
+                    args=(),
+                    exc_info=None,
+                )
+            )
+        )
 
     def format(self, record):
         """Format a record with added indentation."""
-        indent = ' ' * self.get_header_length(record)
+        indent = " " * self.get_header_length(record)
         head, *trailing = super().format(record).splitlines(True)
-        return head + ''.join(indent + line for line in trailing)
+        return head + "".join(indent + line for line in trailing)
 
 
 def get_logger(logger_name=None, create_file=False, verbose=None):
@@ -147,17 +160,16 @@ def get_logger(logger_name=None, create_file=False, verbose=None):
     format4 = "%(name)-32s%(levelname)8s: %(message)s"
     format2 = "%(asctime)s.%(msecs)03d|%(name)-16s%(levelname)8s: %(message)s"
     format3 = (
-       "%(asctime)s.%(msecs)03d"
-       + " (%(process)d/%(thread)d) "
-       + "%(pathname)s:%(lineno)d:%(funcName)s"
-       + ": "
-       + "%(levelname)s: %(message)s"
+        "%(asctime)s.%(msecs)03d"
+        + " (%(process)d/%(thread)d) "
+        + "%(pathname)s:%(lineno)d:%(funcName)s"
+        + ": "
+        + "%(levelname)s: %(message)s"
     )
     tformat1 = "%H:%M:%S"
-    #tformat2 = "%Y-%m-%d %H:%M:%S"
-    #formatter = logging.Formatter(format4, tformat1)
+    # tformat2 = "%Y-%m-%d %H:%M:%S"
+    # formatter = logging.Formatter(format4, tformat1)
     formatter = MultiLineFormatter(format1, tformat1)
-    
 
     # Create console handler for logger.
     stream = logging.StreamHandler()
@@ -172,7 +184,7 @@ def get_logger(logger_name=None, create_file=False, verbose=None):
         handler.setFormatter(formatter)
         log.addHandler(handler)
 
-    #print (f"Fetch logger name: {logger_name} (level={loglevel})")
+    # print (f"Fetch logger name: {logger_name} (level={loglevel})")
 
     # Return objects
     return log
@@ -183,10 +195,10 @@ def get_logger(logger_name=None, create_file=False, verbose=None):
 # =====================================================================
 
 
-def serialize(obj, fmt='json'):
+def serialize(obj, fmt="json"):
     "Serialize anything, output json like compatible (destructive)"
-    
-    if fmt in ['yaml', 'yml']:
+
+    if fmt in ["yaml", "yml"]:
         # Serialize object in json first
         obj = json.dumps(obj, default=lambda o: str(o), indent=2)
         obj = json.loads(obj)
@@ -206,7 +218,7 @@ def serialize(obj, fmt='json'):
 
 
 def duplicates(_list):
-    ''' Check if given list contains duplicates'''    
+    """Check if given list contains duplicates"""
     known = set()
     duplicates = set()
     for item in _list:
@@ -215,16 +227,15 @@ def duplicates(_list):
         else:
             known.add(item)
 
-    if len (duplicates) > 0:
+    if len(duplicates) > 0:
         return list(duplicates)
     return []
-
 
 
 def read_file(file):
     "Read file content"
     with open(file) as f:
-        return ''.join(f.readlines())
+        return "".join(f.readlines())
 
 
 def write_file(file, content):
@@ -234,7 +245,7 @@ def write_file(file, content):
     if not os.path.exists(file_folder):
         os.makedirs(file_folder)
 
-    with open(file, 'w') as f:
+    with open(file, "w") as f:
         f.write(content)
 
 
@@ -251,6 +262,7 @@ def flatten(S):
 # JSON Schema framework
 # =====================================================================
 
+
 def _extend_with_default(validator_class):
     validate_properties = validator_class.VALIDATORS["properties"]
 
@@ -260,29 +272,38 @@ def _extend_with_default(validator_class):
                 instance.setdefault(property, subschema["default"])
 
         for error in validate_properties(
-            validator, properties, instance, schema,
+            validator,
+            properties,
+            instance,
+            schema,
         ):
             yield error
 
     return validators.extend(
-        validator_class, {"properties" : set_defaults},
+        validator_class,
+        {"properties": set_defaults},
     )
 
+
 DefaultValidatingValidator = _extend_with_default(Draft202012Validator)
+
 
 def json_validate_defaults(schema, payload):
     "Validate dict against schema and set defaults"
     DefaultValidatingValidator(schema).validate(payload)
     return payload
 
+
 def json_validate(schema, payload):
     "Validate dict against schema"
     jsonschema.validate(payload, schema)
     return payload
 
+
 # =====================================================================
 # Command Execution framework
 # =====================================================================
+
 
 def _exec(command, cli_args=None, logger=None, **kwargs):
     "Execute any command"
@@ -293,8 +314,8 @@ def _exec(command, cli_args=None, logger=None, **kwargs):
 
     # Prepare context
     sh_opts = {
-        '_in': sys.stdin,
-        '_out': sys.stdout,
+        "_in": sys.stdin,
+        "_out": sys.stdout,
     }
     sh_opts = kwargs or sh_opts
 
@@ -304,9 +325,9 @@ def _exec(command, cli_args=None, logger=None, **kwargs):
 
     # Log command
     if logger:
-        cmd_line = [cmd.__name__ ] + [ x.decode('utf-8') for x in cmd._partial_baked_args]
-        cmd_line = ' '.join(cmd_line)
-        logger.exec (cmd_line)     # Support exec level !!!
+        cmd_line = [cmd.__name__] + [x.decode("utf-8") for x in cmd._partial_baked_args]
+        cmd_line = " ".join(cmd_line)
+        logger.exec(cmd_line)  # Support exec level !!!
 
     # Execute command via sh
     try:
@@ -314,11 +335,10 @@ def _exec(command, cli_args=None, logger=None, **kwargs):
         return output
 
     except sh.ErrorReturnCode as err:
-        #log.error(f"Error while running command: {command} {' '.join(cli_args)}")
-        #log.critical (f"Command failed with message:\n{err.stderr.decode('utf-8')}")
-        
-        #pprint (err.__dict__)
-        #raise error.ShellCommandFailed(err)
-        #sys.exit(1)
-        raise err
+        # log.error(f"Error while running command: {command} {' '.join(cli_args)}")
+        # log.critical (f"Command failed with message:\n{err.stderr.decode('utf-8')}")
 
+        # pprint (err.__dict__)
+        # raise error.ShellCommandFailed(err)
+        # sys.exit(1)
+        raise err

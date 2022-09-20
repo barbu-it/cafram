@@ -80,9 +80,9 @@ class Base:
         self.log.debug(
             f"__init__: Base/{self} => {[ x.__name__ for x in  self.__class__.__mro__]}"
         )
-        #print (f"__init__: Base/{self} => {[ x.__name__ for x in  self.__class__.__mro__]}")
+        # print (f"__init__: Base/{self} => {[ x.__name__ for x in  self.__class__.__mro__]}")
 
-        #print ("INIT Base", args, kwargs)
+        # print ("INIT Base", args, kwargs)
 
         # print ("init base")
         self.kind = kwargs.get("kind") or self.kind or self.__class__.__name__
@@ -97,7 +97,6 @@ class Base:
 
         self.log = kwargs.get("log") or self.log
         # print ("Update in INIT BASE", self.ident, id(self))
-        
 
         self.shared = kwargs.get("shared") or {}
         # if "runtime" in kwargs:
@@ -139,10 +138,10 @@ class Base:
 
         print("")
 
-
     def dump2(self, *args, **kwargs):
-        self.log.warning ("WARNING: dump2 method is deprecated in favor of dump")
+        self.log.warning("WARNING: dump2 method is deprecated in favor of dump")
         self.dump(*args, **kwargs)
+
 
 # =====================================================================
 # Pre Base Class helpers
@@ -273,7 +272,6 @@ class Family(Base):
             print(textwrap.indent(children, "      "))
 
         print("\n")
-
 
 
 # Hooks
