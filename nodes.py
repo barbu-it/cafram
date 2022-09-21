@@ -188,26 +188,31 @@ class NodeVal(Base):
     # -----------------
 
     def _node_conf_defaults(self, payload):
+        """Return payload or default value"""
 
-        if payload:
-            # Skip if payload is provided
-            return payload
+        return payload or self.conf_default
 
-        default = None
+        # if payload:
+        #     # Skip if payload is provided
+        #     return payload
 
-        # Check if defaults are presents in conf_schema
-        if isinstance(self.conf_schema, dict):
-            # pylint: disable=E1136,E1135
-            if "default" in self.conf_schema:
-                # pylint: disable=E1135
-                default = copy.deepcopy(self.conf_schema["default"])
+        # default = None
 
-        # Check if defaults are presents in conf_default
-        else:
-            if isinstance(self.conf_default, dict):
-                default = copy.deepcopy(self.conf_default)
+        # # Check if defaults are presents in conf_schema
+        # if isinstance(self.conf_schema, dict):
+        #     # pylint: disable=E1136,E1135
+        #     if "default" in self.conf_schema:
+        #         # pylint: disable=E1135
+        #         default = copy.deepcopy(self.conf_schema["default"])
 
-        return default
+        # # Check if defaults are presents in conf_default
+        # else:
+        #     if isinstance(self.conf_default, (dict, list)):
+        #         default = copy.deepcopy(self.conf_default)
+        #     else:
+        #         default = self.conf_default
+
+        # return default
 
     def _node_conf_validate(self, payload):
         """Validate config against schema
@@ -335,14 +340,14 @@ class NodeVal(Base):
     # Dumper
     # -----------------
 
-    def dump(self, explain=True, all=False, **kwargs):
+    def dump(self, explain=True, all=True, **kwargs):
         """Output a dump of the object, helpful for troubleshooting prupose"""
 
         super(NodeVal, self).dump(**kwargs)
 
         _node_conf_parsed = self._node_conf_parsed
         _node_conf_current = self._node_conf_current
-
+        
         if all and _node_conf_parsed is not None:
             msg = "(same as Raw Config)"
             if _node_conf_current != _node_conf_parsed:
@@ -358,6 +363,13 @@ class NodeVal(Base):
             out = serialize(_node_conf_parsed, fmt="yaml")
             print(textwrap.indent(out, "    "))
 
+        print("  Whole config:")
+        print("  -----------------")
+        children = self.get_value(lvl=-1)
+        #out = serialize(children, fmt="yaml")
+        out = serialize(children, fmt="json")
+        print(textwrap.indent(out, "    "))
+
         if all:
             print("  Children:")
             print("  -----------------")
@@ -366,11 +378,16 @@ class NodeVal(Base):
             # out = pformat(children, indent=2, width=5)
             print(textwrap.indent(out, "    "))
 
-        print("  Config:")
-        print("  -----------------")
-        children = self.get_value(explain=explain)
-        out = serialize(children, fmt="yaml")
-        print(textwrap.indent(out, "    "))
+            print("  Value:")
+            print("  -----------------")
+            children = self.get_value(explain=explain)
+            #out = serialize(children, fmt="yaml")
+            out = serialize(children, fmt="json")
+            print(textwrap.indent(out, "    "))
+
+
+
+
 
         # out = pformat(children)
         # print (textwrap.indent(out, '    '))
@@ -411,17 +428,13 @@ class NodeList(NodeVal):
     # -------------------
 
     def _node_conf_defaults(self, payload):
-        """Generate default configuration for NodeList"""
+        """Return payload or default list (NodeList)"""
 
-        result = super(NodeList, self)._node_conf_defaults(payload)
-        if not result:
-            result = []
+        payload = payload or self.conf_default or []
+        if not isinstance(payload, list):
+            raise ListExpected(f"A list was expected for {self}, got: {payload}")
 
-        if not isinstance(result, list):
-            raise ListExpected(
-                f"A list was expected for {self}, got {type(result)}: {result}"
-            )
-        return result
+        return payload
 
     def _node_conf_build(self, payload):
         "Just assign the value, thats all NodeList"
@@ -591,18 +604,17 @@ class NodeDict(NodeVal):
         return result
 
     def _node_conf_defaults(self, payload):
-        "For NodeDict"
+        """Return payload merged with default value (NodeDict)"""
 
         payload = payload or {}
+        if not isinstance(payload, dict):
+            raise DictExpected(f"A dict was expected for {self}, got: {payload}")
 
-        result = super(NodeDict, self)._node_conf_defaults(payload)
-        if not result:
-            result = {}
-        if not isinstance(result, dict):
-            raise DictExpected(f"A dict was expected for {self}, got: {result}")
-
-        # Overrides dict defaults
+        result = copy.deepcopy(self.conf_default) or {}
         result.update(payload)
+
+
+
         return result
 
     def _node_conf_build(self, payload):

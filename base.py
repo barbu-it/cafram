@@ -1,5 +1,6 @@
 # Pshiiit' Knackie ! Library
 
+import os
 import logging
 import textwrap
 
@@ -55,7 +56,7 @@ class Base:
     # ---------------------
 
     # Current library name
-    _app = "cafram"
+    module = "cafram"
 
     # Objects can have names
     ident = None
@@ -112,10 +113,11 @@ class Base:
     def dump(self, format="json", filter=None, **kwargs):
 
         print("\n===================================================================")
-        print(f"== Dump of {self._app}.{self.kind}.{self.ident} {id(self)}")
+        print(f"== Dump of {self.module}.{self.kind}.{self.ident} {id(self)}")
         print("===================================================================\n")
 
         print("  Infos:")
+        print("  -----------------")
         print(f"    ID: {id(self)}")
         print(f"    Kind: {self.kind}")
         print(f"    Ident: {self.ident}")
@@ -140,6 +142,9 @@ class Base:
         self.dump(*args, **kwargs)
 
 
+
+
+
 # =====================================================================
 # Pre Base Class helpers
 # =====================================================================
@@ -159,9 +164,9 @@ class Log(Base):
 
         log = kwargs.get("log")
         if log is None:
-            log_name = f"{self._app}.{self.kind}.{self.ident}"
+            log_name = f"{self.module}.{self.kind}.{self.ident}"
         elif isinstance(log, str):
-            log_name = f"{self._app}.{log}"
+            log_name = f"{self.module}.{log}"
             log = None
         elif log.__class__.__name__ == "Logger":
             pass
