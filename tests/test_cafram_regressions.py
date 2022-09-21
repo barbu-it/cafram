@@ -76,19 +76,33 @@ payload_regression = {
 }
 
 
-def test_autoconf_levels_get_values():
+def test_autoconf_levels_get_values_minus1():
 
     node = NodeAuto(ident="AutoConf-1", payload=payload_regression, autoconf=-1)
+    # pprint (node.__dict__)
+    node.dump()
     assert node.get_value() == {}
+
+
+def test_autoconf_levels_get_values_0():
 
     node = NodeAuto(ident="AutoConf0", payload=payload_regression, autoconf=0)
     assert node.get_value() == payload_regression
 
+
+def test_autoconf_levels_get_values_1():
+
     node = NodeAuto(ident="AutoConf1", payload=payload_regression, autoconf=1)
     assert node.get_value() == payload_regression
 
+
+def test_autoconf_levels_get_values_2():
+
     node = NodeAuto(ident="AutoConf2", payload=payload_regression, autoconf=2)
     assert node.get_value() == {}
+
+
+def test_autoconf_levels_get_values_3():
 
     node = NodeAuto(ident="AutoConf3", payload=payload_regression, autoconf=3)
     assert node.get_value() == {}

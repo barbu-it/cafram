@@ -4,7 +4,7 @@ from pprint import pprint
 import pytest
 import logging
 
-from cafram.base import MissingIdent
+from cafram.base import MissingIdent, InvalidSyntax
 from cafram.nodes import *
 
 # from cafram.nodes_conf import *
@@ -106,7 +106,7 @@ def node_inst(request):
     class MyConfig(cls):
         ident = "ConfigTest"
 
-        def node_hook_pre(self, payload):
+        def node_hook_conf(self, payload):
 
             # Assert children are not set
             assert not self._nodes
@@ -114,7 +114,7 @@ def node_inst(request):
             # Always return payload for hook_pre
             return payload
 
-        def node_hook_post(self):
+        def node_hook_children(self):
 
             # Ensure nodes is correct type if dict or list
             if isinstance(self, (NodeList, NodeDict)):
@@ -301,17 +301,170 @@ def test_get_env(node_inst, result, monkeypatch):
     "Test if"
 
     # Prepare environment vars
-    name = f"{node_inst.conf_env_prefix or node_inst.kind}"
-    for var in ["KEYVAL", "KEYDICT", "KEYLIST"]:
-        varname = f"{name}_{var}".upper()
-        monkeypatch.setenv(varname, "test123")
+    name = f"{node_inst.conf_env_prefix or node_inst.kind}".upper()
+    env_loop = (
+        ("keyVal", "test123", "test123"),
+        (
+            "keyDict",
+            "subkey1=val1,subkey2=val2",
+            {"subkey1": "val1", "subkey2": "val2"},
+        ),
+        ("keyList", "test123", ["test123"]),
+    )
+
+    # Mokey patch environment vars
+    for env_def in env_loop:
+        key = env_def[0]
+        val = env_def[1]
+        key = f"{name}_{key}".upper()
+        monkeypatch.setenv(key, val)
 
     # Load env vars
     node_inst.deserialize(payload)
 
+    # Check env vars are correctly parsed
     node_conf = node_inst.get_value()
-    for key, val in node_conf.items():
-        assert val == "test123"
+    for env_def in env_loop:
+        key = env_def[0]
+        val = env_def[1]
+        result = env_def[2]
+        assert node_conf[key] == result, f"Got: {node_conf[key]} != {val}"
+
+
+# Test unset/drop attributes
+# ------------------------
+
+
+payload_none = {
+    "keyVal": None,
+    "keyDict": None,
+    "keyList": None,
+}
+payload_empty = {
+    "keyVal": "",
+    "keyDict": {},
+    "keyList": [],
+}
+
+###
+
+
+class ConfigDropMock(NodeMapEnv):
+
+    conf_children = [
+        {
+            "key": "keyDict",
+            "action": "drop",
+        },
+        {
+            "key": "keyList",
+            "action": "drop",
+        },
+        {
+            "key": "keyVal",
+            "action": "drop",
+        },
+    ]
+
+
+@pytest.mark.parametrize(
+    "node_inst,result",
+    [
+        ((payload_none, ConfigDropMock), {}),
+        ((payload_empty, ConfigDropMock), {}),
+    ],
+    indirect=["node_inst"],
+)
+def test_action_drop(node_inst, result, monkeypatch):
+    "Ensure drop value are absent"
+
+    pprint(result)
+    pprint(node_inst.__dict__)
+    assert node_inst.get_children() == {}
+    assert node_inst.get_value() == {}
+
+
+###
+
+
+class ConfigUnsetMock(NodeMapEnv):
+
+    conf_children = [
+        {
+            "key": "keyDict",
+            "action": "unset",
+            "cls": dict,
+        },
+        {
+            "key": "keyList",
+            "action": "unset",
+            "cls": list,
+        },
+        {
+            "key": "keyVal",
+            "action": "unset",
+            "cls": str,
+        },
+    ]
+
+
+@pytest.mark.parametrize(
+    "node_inst,result",
+    [
+        ((payload_empty, ConfigUnsetMock), payload_none),
+        ((payload_none, ConfigUnsetMock), payload_none),
+    ],
+    indirect=["node_inst"],
+)
+def test_action_unset(node_inst, result, monkeypatch):
+    "Ensure unset value are set to None"
+
+    pprint(result)
+    pprint(node_inst.__dict__)
+    pprint(node_inst.get_value())
+    assert node_inst.get_children() == {}
+    assert node_inst.get_value() == result
+    # assert False
+
+
+# Test other functions
+# ------------------------
+
+
+@pytest.mark.parametrize(
+    "payload,cls,expected",
+    [
+        (
+            "key1=val1,key2=True,key3=123",
+            dict,
+            {"key1": "val1", "key2": "True", "key3": "123"},
+        ),
+        ("val1,True,123", list, ["val1", "True", "123"]),
+        # Other edge cases
+        ("val1,True,123", None, "val1,True,123"),
+        (
+            {"key1": "val1", "key2": "True", "key3": "123"},
+            dict,
+            {"key1": "val1", "key2": "True", "key3": "123"},
+        ),
+        (["val1", "True", "123"], list, ["val1", "True", "123"]),
+    ],
+)
+def test_expand_envar_syntax(payload, cls, expected):
+
+    result = expand_envar_syntax(payload, cls)
+    assert expected == result
+
+
+def test_expand_envar_syntax_invalid_syntax():
+
+    payload = "key3_missing_equal,key1=val1,"
+
+    try:
+        result = expand_envar_syntax(payload, dict)
+        assert False, f"This test should have failed because of missing '='"
+    except InvalidSyntax:
+        pass
 
 
 # Main run

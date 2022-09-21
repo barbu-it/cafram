@@ -45,6 +45,14 @@ class ClassExpected(CaframException):
     """Raised when a class was expected"""
 
 
+class InvalidSyntax(CaframException):
+    """Raised when config string are not correct"""
+
+
+class SchemaError(CaframException):
+    """Raised when config does not match to schema"""
+
+
 # =====================================================================
 # Class helpers
 # =====================================================================

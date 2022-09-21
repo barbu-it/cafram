@@ -8,43 +8,18 @@ import textwrap
 import jsonschema
 import json
 
-from cafram.base import Base, DictExpected, ListExpected, NotExpectedType, ClassExpected
+from cafram.base import (
+    Base,
+    DictExpected,
+    ListExpected,
+    NotExpectedType,
+    ClassExpected,
+    InvalidSyntax,
+    SchemaError,
+)
 from cafram.utils import serialize, flatten, json_validate
 
 from pprint import pprint, pformat
-
-# Types
-# =====================================
-
-
-class _unset:
-    "Represent an unset attribute"
-
-    def __repr__(self):
-        return "<cafram.unset>"
-
-    def __reduce__(self):
-        return "unset"  # when unpickled, refers to "unset" below (singleton)
-
-
-unset = _unset()
-
-
-class _drop:
-    """Represents a value that will be dropped from the schema if it
-    is missing during *serialization* or *deserialization*.  Passed as
-    a value to the `missing` or `default` keyword argument
-    of :class:`SchemaNode`.
-    """
-
-    def __repr__(self):
-        return "<cafram.drop>"
-
-    def __reduce__(self):
-        return "drop"  # when unpickled, refers to "drop" below (singleton)
-
-
-drop = _drop()
 
 
 # Functions
@@ -124,6 +99,9 @@ class NodeVal(Base):
             autoconf = getattr(self._node_parent, "_node_autoconf", 0)
         self._node_autoconf = (autoconf - 1) if autoconf > 0 else autoconf
 
+        # Manage node level
+        self._node_lvl = getattr(self._node_parent, "_node_lvl", -1) + 1
+
         # Auto init object
         self.deserialize(payload)
 
@@ -138,28 +116,30 @@ class NodeVal(Base):
         self._node_conf_raw = payload
 
         # Parse config
-        payload1 = self._node_conf_defaults(payload)
-        payload2 = self._node_conf_validate(payload1)
+
+        payload1 = self._node_conf_validate(payload)
+        payload2 = self.node_hook_transform(payload1)
+        payload3 = self._node_conf_defaults(payload2)
 
         # Preset default ident
         if self.conf_ident:
             self.ident = self.conf_ident.format(**locals())
 
         # Pre hook
-        payload3 = self.node_hook_pre(payload2)
+        payload4 = self.node_hook_conf(payload3)
 
         # User report
-        if payload1 != payload3:
+        if payload1 != payload4:
             self.log.debug(
                 f"Payload transformation for: {self}\nFrom: {payload1}\nTo: {payload3}"
             )
 
         # Create children nodes
-        self._node_conf_parsed = payload3
-        self._node_conf_build(payload3)
+        self._node_conf_parsed = payload4
+        self._node_conf_build(payload4)
 
         # Post hook
-        self.node_hook_post()
+        self.node_hook_children()
 
     def serialize(self, mode="parsed"):
         "Transform object to json"
@@ -176,11 +156,23 @@ class NodeVal(Base):
     # User hooks
     # -----------------
 
-    def node_hook_pre(self, payload):
-        "Placeholder to transform config"
+    # Available hooks:
+    # node_hook_transform:
+    #   - Payload modifications only
+    # node_hook_conf
+    #   - Payload is done, preset values
+    # node_hook_children
+    #   - Once the children has been created
+
+    def node_hook_transform(self, payload):
+        "Placeholder to transform config after validation"
         return payload
 
-    def node_hook_post(self):
+    def node_hook_conf(self, payload):
+        "Placeholder to executes after configuration build"
+        return payload
+
+    def node_hook_children(self):
         "Placeholder to transform object once onfig has been done"
         pass
 
@@ -192,28 +184,6 @@ class NodeVal(Base):
 
         return payload or self.conf_default
 
-        # if payload:
-        #     # Skip if payload is provided
-        #     return payload
-
-        # default = None
-
-        # # Check if defaults are presents in conf_schema
-        # if isinstance(self.conf_schema, dict):
-        #     # pylint: disable=E1136,E1135
-        #     if "default" in self.conf_schema:
-        #         # pylint: disable=E1135
-        #         default = copy.deepcopy(self.conf_schema["default"])
-
-        # # Check if defaults are presents in conf_default
-        # else:
-        #     if isinstance(self.conf_default, (dict, list)):
-        #         default = copy.deepcopy(self.conf_default)
-        #     else:
-        #         default = self.conf_default
-
-        # return default
-
     def _node_conf_validate(self, payload):
         """Validate config against schema
 
@@ -222,40 +192,40 @@ class NodeVal(Base):
         * self.conf_schema conatins the "$schema" key
         """
 
-        old_payload = payload
+        #old_payload = payload
 
         # pylint: disable=E1135
-        if isinstance(self.conf_schema, dict) and "$schema" in self.conf_schema:
+        if isinstance(self.conf_schema, dict):
+            if "$schema" in self.conf_schema:
 
-            try:
-                # print (f"Validate config of: {self} WITHY PAYLOAD: {payload}")
-                payload = json_validate(self.conf_schema, payload)
-            except jsonschema.exceptions.ValidationError as err:
+                try:
+                    payload = json_validate(self.conf_schema, payload)
+                except jsonschema.exceptions.ValidationError as err:
 
-                print("")
-                print(f"Error: {err.message} for {self.__dict__}")
-                print(f"Value: {err.instance}")
-                print(f"Payload: {payload}")
-                print("Schema:")
-                # print (serialize(self.conf_schema, fmt='yml'))
-                # print(traceback.format_exc())
-                raise Exception()
+                    self.log.critical(f"Value: {err.instance}")
+                    self.log.critical(f"Payload: {payload}")
+                    raise SchemaError(
+                        f"Schema validation error for {self}: {err.message}"
+                    )
 
-            except jsonschema.exceptions.SchemaError as err:
-                print("Bug in schema for ", self)
-                print(err)
+                except jsonschema.exceptions.SchemaError as err:
+                    # print("Bug in schema for ", self)
+                    # print(err)
 
-                print("PAYLOAD")
-                pprint(payload)
-                print("SCHEMA")
-                pprint(self.conf_schema)
-                print("BBBUUUUUGGGGGGG on schema !!!")
-                # print(traceback.format_exc())
-                raise Exception()
+                    # print("PAYLOAD")
+                    # pprint(payload)
+                    # print("SCHEMA")
+                    # pprint(self.conf_schema)
+                    # print("BBBUUUUUGGGGGGG on schema !!!")
+                    # # print(traceback.format_exc())
+                    raise Exception(err) from err
 
-            if old_payload != payload:
-                print("OLD CONFIG WITHOUT DEFAULTS", old_payload)
-                print("NEW CONFIG WITH DEFAULTS", payload)
+                # if old_payload != payload:
+                #     print("OLD CONFIG WITHOUT DEFAULTS", old_payload)
+                #     print("NEW CONFIG WITH DEFAULTS", payload)
+
+        # else:
+        #     print(f"NO SCHEMA VALIDATION FOR {self}")
 
         return payload
 
@@ -269,8 +239,7 @@ class NodeVal(Base):
     # -----------------
 
     def from_json(self, payload):
-        # payload = json.loads(payload)
-        # payload = jsonschema.validate(payload)
+        "Load from json string"
 
         payload = json.loads(payload)
         return self.deserialize(payload)
@@ -279,10 +248,7 @@ class NodeVal(Base):
     # -----------------
 
     # Methods:
-    # value:
-    #   - return both node objects and other
-    #   - Support recursivity
-    # get_nodes
+    # get_children
     #   - return only node objects
     #   - support recur
     # get_value
@@ -347,28 +313,30 @@ class NodeVal(Base):
 
         _node_conf_parsed = self._node_conf_parsed
         _node_conf_current = self._node_conf_current
+        _node_conf_raw = self._node_conf_raw
+
+        print("  Node info:")
+        print("  -----------------")
+        print(f"    Node level: {self._node_lvl}")
+        print(f"    Node root: {self._node_root}")
+        print(f"    Node parents: {self.get_parents()}")
+        print("")
 
         if all and _node_conf_parsed is not None:
             msg = "(same as Raw Config)"
-            if _node_conf_current != _node_conf_parsed:
+            if _node_conf_raw != _node_conf_parsed:
                 msg = "(different from Raw Config)"
 
                 print("  Raw Config:")
                 print("  -----------------")
-                out = serialize(_node_conf_current, fmt="yaml")
+                out = serialize(_node_conf_raw, fmt="yaml")
                 print(textwrap.indent(out, "    "))
 
             print("  Parsed Config:", msg)
             print("  -----------------")
             out = serialize(_node_conf_parsed, fmt="yaml")
             print(textwrap.indent(out, "    "))
-
-        print("  Whole config:")
-        print("  -----------------")
-        children = self.get_value(lvl=-1)
-        # out = serialize(children, fmt="yaml")
-        out = serialize(children, fmt="json")
-        print(textwrap.indent(out, "    "))
+            # print ("")
 
         if all:
             print("  Children:")
@@ -377,6 +345,7 @@ class NodeVal(Base):
             out = serialize(children)
             # out = pformat(children, indent=2, width=5)
             print(textwrap.indent(out, "    "))
+            print("")
 
             print("  Value:")
             print("  -----------------")
@@ -384,11 +353,20 @@ class NodeVal(Base):
             # out = serialize(children, fmt="yaml")
             out = serialize(children, fmt="json")
             print(textwrap.indent(out, "    "))
+            print("")
+
+        print("  Whole config:")
+        print("  -----------------")
+        children = self.get_value(lvl=-1)
+        # out = serialize(children, fmt="yaml")
+        out = serialize(children, fmt="json")
+        print(textwrap.indent(out, "    "))
+        print("")
 
         # out = pformat(children)
         # print (textwrap.indent(out, '    '))
 
-        print("\n")
+        # print("\n")
 
 
 # Test Class Data
@@ -444,8 +422,7 @@ class NodeList(NodeVal):
         count = 0
         for item in payload:
 
-            # TOFIX: ident = item_def.ident
-            ident = f"Item{count}"
+            ident = f"{self.ident}_{count}"
 
             if self._node_autoconf != 0:
                 cls = cls or map_all_class(item)
@@ -455,9 +432,6 @@ class NodeList(NodeVal):
                     raise ClassExpected(
                         f"A class was expected for {self}.conf_struct, got {type(cls)}: {cls}"
                     )
-
-                # ident = f"{cls.__name__}_{count}"
-                ident = f"{self.ident}_{count}"
 
                 if issubclass(cls, NodeVal):
                     item = cls(parent=self, ident=ident, payload=item)
@@ -519,7 +493,9 @@ class NodeList(NodeVal):
 class NodeDictItem:
     """Children configuration for NodeDict"""
 
-    def __init__(self, *args, key=None, cls=None, default=None, attr=None, **kwargs):
+    def __init__(
+        self, *args, key=None, cls=None, action="set", default=None, attr=None, **kwargs
+    ):
 
         self.key = key
         self.attr = attr or None
@@ -527,6 +503,7 @@ class NodeDictItem:
 
         self.cls = cls or None
         self.default = default or None
+        self.action = action
 
     @property
     def ident(self) -> str:
@@ -534,21 +511,14 @@ class NodeDictItem:
 
     def __repr__(self):
         result = [f"{key}={val}" for key, val in self.__dict__.items() if val]
-        result = ",".join(result)
+        result = "|".join(result)
         return f"Remap:{result}"
 
 
 class NodeDict(NodeVal):
 
     _nodes = {}
-
-    def __init__(self, *args, **kwargs):
-
-        # Build conf_children
-        if isinstance(self.conf_children, list):
-            self.conf_children = [NodeDictItem(**conf) for conf in self.conf_children]
-
-        super(NodeDict, self).__init__(*args, **kwargs)
+    _node_conf_struct = None
 
     # # TODO: https://www.pythonlikeyoumeanit.com/Module4_OOP/Special_Methods.html
     # __len__
@@ -599,17 +569,110 @@ class NodeDict(NodeVal):
 
         return result
 
+    def _node_conf_gen_struct(self, payload):
+        """Assemble conf_struct fron conf_children for NodeDict"""
+
+        # Conf_children default behavior: auto from dict
+        conf_children = self.conf_children or {}
+        conf_struct = None
+
+        # 1. Leave as is
+        if isinstance(conf_children, list):
+            self.log.debug(f"    > Confstruct for list")
+            pass
+
+        # 2. Direct generate
+        elif inspect.isclass(conf_children):
+            self.log.debug(f"    > Confstruct for {conf_children}")
+
+            conf_children = [
+                {"key": key, "default": val, "cls": conf_struct}
+                for key, val in payload.items()
+            ]
+
+        # 3. Auto generate
+        elif self._node_autoconf != 0:
+            self.log.debug(f"    > Confstruct for {self._node_autoconf}")
+
+            conf_children = [
+                {"key": key, "default": val, "cls": map_node_class(val)}
+                for key, val in payload.items()
+            ]
+
+        # 4. Auto guess from payload
+        elif conf_children == {}:
+            self.log.debug("    > Confstruct for {}")
+            conf_children = [
+                {"key": key, "default": val, "cls": type(val)}
+                for key, val in payload.items()
+            ]
+
+        # Actually build conf_Struct
+        conf_struct = [NodeDictItem(**conf) for conf in conf_children]
+
+        # Developper sanity check
+        if not isinstance(conf_struct, list):
+            raise ListExpected(
+                f"A list was expected for conf_children, got : {conf_struct}, {conf_children}"
+            )
+
+        return conf_struct
+
     def _node_conf_defaults(self, payload):
         """Return payload merged with default value (NodeDict)"""
 
         payload = payload or {}
+        conf_default = self.conf_default or {}
+
+        # Payload sanity check
         if not isinstance(payload, dict):
             raise DictExpected(f"A dict was expected for {self}, got: {payload}")
+        if not isinstance(conf_default, dict):
+            raise DictExpected(
+                f"A dict was expected for {self}/conf_default, got: {conf_default}"
+            )
 
-        result = copy.deepcopy(self.conf_default) or {}
+        # Update payload
+        result = copy.deepcopy(conf_default)
         result.update(payload)
+        payload = result
 
-        return result
+        # Generate conf_struct
+        conf_struct = self._node_conf_gen_struct(payload)
+        self.log.debug(f"Applied conf_children for {self}: {conf_struct}")
+        self._node_conf_struct = conf_struct
+
+        # Clean config
+        for item_def in conf_struct:
+
+            key = item_def.key
+            cls = item_def.cls
+            action = item_def.action
+
+            # Get value
+            if key is None:
+                continue
+
+            # Check value
+            if action == "drop":
+                del payload[key]
+            elif action == "unset":
+
+                # Fetch value and nullify it
+                if key:
+                    value = copy.deepcopy(payload.get(key) or item_def.default)
+                else:
+                    value = copy.deepcopy(item_def.default)
+
+                # Default all unset to None
+                if not value:
+                    value = None
+
+                payload[key] = value
+
+        # print(f"Actual payload {self}: {payload}")
+
+        return payload
 
     def _node_conf_build(self, payload):
         "For NodeDict"
@@ -617,58 +680,16 @@ class NodeDict(NodeVal):
         result = {}
         payload = payload or {}
 
+        # Developper sanity check
         if not isinstance(payload, dict):
-            # self._nodes = payload
-            # return
             self.log.warning(
-                "Developper must call node_hook_pre() first if data are not dict"
+                "Developper must call node_hook_conf() first if data are not dict"
             )
             raise DictExpected(
                 f"A dictionnary was expected for {self}, got {type(payload).__name__}: {payload}"
             )
 
-        # Check the mapping structure
-        conf_struct = self.conf_children
-
-        # Direct generrate
-        if inspect.isclass(conf_struct):
-            # print ("Create autofilter for class:", conf_struct)
-            conf_struct = [
-                {"key": key, "default": val, "cls": conf_struct}
-                for key, val in payload.items()
-            ]
-            conf_struct = [NodeDictItem(**conf) for conf in conf_struct]
-
-        # Auto guess from payload
-        elif conf_struct == {}:
-            conf_struct = [
-                {"key": key, "default": val, "cls": type(val)}
-                for key, val in payload.items()
-            ]
-            conf_struct = [NodeDictItem(**conf) for conf in conf_struct]
-
-        # Leave as is
-        elif isinstance(conf_struct, list):
-            pass
-
-        # Auto generate
-        elif self._node_autoconf != 0:
-            # print (f"Auto generate attr: {self}")
-            conf_struct = [
-                {"key": key, "default": val, "cls": map_node_class(val)}
-                for key, val in payload.items()
-            ]
-            conf_struct = [NodeDictItem(**conf) for conf in conf_struct]
-
-        # Simply forward dict
-        elif conf_struct is None or conf_struct == []:
-            self._nodes = payload
-            return
-
-        if not isinstance(conf_struct, list):
-            raise ListExpected(
-                f"A list was expected for conf_struct, got : {conf_struct}"
-            )
+        conf_struct = self._node_conf_struct
 
         # Process each children
         for item_def in conf_struct:
@@ -676,61 +697,65 @@ class NodeDict(NodeVal):
             key = item_def.key
             attr = item_def.attr or key
             cls = item_def.cls
+            action = item_def.action
 
-            # Check value
-            if item_def.ident is None:
-                # print (f"    > Skip item: nokey/noattr {item_def.ident}=unset")
-                continue
-            elif key:
-                value = copy.deepcopy(payload.get(key, item_def.default))
-                # print (f"  > Process item: {item_def}:{key} with value={value}")
-            else:
-                value = copy.deepcopy(item_def.default)
-                # print (f"  > Process internal item: {item_def}:{attr} with value={value}")
+            # Get value
+            value = None
+            if key:
+                value = payload.get(key)
 
-            # Create children
-            if value == drop or item_def.default == drop:
-                # print (f"    > Skip dropped nested item: {attr}={cls}({value})")
-                continue
-            elif value == unset:
-                value = None
-                # print (f"    > Instanciate unset key item object: {attr}={value}")
-            else:
+            # Check action
+            if not value:
+                if action == "unset":
+                    # value = None
+                    cls = None
+                elif action == "drop":
+                    continue
 
-                if cls:
-                    if issubclass(cls, NodeVal):
-                        # print (f"    > Instanciate Node object: {attr}={cls}(payload={value})")
-                        value = cls(parent=self, ident=item_def.ident, payload=value)
-                    else:
-                        if not value:
-                            # print (f"    > Instanciate null child object: {attr}={cls}()")
-                            value = cls()
-                        elif isinstance(value, cls):
-                            # print (f"    > Instanciate child object: {attr}={cls}({value})")
-                            value = cls(value)
-                        else:
-                            # print (f"    > Instanciate empty child object: {attr}={cls}()")
-                            try:
-                                value = cls(value)
-                            except Exception as err:
-                                self.log.critical(
-                                    f"Type mismatch between: {cls} and {value}"
-                                )
-                                raise NotExpectedType(err)
+            if cls:
+                # Instanciate or cast value
+                if issubclass(cls, NodeVal):
+                    self.log.debug(
+                        f"    > Instanciate Node object: {attr}={cls}(payload={value})"
+                    )
+                    value = cls(parent=self, ident=item_def.ident, payload=value)
                 else:
-                    # print (f"    > Instanciate direct assignment: {attr}={value}")
-                    value = value
+                    if not value:
+                        self.log.debug(
+                            f"    > Instanciate null child object: {attr}={cls}()"
+                        )
+                        value = cls()
+                    elif isinstance(value, cls):
+                        self.log.debug(
+                            f"    > Instanciate child object: {attr}={cls}({value})"
+                        )
+                        value = cls(value)
+                    else:
+                        self.log.debug(
+                            f"    > Instanciate empty child object: {attr}={cls}()"
+                        )
+                        try:
+                            value = cls(value)
+                        except Exception as err:
+                            self.log.critical(
+                                f"Type mismatch between: {cls} and {value}"
+                            )
+                            raise NotExpectedType(err)
+            else:
+                # Forward value
+                self.log.debug(f"    > Instanciate direct assignment: {attr}={value}")
+                value = value
 
             if attr:
                 result[attr] = value
 
-        # Happend other keys
+        # 2. Append other keys only if not already set
         done_keys = [remap.key for remap in conf_struct if remap.ident]
         for key, val in payload.items():
             if key not in done_keys:
                 result[key] = val
 
-        # Create children
+        # 3. Create children
         self._nodes = result
 
     def add_child(self, ident, obj):
@@ -778,6 +803,38 @@ class NodeMap(NodeDict):
 # =====================================
 
 
+def expand_envar_syntax(payload, cls):
+    "Expand serialized dict/list from env syntax"
+
+    if not cls:
+        return payload
+    if isinstance(payload, cls):
+        return payload
+    if not isinstance(payload, str):
+        return payload
+
+    if cls == dict:
+        result = {}
+        for statement in payload.split(","):
+
+            keyval = statement.split("=", 1)
+            print("STATELENT", statement, keyval)
+            if len(keyval) != 2:
+                raise InvalidSyntax(
+                    f"Invalid syntax, expected 'key=value', got: {statement}"
+                )
+            key = keyval[0]
+            value = keyval[1]
+            result[key] = value
+        return result
+
+    if cls == list:
+        result = []
+        for statement in payload.split(","):
+            result.append(statement)
+        return result
+
+
 class NodeMapEnv(NodeMap):
     "Like a NodeMap, but fetch value from env"
 
@@ -787,15 +844,17 @@ class NodeMapEnv(NodeMap):
         """Override payload from environment vars"""
 
         result = super(NodeMapEnv, self)._node_conf_defaults(payload)
+        conf_struct = self._node_conf_struct
+
         # Override from environment
         for key, val in result.items():
-            result[key] = self.get_env_conf(key) or val
+            value = self.get_env_conf(key) or val
 
-        conf_default = self.conf_default
-        if not isinstance(conf_default, dict) or not conf_default:
-            raise DictExpected(
-                f"A dict was expected for {self}/conf_default, got: {conf_default}"
-            )
+            cls = [item.cls for item in conf_struct if item.key == key]
+            if len(cls) > 0:
+                value = expand_envar_syntax(value, cls[0])
+
+            result[key] = value
 
         return result
 
@@ -810,7 +869,11 @@ class NodeMapEnv(NodeMap):
         name = name.upper()
         result = os.getenv(name)
 
-        print("GET ENVIRONMENT VAR:", name, result)
+        if result:
+            self.log.info(f"Fetch value from env: {name}={result}")
+        else:
+            self.log.debug(f"Skip value from env: {name}")
+
         return result
 
 
@@ -839,21 +902,8 @@ class NodeAuto:
 
     def __init__(self, *args, ident=None, payload=None, autoconf=-1, **kwargs):
 
+        # Map json object to Node class
         self.__class__ = map_all_class(payload)
-        # print ("Found class", self.__class__, payload)
-        # # classes = "-> ".join([x.__name__ for x in self.__class__.__mro__])
-        # # print(f"    MRO: {classes}")
-        # print ("INIT AUTO", args, ident, payload, autoconf, kwargs)
 
+        # Forward to class
         self.__init__(*args, ident=ident, payload=payload, autoconf=autoconf, **kwargs)
-
-        # super(self.__class__, self).__init__(
-        #     *args, ident=ident, payload=payload, autoconf=autoconf, **kwargs
-        # )
-
-        # super(self.__class__, self).__init__(
-        #     *args, ident=ident, payload=payload, autoconf=autoconf, **kwargs
-        # )
-
-
-# def confauto()

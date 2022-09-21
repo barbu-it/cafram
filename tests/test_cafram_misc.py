@@ -8,11 +8,11 @@ from cafram.nodes import *
 # from cafram.nodes_conf import *
 
 
-def test_attribute_class():
-    "Should return empty things"
+# def test_attribute_class():
+#     "Should return empty things"
 
-    assert str(unset) == "<cafram.unset>"
-    assert str(drop) == "<cafram.drop>"
+#     assert str(unset) == "<cafram.unset>"
+#     assert str(drop) == "<cafram.drop>"
 
 
 if __name__ == "__main__":
