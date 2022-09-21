@@ -5,15 +5,13 @@ import sys
 import logging
 import json
 
-# import re
-import sh
-
 from pprint import pprint
 from pathlib import Path
 
 import ruamel.yaml
 import jsonschema
 from jsonschema import Draft202012Validator, validators
+import sh
 
 
 # =====================================================================

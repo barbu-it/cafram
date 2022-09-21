@@ -281,6 +281,39 @@ def test_serialize_method(node_inst, result):
     assert node_inst.serialize() == result
 
 
+# Test NodeMapEnv
+# ------------------------
+
+
+class ConfigEnvMock(NodeMapEnv):
+
+    conf_default = payload
+
+
+@pytest.mark.parametrize(
+    "node_inst,result",
+    [
+        ((payload, ConfigEnvMock), payload),
+    ],
+    indirect=["node_inst"],
+)
+def test_get_env(node_inst, result, monkeypatch):
+    "Test if"
+
+    # Prepare environment vars
+    name = f"{node_inst.conf_env_prefix or node_inst.kind}"
+    for var in ["KEYVAL", "KEYDICT", "KEYLIST"]:
+        varname = f"{name}_{var}".upper()
+        monkeypatch.setenv(varname, "test123")
+
+    # Load env vars
+    node_inst.deserialize(payload)
+
+    node_conf = node_inst.get_value()
+    for key, val in node_conf.items():
+        assert val == "test123"
+
+
 # Main run
 # ------------------------
 

@@ -1,7 +1,7 @@
 """
 Config Node classes
 """
-
+import os
 import copy
 import inspect
 import textwrap
@@ -347,7 +347,7 @@ class NodeVal(Base):
 
         _node_conf_parsed = self._node_conf_parsed
         _node_conf_current = self._node_conf_current
-        
+
         if all and _node_conf_parsed is not None:
             msg = "(same as Raw Config)"
             if _node_conf_current != _node_conf_parsed:
@@ -366,7 +366,7 @@ class NodeVal(Base):
         print("  Whole config:")
         print("  -----------------")
         children = self.get_value(lvl=-1)
-        #out = serialize(children, fmt="yaml")
+        # out = serialize(children, fmt="yaml")
         out = serialize(children, fmt="json")
         print(textwrap.indent(out, "    "))
 
@@ -381,13 +381,9 @@ class NodeVal(Base):
             print("  Value:")
             print("  -----------------")
             children = self.get_value(explain=explain)
-            #out = serialize(children, fmt="yaml")
+            # out = serialize(children, fmt="yaml")
             out = serialize(children, fmt="json")
             print(textwrap.indent(out, "    "))
-
-
-
-
 
         # out = pformat(children)
         # print (textwrap.indent(out, '    '))
@@ -613,8 +609,6 @@ class NodeDict(NodeVal):
         result = copy.deepcopy(self.conf_default) or {}
         result.update(payload)
 
-
-
         return result
 
     def _node_conf_build(self, payload):
@@ -778,6 +772,46 @@ class NodeMap(NodeDict):
             # or just set regular attribute
             # print (f"Set attr value: {key}={value} for {self}")
             super(NodeMap, self).__setattr__(key, value)
+
+
+# NodeMap
+# =====================================
+
+
+class NodeMapEnv(NodeMap):
+    "Like a NodeMap, but fetch value from env"
+
+    conf_env_prefix = None
+
+    def _node_conf_defaults(self, payload):
+        """Override payload from environment vars"""
+
+        result = super(NodeMapEnv, self)._node_conf_defaults(payload)
+        # Override from environment
+        for key, val in result.items():
+            result[key] = self.get_env_conf(key) or val
+
+        conf_default = self.conf_default
+        if not isinstance(conf_default, dict) or not conf_default:
+            raise DictExpected(
+                f"A dict was expected for {self}/conf_default, got: {conf_default}"
+            )
+
+        return result
+
+    def get_env_conf(self, key=None):
+        "Return the value of environment var associated to this object"
+        # name = f"{self.module}_{self.kind}_{self.ident}"
+        # name = f"{self.kind}_{self.ident}"
+        name = f"{self.conf_env_prefix or self.kind}"
+
+        if key:
+            name += f"_{key}"
+        name = name.upper()
+        result = os.getenv(name)
+
+        print("GET ENVIRONMENT VAR:", name, result)
+        return result
 
 
 # Test decorators
