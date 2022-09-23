@@ -29,11 +29,15 @@ _3_dict_mixed:
       _4_key_dict_nested:
         _4_key_dict_nested:
           nest_key: nested_value
-_4_list_mixed:
-- string1
-- 1234
-- false
+_4_list_null:
 - null
+- null
+- null
+_4_list_str:
+- true
+- false
+- true
+- false
 _5_list_dict:
 - key: value1
 - key: value2
@@ -43,10 +47,3 @@ _6_list_list:
 - - value2
 - - 1234
 _7_list_empty: []
-_8_list_mixed:
-- value
-- 12
-- true
-- dict:
-    subkey: 1234
-  key: val

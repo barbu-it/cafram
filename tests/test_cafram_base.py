@@ -66,7 +66,7 @@ class Test01_ConfVal(unittest.TestCase):
         """
 
         node = NodeMap(ident="TestInstance")
-        node.dump2()
+        node.dump()
 
 
 # ConfMixed Testing
@@ -96,10 +96,10 @@ def node_inst(request):
         params = request.param
         payload = request.param
 
-        cls = map_all_class(payload)
+        cls = map_node_class(payload)
         if isinstance(params, tuple):
             payload = params[0]
-            cls = params[1] if len(params) > 1 else map_all_class(payload)
+            cls = params[1] if len(params) > 1 else map_node_class(payload)
 
     print("Create new obj:", cls, payload)
 
@@ -205,7 +205,7 @@ def test_get_parents_method(node_inst):
     indirect=["node_inst"],
 )
 def test_node_get_value_method(node_inst, result):
-    # pprint (self.__dict__)
+    pprint(node_inst.__dict__)
     assert node_inst.get_value() == result
 
 
@@ -279,6 +279,72 @@ def test_deserialize_method(node_inst, result):
 )
 def test_serialize_method(node_inst, result):
     assert node_inst.serialize() == result
+
+
+# Test NodeList
+# ------------------------
+
+
+payload_list_str = [
+    "string1",
+    "string2",
+    "string3",
+]
+payload_list_int = [123, 456, 789]
+payload_list_bool = [True, False, True, False]
+payload_list_mixed_ko1 = [
+    123,
+    False,
+    "string",
+]
+payload_list_mixed_ko2 = [
+    "string",
+    123,
+    False,
+]
+
+
+class ConfigListTester(NodeList):
+
+    ident = "ListTester"
+
+
+# @pytest.mark.parametrize(
+#     "node_inst,result",
+#     [
+#         ((payload, ConfigListTester), payload),
+#     ],
+#     indirect=["node_inst"],
+# )
+# def test_list_default_class(node_inst, result):
+#     "Ensure first element of the list determine the class"
+
+#     node_inst.deserialize(payload_list_str)
+#     pprint (node_inst.__dict__)
+
+#     assert False, "WIPP"
+
+# @pytest.mark.parametrize(
+#     "node_inst,result",
+#     [
+#         ((payload, ConfigListTester), payload),
+#     ],
+#     indirect=["node_inst"],
+# )
+def test_list_fail_on_mixed_class(node_inst):
+    "Ensure this fail when mixed type elements are present in a list"
+
+    node_inst = ConfigListTester(autoconf=-1)
+
+    for payload in [payload_list_mixed_ko1, payload_list_mixed_ko2]:
+        try:
+            node_inst.deserialize(payload)
+            pprint(node_inst.__dict__)
+            assert False, "This test should have failed"
+        except NotExpectedType:
+            pass
+
+    # assert False, "WIPPPP"
 
 
 # Test NodeMapEnv

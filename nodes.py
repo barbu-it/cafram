@@ -1,12 +1,20 @@
 """
 Config Node classes
 """
+# pylint: disable=too-many-lines
+# pylint: disable=too-few-public-methods
+# pylint: disable=arguments-renamed
+# pylint: disable=arguments-differ
+# pylint: disable=unused-argument
+
 import os
 import copy
 import inspect
 import textwrap
-import jsonschema
 import json
+from pprint import pprint
+
+import jsonschema
 
 from cafram.base import (
     Base,
@@ -17,16 +25,14 @@ from cafram.base import (
     InvalidSyntax,
     SchemaError,
 )
-from cafram.utils import serialize, flatten, json_validate
-
-from pprint import pprint, pformat
+from cafram.utils import serialize, json_validate
 
 
 # Functions
 # =====================================
 
 
-def map_node_class(payload):
+def map_container_class(payload):  # map_container_class
     "Map list or dict to cafram classes, otherwise keep value as is"
 
     # if payload is None:
@@ -41,7 +47,7 @@ def map_node_class(payload):
     return type(payload)
 
 
-def map_all_class(payload):
+def map_node_class(payload):  # map_node_class
     "Map anything to cafram classes"
 
     if isinstance(payload, dict):
@@ -56,7 +62,7 @@ def map_all_class(payload):
 # Simple attributes class
 # =====================================
 
-
+# pylint: disable=too-many-instance-attributes
 class NodeVal(Base):
     """
     Base configuration class
@@ -80,13 +86,13 @@ class NodeVal(Base):
     _node_parent = None
 
     _node_conf_raw = None
-    _node_conf_current = None
     _node_conf_parsed = None
     _node_autoconf = 0
 
     def __init__(self, *args, parent=None, payload=None, autoconf=None, **kwargs):
 
         # Call parents
+        # pylint: disable=super-with-arguments
         super(NodeVal, self).__init__(*args, **kwargs)
         self.log.debug(f"__init__: NodeVal/{self}")
 
@@ -111,8 +117,8 @@ class NodeVal(Base):
     def deserialize(self, payload):
         "Transform json to object"
 
+        # pylint: disable=W0212
         self._nodes = self.__class__._nodes
-        self._node_conf_current = None
         self._node_conf_raw = payload
 
         # Parse config
@@ -135,7 +141,7 @@ class NodeVal(Base):
             )
 
         # Create children nodes
-        self._node_conf_parsed = payload4
+
         self._node_conf_build(payload4)
 
         # Post hook
@@ -146,8 +152,6 @@ class NodeVal(Base):
 
         if mode == "raw":
             value = self._node_conf_raw
-        elif mode == "current":
-            value = self._node_conf_current
         elif mode == "parsed":
             value = self._node_conf_parsed
 
@@ -164,17 +168,18 @@ class NodeVal(Base):
     # node_hook_children
     #   - Once the children has been created
 
+    # pylint: disable=no-self-use
     def node_hook_transform(self, payload):
         "Placeholder to transform config after validation"
         return payload
 
+    # pylint: disable=no-self-use
     def node_hook_conf(self, payload):
         "Placeholder to executes after configuration build"
         return payload
 
     def node_hook_children(self):
         "Placeholder to transform object once onfig has been done"
-        pass
 
     # Configuration parser
     # -----------------
@@ -192,7 +197,7 @@ class NodeVal(Base):
         * self.conf_schema conatins the "$schema" key
         """
 
-        #old_payload = payload
+        # old_payload = payload
 
         # pylint: disable=E1135
         if isinstance(self.conf_schema, dict):
@@ -206,7 +211,7 @@ class NodeVal(Base):
                     self.log.critical(f"Payload: {payload}")
                     raise SchemaError(
                         f"Schema validation error for {self}: {err.message}"
-                    )
+                    ) from err
 
                 except jsonschema.exceptions.SchemaError as err:
                     # print("Bug in schema for ", self)
@@ -233,7 +238,8 @@ class NodeVal(Base):
     # -----------------
     def _node_conf_build(self, payload):
         "Just assign the value, thats all"
-        self._nodes = payload
+        self._nodes = None
+        self._node_conf_parsed = payload
 
     # Misc
     # -----------------
@@ -255,6 +261,7 @@ class NodeVal(Base):
     #   - return ALL but node objects
 
     def get_children(self, lvl=0, explain=False, leaves=False):
+        """A nodeVal can't have a children, so always return None"""
         result = None
         if leaves:
             result = self
@@ -267,10 +274,10 @@ class NodeVal(Base):
             }
         return result
 
-    def get_value(self, lvl=0, explain=False):
+    def get_value(self, **kwargs):
         """Return the _nodes value (value+children)"""
 
-        return self._nodes
+        return self._node_conf_parsed
 
     # Sibling management
     # -----------------
@@ -296,7 +303,7 @@ class NodeVal(Base):
         current = self
         parent = self._node_parent or None
         while parent is not None and parent != current:
-            if not parent in parents:
+            if parent not in parents:
                 parents.append(parent)
                 current = parent
                 parent = getattr(current, "_node_parent")
@@ -306,13 +313,14 @@ class NodeVal(Base):
     # Dumper
     # -----------------
 
+    # pylint: disable=redefined-builtin
     def dump(self, explain=True, all=True, **kwargs):
         """Output a dump of the object, helpful for troubleshooting prupose"""
 
+        # pylint: disable=super-with-arguments
         super(NodeVal, self).dump(**kwargs)
 
         _node_conf_parsed = self._node_conf_parsed
-        _node_conf_current = self._node_conf_current
         _node_conf_raw = self._node_conf_raw
 
         print("  Node info:")
@@ -397,6 +405,7 @@ class NodeList(NodeVal):
     """NodeList"""
 
     _nodes = []
+    _node_conf_parsed = []
 
     # Overrides
     # -------------------
@@ -413,19 +422,25 @@ class NodeList(NodeVal):
     def _node_conf_build(self, payload):
         "Just assign the value, thats all NodeList"
 
+        self._node_conf_parsed = payload
         if not payload:
-            return []
+            self._nodes = []
+            return
 
         cls = self.conf_children
 
-        result = []
+        results = []
         count = 0
+        are_children = False
         for item in payload:
 
             ident = f"{self.ident}_{count}"
 
             if self._node_autoconf != 0:
-                cls = cls or map_all_class(item)
+                # If not found, first element of the list determine class
+                # cls = cls or map_node_class(item)
+                cls = cls or map_container_class(item)
+                # print ("AUTOGUESS CLASS: ", cls)
 
             if cls:
                 if not inspect.isclass(cls):
@@ -434,14 +449,38 @@ class NodeList(NodeVal):
                     )
 
                 if issubclass(cls, NodeVal):
-                    item = cls(parent=self, ident=ident, payload=item)
+                    are_children = True
+                    result = cls(parent=self, ident=ident, payload=item)
                 elif cls:
-                    item = cls(item)
 
-            result.append(item)
+                    are_children = False
+
+                    if item and not isinstance(item, cls):
+                        msg = f"""Wrong type in list: '{item}' is not
+                        a '{cls.__name__}' type in '{payload}'"""
+                        raise NotExpectedType(msg)
+
+                    result = item
+                    if item:
+                        result = cls(item)
+
+                    # try:
+
+                    # except (ValueError, TypeError) as err:
+                    #     msg = f"""Wrong type in list: '{item}' is not a
+                    # '{cls.__name__}' type in '{payload}'"""
+                    #     raise NotExpectedType(msg) from err
+
+                results.append(result)
+            else:
+                results.append(item)
+
             count = +1
 
-        self._nodes = result
+        if are_children:
+            self._nodes = results
+        else:
+            self._node_conf_parsed = results
 
     def __iter__(self):
         return NodeListIterator(self)
@@ -450,18 +489,16 @@ class NodeList(NodeVal):
         "Return NodeList childs"
         result = []
         for child in self._nodes:
-            if isinstance(child, NodeVal):
-                if lvl != 0:
-                    value = child.get_children(
-                        lvl=lvl - 1, explain=explain, leaves=leaves
-                    )
-                else:
-                    value = child
+            # if isinstance(child, NodeVal):
+            if lvl != 0:
+                value = child.get_children(lvl=lvl - 1, explain=explain, leaves=leaves)
+            else:
+                value = child
 
-                if leaves:
-                    value = value or child
+            if leaves:
+                value = value or child
 
-                result.append(value)
+            result.append(value)
 
         if explain:
             return {
@@ -477,13 +514,12 @@ class NodeList(NodeVal):
         "Return NodeList value"
         result = []
         for child in self._nodes:
-            if not isinstance(child, NodeVal):
-                result.append(child)
+            if lvl != 0:
+                result.append(child.get_value(lvl=lvl - 1, explain=explain))
             else:
-                if lvl != 0:
-                    result.append(child.get_value(lvl=lvl - 1, explain=explain))
+                result.append(child)
 
-        return result
+        return result or self._node_conf_parsed
 
 
 # NodeDict
@@ -494,12 +530,21 @@ class NodeDictItem:
     """Children configuration for NodeDict"""
 
     def __init__(
-        self, *args, key=None, cls=None, action="set", default=None, attr=None, **kwargs
+        self,
+        *args,
+        key=None,
+        cls=None,
+        action="set",
+        hook=None,
+        default=None,
+        attr=None,
+        **kwargs,
     ):
 
         self.key = key
         self.attr = attr or None
         self._ident = None
+        self.hook = hook
 
         self.cls = cls or None
         self.default = default or None
@@ -507,6 +552,7 @@ class NodeDictItem:
 
     @property
     def ident(self) -> str:
+        "Return ident"
         return self.attr or self.key
 
     def __repr__(self):
@@ -516,9 +562,11 @@ class NodeDictItem:
 
 
 class NodeDict(NodeVal):
+    "Node Dict container"
 
     _nodes = {}
     _node_conf_struct = None
+    _node_conf_parsed = {}
 
     # # TODO: https://www.pythonlikeyoumeanit.com/Module4_OOP/Special_Methods.html
     # __len__
@@ -559,13 +607,12 @@ class NodeDict(NodeVal):
 
     def get_value(self, lvl=0, explain=False):
         "Return NodeDict value"
-        result = {}
+        result = dict(self._node_conf_parsed)
         for name, child in self._nodes.items():
-            if not isinstance(child, NodeVal):
-                result[name] = child
+            if lvl != 0:
+                result[name] = child.get_value(lvl=lvl - 1)
             else:
-                if lvl != 0:
-                    result[name] = child.get_value(lvl=lvl - 1)
+                del result[name]
 
         return result
 
@@ -595,12 +642,12 @@ class NodeDict(NodeVal):
             self.log.debug(f"    > Confstruct for {self._node_autoconf}")
 
             conf_children = [
-                {"key": key, "default": val, "cls": map_node_class(val)}
+                {"key": key, "default": val, "cls": map_container_class(val)}
                 for key, val in payload.items()
             ]
 
         # 4. Auto guess from payload
-        elif conf_children == {}:
+        elif not conf_children:
             self.log.debug("    > Confstruct for {}")
             conf_children = [
                 {"key": key, "default": val, "cls": type(val)}
@@ -654,21 +701,17 @@ class NodeDict(NodeVal):
                 continue
 
             # Check value
-            if action == "drop":
+            value = payload.get(key, item_def.default or None)
+            if action == "unset":
+                value = value or None
+            elif action == "drop":
                 del payload[key]
-            elif action == "unset":
+                continue
 
-                # Fetch value and nullify it
-                if key:
-                    value = copy.deepcopy(payload.get(key) or item_def.default)
-                else:
-                    value = copy.deepcopy(item_def.default)
+            if key == "TEST":
+                pprint(conf_struct)
 
-                # Default all unset to None
-                if not value:
-                    value = None
-
-                payload[key] = value
+            payload[key] = value
 
         # print(f"Actual payload {self}: {payload}")
 
@@ -677,8 +720,9 @@ class NodeDict(NodeVal):
     def _node_conf_build(self, payload):
         "For NodeDict"
 
-        result = {}
         payload = payload or {}
+        self._node_conf_parsed = payload
+        self._nodes = {}
 
         # Developper sanity check
         if not isinstance(payload, dict):
@@ -691,18 +735,29 @@ class NodeDict(NodeVal):
 
         conf_struct = self._node_conf_struct
 
-        # Process each children
+        # # 1. Append other keys only if not already set
+        # done_keys = [remap.key for remap in conf_struct if remap.ident]
+        # for key, val in payload.items():
+        #     if key not in done_keys:
+        #         self._nodes[key] = val
+
+        # 2. Process each children
+
         for item_def in conf_struct:
+
+            # Required for modified items during the loop to let __getattr__ to work correctly
+            # self._node_conf_parsed = payload
 
             key = item_def.key
             attr = item_def.attr or key
             cls = item_def.cls
             action = item_def.action
+            hook = item_def.hook
 
             # Get value
             value = None
             if key:
-                value = payload.get(key)
+                value = self._node_conf_parsed.get(key)
 
             # Check action
             if not value:
@@ -718,7 +773,13 @@ class NodeDict(NodeVal):
                     self.log.debug(
                         f"    > Instanciate Node object: {attr}={cls}(payload={value})"
                     )
-                    value = cls(parent=self, ident=item_def.ident, payload=value)
+                    node = cls(parent=self, ident=item_def.ident, payload=value)
+
+                    # Update parsed conf
+                    value = node.serialize(mode="parsed")
+                    if attr:
+                        self._nodes[attr] = node
+
                 else:
                     if not value:
                         self.log.debug(
@@ -746,19 +807,31 @@ class NodeDict(NodeVal):
                 self.log.debug(f"    > Instanciate direct assignment: {attr}={value}")
                 value = value
 
-            if attr:
-                result[attr] = value
+            if key:
+                self._node_conf_parsed[key] = value
 
-        # 2. Append other keys only if not already set
-        done_keys = [remap.key for remap in conf_struct if remap.ident]
-        for key, val in payload.items():
-            if key not in done_keys:
-                result[key] = val
+            if hook:
+                fun = getattr(self, hook)
+                self.log.debug("Execute hook: ", hook, fun)
+                fun()
+                # _payload = fn(payload)
+                # if _payload != payload:
+                #     print ("Payload modified!")
+                #     self._node_conf_parsed = _payload
+
+        # 1. Append other keys only if not already set
+        # done_keys = [remap.key for remap in conf_struct if remap.ident]
+        # for key, val in payload.items():
+        #     if key not in done_keys:
+        #         self._nodes[key] = val
 
         # 3. Create children
-        self._nodes = result
+        # self._nodes = result
 
     def add_child(self, ident, obj):
+        "Add a child node"
+
+        # TODO: Check it's always a NodeVal obj !!!
         self._nodes[ident] = obj
 
 
@@ -767,15 +840,24 @@ class NodeDict(NodeVal):
 
 
 class NodeMap(NodeDict):
+    "A nodeDict accessible via its attributes"
+
     def add_child(self, ident, obj):
+        "Add a child node"
+
+        # pylint: disable=super-with-arguments
         super(NodeMap, self).add_child(ident, obj)
         setattr(self, ident, obj)
 
     def __getattr__(self, key):
 
         if key in self._nodes:
-            # print (f"Get value: {key} for {id(self)}")
+            # print (f"Get value: {key} for {id(self)} from _nodes")
             return self._nodes[key]
+
+        if key in self._node_conf_parsed:
+            # print (f"Get value: {key} for {id(self)} from _conf_parsed")
+            return self._node_conf_parsed[key]
 
         # Todo: Implement nice warning for dropped childrens !!!
         # if self.conf_children:
@@ -792,10 +874,14 @@ class NodeMap(NodeDict):
             # Set attribute if in _nodes
             # print (f"Set node value: {key}={value} for {self}")
             self._nodes[key] = value
-            self.__dict__[key] = value
+            # self.__dict__[key] = value
+        elif key in self._node_conf_parsed:
+            # print (f"Set conf value: {key}={value} for {self}")
+            self._node_conf_parsed[key] = value
         else:
             # or just set regular attribute
             # print (f"Set attr value: {key}={value} for {self}")
+            # pylint: disable=super-with-arguments
             super(NodeMap, self).__setattr__(key, value)
 
 
@@ -813,12 +899,12 @@ def expand_envar_syntax(payload, cls):
     if not isinstance(payload, str):
         return payload
 
+    result = payload
     if cls == dict:
         result = {}
         for statement in payload.split(","):
 
             keyval = statement.split("=", 1)
-            print("STATELENT", statement, keyval)
             if len(keyval) != 2:
                 raise InvalidSyntax(
                     f"Invalid syntax, expected 'key=value', got: {statement}"
@@ -826,13 +912,13 @@ def expand_envar_syntax(payload, cls):
             key = keyval[0]
             value = keyval[1]
             result[key] = value
-        return result
 
     if cls == list:
         result = []
         for statement in payload.split(","):
             result.append(statement)
-        return result
+
+    return result
 
 
 class NodeMapEnv(NodeMap):
@@ -843,6 +929,7 @@ class NodeMapEnv(NodeMap):
     def _node_conf_defaults(self, payload):
         """Override payload from environment vars"""
 
+        # pylint: disable=super-with-arguments
         result = super(NodeMapEnv, self)._node_conf_defaults(payload)
         conf_struct = self._node_conf_struct
 
@@ -882,7 +969,10 @@ class NodeMapEnv(NodeMap):
 
 
 def makemap(cls):
+    "Test decorator to create NodeMap classes"
+
     class Class(cls, NodeMap):
+        "Generated class"
         pass
 
     return Class
@@ -903,7 +993,7 @@ class NodeAuto:
     def __init__(self, *args, ident=None, payload=None, autoconf=-1, **kwargs):
 
         # Map json object to Node class
-        self.__class__ = map_all_class(payload)
+        self.__class__ = map_node_class(payload)
 
         # Forward to class
         self.__init__(*args, ident=ident, payload=payload, autoconf=autoconf, **kwargs)

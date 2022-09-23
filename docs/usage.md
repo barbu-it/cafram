@@ -57,11 +57,11 @@ config = anyconfig.load("config1.yml")
 
 # Let check program by default
 app = App()
-app.dump2()
+app.dump()
 
 # Now inspect once config is loaded
 app.deserialize(config)
-app.dump2()
+app.dump()
 
 ```
 

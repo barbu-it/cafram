@@ -1,3 +1,10 @@
+"""
+Cafram utils
+"""
+
+# pylint: disable=line-too-long
+# pylint: disable=invalid-name
+
 import io
 import os
 import sys
@@ -5,8 +12,8 @@ import sys
 import logging
 import json
 
-from pprint import pprint
-from pathlib import Path
+# from pprint import pprint
+# from pathlib import Path
 
 import ruamel.yaml
 import jsonschema
@@ -72,11 +79,11 @@ def addLoggingLevel(levelName, levelNum, methodName=None):
         methodName = levelName.lower()
 
     if hasattr(logging, levelName):
-        raise AttributeError("{} already defined in logging module".format(levelName))
+        raise AttributeError("{levelName} already defined in logging module")
     if hasattr(logging, methodName):
-        raise AttributeError("{} already defined in logging module".format(methodName))
+        raise AttributeError("{methodName} already defined in logging module")
     if hasattr(logging.getLoggerClass(), methodName):
-        raise AttributeError("{} already defined in logger class".format(methodName))
+        raise AttributeError("{methodName} already defined in logger class")
 
     # This method was inspired by the answers to Stack Overflow post
     # http://stackoverflow.com/q/2183233/2988730, especially
@@ -203,10 +210,10 @@ def serialize(obj, fmt="json"):
 
         # Remove 2 first lines of output
         output_str = output_str.split("\n", 2)[2]
-        return output_str
     else:
-        obj = json.dumps(obj, default=lambda o: str(o), indent=2)
-        return obj
+        output_str = json.dumps(obj, default=lambda o: str(o), indent=2)
+
+    return output_str
 
 
 def duplicates(_list):
@@ -226,8 +233,8 @@ def duplicates(_list):
 
 def read_file(file):
     "Read file content"
-    with open(file) as f:
-        return "".join(f.readlines())
+    with open(file) as _file:
+        return "".join(_file.readlines())
 
 
 def write_file(file, content):
@@ -237,17 +244,17 @@ def write_file(file, content):
     if not os.path.exists(file_folder):
         os.makedirs(file_folder)
 
-    with open(file, "w") as f:
-        f.write(content)
+    with open(file, "w") as _file:
+        _file.write(content)
 
 
-def flatten(S):
+def flatten(array):
     "Flatten any arrays nested arrays"
-    if S == []:
-        return S
-    if isinstance(S[0], list):
-        return flatten(S[0]) + flatten(S[1:])
-    return S[:1] + flatten(S[1:])
+    if array == []:
+        return array
+    if isinstance(array[0], list):
+        return flatten(array[0]) + flatten(array[1:])
+    return array[:1] + flatten(array[1:])
 
 
 # =====================================================================

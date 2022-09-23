@@ -1,6 +1,11 @@
-# Pshiiit' Knackie ! Library
+"""
+Cafram
 
-import os
+Also known as: Pshiiit' Knackie ! Framework
+"""
+# pytest: disable=too-few-public-methods
+# pytest: disable=unused-argument
+
 import logging
 import textwrap
 
@@ -33,10 +38,6 @@ class MissingIdent(CaframException):
     """Raised ident is not set"""
 
 
-class NotImplemented(CaframException):
-    """Raised when missing features"""
-
-
 class NotExpectedType(CaframException):
     """Raised when types mismatchs"""
 
@@ -59,6 +60,17 @@ class SchemaError(CaframException):
 
 
 class Base:
+    """Base cafram object class
+
+    Provides basic features such as:
+    * module name
+    * object kind
+    * object name
+    * object logger
+
+    Available methods:
+    * dump()
+    """
 
     # Public attributes
     # ---------------------
@@ -111,14 +123,17 @@ class Base:
         # print ("OVER Base")
 
     def __str__(self):
+        "Return a nice str representation of object"
         return f"{self.__class__.__name__}:{self.ident}"
 
     def __repr__(self):
+        "Return a nice representation of object"
         # return self._nodes
         return f"{self.__class__.__name__}.{id(self)} {self.ident}"
         # return f"Instance {id(self)}: {self.__class__.__name__}:{self.ident}"
 
     def dump(self, format="json", filter=None, **kwargs):
+        "Show a dump of an object"
 
         print("\n===================================================================")
         print(f"== Dump of {self.module}.{self.kind}.{self.ident} {id(self)}")
@@ -134,20 +149,7 @@ class Base:
         classes = "-> ".join([x.__name__ for x in self.__class__.__mro__])
         print(f"    MRO: {classes}")
 
-        # cls = self.__class__.__bases__
-        # cls = inspect.getmro(self.__class__)
-        # data = serialize(cls, fmt="yaml")
-        # print ("  Features:")
-        # print (textwrap.indent(data, '    '))
-
-        # print ("  Runtime config:")
-        # print (serialize(list(self.runtime.keys())))
-
         print("")
-
-    def dump2(self, *args, **kwargs):
-        self.log.warning("WARNING: dump2 method is deprecated in favor of dump")
-        self.dump(*args, **kwargs)
 
 
 # =====================================================================
@@ -160,6 +162,7 @@ class Base:
 
 
 class Log(Base):
+    "Provide a per instance logging"
 
     log = log
 
@@ -183,6 +186,7 @@ class Log(Base):
 
         self.log = log
 
+        # pylint: disable=super-with-arguments
         super(Log, self).__init__(*args, **kwargs)
 
 
@@ -196,6 +200,7 @@ class Log(Base):
 
 
 class Family(Base):
+    "Provides a family tree"
 
     root = None
     parent = None
@@ -203,12 +208,12 @@ class Family(Base):
 
     def __init__(self, *args, **kwargs):
 
+        # pylint: disable=super-with-arguments
         super(Family, self).__init__(*args, **kwargs)
 
         self.log.debug(f"__init__: Family/{self}")
 
         # Init family
-        # print ("init family")
         parent = kwargs.get("parent") or self.parent
 
         # Register parent
@@ -225,6 +230,7 @@ class Family(Base):
             self.parent.children.append(self)
 
     def get_children_tree(self):
+        "Get children tree"
 
         result = []
         children = self.children or []
@@ -235,9 +241,11 @@ class Family(Base):
         return result
 
     def has_parents(self):
-        return True if self.parent and self.parent != self else False
+        "Check if has parents"
+        return bool(self.parent and self.parent != self)
 
     def get_parent(self):
+        "Return parent"
         return self.parent or None
 
     def get_parents(self):
@@ -247,14 +255,18 @@ class Family(Base):
         current = self
         parent = self.parent or None
         while parent is not None and parent != current:
-            if not parent in parents:
+            if parent not in parents:
                 parents.append(parent)
                 current = parent
                 parent = getattr(current, "parent")
 
         return parents
 
+    # pylint: disable=arguments-differ
     def dump(self, **kwargs):
+        "Return a dump of the family tree"
+
+        # pylint: disable=super-with-arguments
         super(Family, self).dump(**kwargs)
 
         parents = self.get_parents()
@@ -286,8 +298,14 @@ class Family(Base):
 
 
 class Hooks(Base):
+    """Provides a _init hook feature
+
+    DEPRECATED
+    """
+
     def __init__(self, *args, **kwargs):
 
+        # pylint: disable=super-with-arguments
         super(Hooks, self).__init__(*args, **kwargs)
 
         self.log.debug(f"__init__: Hooks/{self}")

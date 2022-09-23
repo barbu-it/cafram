@@ -49,10 +49,20 @@ payload_regression = {
         },
     },
     # List
-    "_4_list_mixed": [
+    "_4_list_str": [
         "string1",
-        1234,
-        False,
+        "string2",
+        "string3",
+    ],
+    "_4_list_str": [
+        123,
+        456,
+        789,
+    ],
+    "_4_list_str": [True, False, True, False],
+    "_4_list_null": [
+        None,
+        None,
         None,
     ],
     "_5_list_dict": [
@@ -72,14 +82,15 @@ payload_regression = {
         [1234],
     ],
     "_7_list_empty": [],
-    "_8_list_mixed": ["value", 12, True, {"key": "val", "dict": {"subkey": 1234}}],
+    # "_8_list_mixed": ["value", 12, True, {"key": "val", "dict": {"subkey": 1234}}],
+    # "_9_list_mixed_KO": [ 12, True, {"key": "val", "dict": {"subkey": 1234}}],
 }
 
 
 def test_autoconf_levels_get_values_minus1():
 
     node = NodeAuto(ident="AutoConf-1", payload=payload_regression, autoconf=-1)
-    # pprint (node.__dict__)
+    pprint(node.__dict__)
     node.dump()
     assert node.get_value() == {}
 
@@ -124,11 +135,14 @@ def test_autoconf_get_children_regressions(data_regression):
 
     node = NodeAuto(ident="AutoConf2", payload=payload_regression, autoconf=4)
 
-    node.dump(all=True)
+    pprint(node.__dict__)
+    # node.dump(all=True)
 
     result = {}
     for name, i in node.get_children().items():
-        out = len(i.get_children())
+        childs = i.get_children()
+        pprint(childs)
+        out = len(childs)
         result[name] = out
 
     data_regression.check(result)
