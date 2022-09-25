@@ -3,6 +3,10 @@ import unittest
 from pprint import pprint
 import pytest
 import logging
+import os
+
+print(sys.path)
+import cafram
 
 from cafram.base import MissingIdent, InvalidSyntax
 from cafram.nodes import *
@@ -106,13 +110,10 @@ def node_inst(request):
     class MyConfig(cls):
         ident = "ConfigTest"
 
-        def node_hook_conf(self, payload):
+        def node_hook_conf(self):
 
             # Assert children are not set
             assert not self._nodes
-
-            # Always return payload for hook_pre
-            return payload
 
         def node_hook_children(self):
 
