@@ -1,10 +1,11 @@
-import sys
-import unittest
+# pylint: disable=no-member
+
+
 from pprint import pprint
 import pytest
 import logging
 
-from cafram.nodes import *
+from cafram.nodes import NodeAuto
 
 log = logging.getLogger()
 
@@ -54,13 +55,12 @@ payload_regression = {
         "string2",
         "string3",
     ],
-    # TODO: reenable this when all tests are OK
-    # "_4_list_int": [
-    #     123,
-    #     456,
-    #     789,
-    # ],
-    # "_4_list_bool": [True, False, True, False],
+    "_4_list_int": [
+        123,
+        456,
+        789,
+    ],
+    "_4_list_bool": [True, False, True, False],
     "_4_list_null": [
         None,
         None,
@@ -122,7 +122,7 @@ def test_autoconf_levels_get_values_3():
 
 def test_autoconf_get_values_regressions(data_regression):
 
-    print ("HELLO")
+    print("HELLO")
 
     node = NodeAuto(ident="AutoConf2", payload=payload_regression, autoconf=2)
 
@@ -139,7 +139,7 @@ def test_autoconf_get_children_regressions(data_regression):
     node = NodeAuto(ident="AutoConf2", payload=payload_regression, autoconf=4)
 
     pprint(node.__dict__)
-    pprint (node.get_children())
+    pprint(node.get_children())
     # node.dump(all=True)
 
     result = {}
@@ -148,16 +148,11 @@ def test_autoconf_get_children_regressions(data_regression):
         pprint(count)
         # out = len(childs)
         result[name] = len(count)
-        #result[name] = f"{child.__class__.__name__}_{child.kind}_{child.ident} {len(count)}"
+        # result[name] = f"{child.__class__.__name__}_{child.kind}_{child.ident} {len(count)}"
 
-    pprint (result)
+    pprint(result)
     data_regression.check(result)
 
 
 if __name__ == "__main__":
-    print ("HELLLOOOOOO")
     retcode = pytest.main([__file__])
-    print ("OVERRRRR")
-
-
-    #unittest.main()

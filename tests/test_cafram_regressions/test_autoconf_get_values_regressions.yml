@@ -29,15 +29,23 @@ _3_dict_mixed:
       _4_key_dict_nested:
         _4_key_dict_nested:
           nest_key: nested_value
+_4_list_bool:
+- true
+- false
+- true
+- false
+_4_list_int:
+- 123
+- 456
+- 789
 _4_list_null:
 - null
 - null
 - null
 _4_list_str:
-- true
-- false
-- true
-- false
+- string1
+- string2
+- string3
 _5_list_dict:
 - key: value1
 - key: value2

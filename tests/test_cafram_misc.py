@@ -17,4 +17,4 @@ from cafram.nodes import *
 
 
 if __name__ == "__main__":
-    unittest.main()
+    retcode = pytest.main([__file__])

@@ -5,11 +5,19 @@ import pytest
 import logging
 import os
 
-print(sys.path)
 import cafram
 
 from cafram.base import MissingIdent, InvalidSyntax
-from cafram.nodes import *
+from cafram.nodes import (
+    Base,
+    NodeMap,
+    map_node_class,
+    NodeDict,
+    NodeList,
+    NotExpectedType,
+    NodeMapEnv,
+    expand_envar_syntax,
+)
 
 # from cafram.nodes_conf import *
 
@@ -37,7 +45,7 @@ class Test01_ConfVal(unittest.TestCase):
         """
 
         try:
-            node = Base()
+            Base()
         except MissingIdent:
             pass
         except:
@@ -249,7 +257,7 @@ def test_get_value_method(node_inst, result):
     ],
     indirect=["node_inst"],
 )
-def test_is_root_method(node_inst, result):
+def test_serialize(node_inst, result):
     assert node_inst.serialize() == result
 
 
@@ -528,7 +536,7 @@ def test_expand_envar_syntax_invalid_syntax():
     payload = "key3_missing_equal,key1=val1,"
 
     try:
-        result = expand_envar_syntax(payload, dict)
+        expand_envar_syntax(payload, dict)
         assert False, f"This test should have failed because of missing '='"
     except InvalidSyntax:
         pass
@@ -538,4 +546,4 @@ def test_expand_envar_syntax_invalid_syntax():
 # ------------------------
 
 if __name__ == "__main__":
-    unittest.main()
+    retcode = pytest.main([__file__])

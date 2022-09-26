@@ -3,7 +3,7 @@ import unittest
 from pprint import pprint
 import pytest
 
-from cafram.utils import *
+from cafram.utils import get_logger, serialize, duplicates
 
 
 def test_get_logger():
@@ -46,4 +46,4 @@ def test_duplicates(data_regression):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    retcode = pytest.main([__file__])
