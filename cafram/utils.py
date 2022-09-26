@@ -7,7 +7,6 @@ Cafram utils
 
 import io
 import os
-import sys
 
 import logging
 import json
@@ -48,6 +47,7 @@ yaml.explicit_start = True
 # =====================================================================
 # Logging helpers
 # =====================================================================
+
 
 # Source: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
 def addLoggingLevel(levelName, levelNum, methodName=None):
@@ -92,7 +92,11 @@ def addLoggingLevel(levelName, levelNum, methodName=None):
 
         if self.isEnabledFor(levelNum):
             # Monkey patch for level below 10, dunno why this not work
-            lvl = levelNum if levelNum >= 10 else 10
+            lvl = levelNum
+            if levelNum < 10:  # Why this ? :`(
+                lvl = 10
+                message = f"({levelName}) {message}"
+            # pylint: disable=protected-access
             self._log(lvl, message, args, **kwargs)
 
     def logToRoot(message, *args, **kwargs):
@@ -141,14 +145,11 @@ def get_logger(logger_name=None, create_file=False, verbose=None):
         loglevel = logging.getLogger().getEffectiveLevel()
     else:
         try:
-            loglevel = {
-                0: logging.ERROR,
-                1: logging.WARN,
-                2: logging.INFO,
-                3: logging.DEBUG,
-            }[verbose]
-        except AttributeError:
-            loglevel = logging.DEBUG
+            # pylint: disable=protected-access
+            loglevels = list(logging._nameToLevel)
+            loglevel = loglevels[verbose]
+        except IndexError:
+            loglevel = len(loglevels) - 1
 
     # Create logger for prd_ci
     _log = logging.getLogger(logger_name)
@@ -193,6 +194,14 @@ def get_logger(logger_name=None, create_file=False, verbose=None):
 # =====================================================================
 # Misc functions
 # =====================================================================
+
+# pylint: disable=redefined-builtin
+def truncate(data, max=72, txt=" ..."):
+    "Truncate a text to max lenght and replace by txt"
+    data = str(data)
+    if len(data) > max:
+        return data[: max + len(txt)] + txt
+    return data
 
 
 def serialize(obj, fmt="json"):
@@ -314,8 +323,8 @@ def _exec(command, cli_args=None, logger=None, **kwargs):
 
     # Prepare context
     sh_opts = {
-        "_in": sys.stdin,
-        "_out": sys.stdout,
+        # "_in": sys.stdin,
+        # "_out": sys.stdout,
     }
     sh_opts = kwargs or sh_opts
 

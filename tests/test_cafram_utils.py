@@ -1,5 +1,5 @@
-import sys
-import unittest
+# import sys
+# import unittest
 from pprint import pprint
 import pytest
 
@@ -9,9 +9,9 @@ from cafram.utils import get_logger, serialize, duplicates
 def test_get_logger():
     "Test get_logger wrapper works correctly"
 
-    logger = get_logger(logger_name="test_logger", verbose=3)
+    logger = get_logger(logger_name="test_logger", verbose=5)
     assert logger.name == "test_logger"
-    assert logger.level == 10
+    assert logger.level == 20
 
 
 def test_serialize_json(data_regression):

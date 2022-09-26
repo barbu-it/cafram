@@ -96,17 +96,10 @@ class Base:
     # ---------------------
 
     # Object shortcut to logger
-    log = _log
+    log = None
 
     def __init__(self, *args, **kwargs):
-        self.log.debug(
-            f"__init__: Base/{self} => {[ x.__name__ for x in  self.__class__.__mro__]}"
-        )
-        # print (f"__init__: Base/{self} => {[ x.__name__ for x in  self.__class__.__mro__]}")
 
-        # print ("INIT Base", args, kwargs)
-
-        # print ("init base")
         self.kind = kwargs.get("kind") or self.kind or self.__class__.__name__
 
         # Ident management
@@ -117,14 +110,8 @@ class Base:
 
         self.ident = self.ident or kwargs.get("ident") or self.kind
 
-        self.log = kwargs.get("log") or self.log
-        # print ("Update in INIT BASE", self.ident, id(self))
-
+        self.log = kwargs.get("log") or self.log or logging.getLogger(__name__)
         self.shared = kwargs.get("shared") or {}
-        # if "runtime" in kwargs:
-        #     self.runtime = kwargs.get("runtime") or {}
-
-        # print ("OVER Base")
 
     def __str__(self):
         "Return a nice str representation of object"
@@ -173,12 +160,10 @@ class Log(Base):
 
     def __init__(self, *args, **kwargs):
 
-        self.log.debug("__init__: Log/%s", self)
-
         # pylint: disable=redefined-outer-name
         log = kwargs.get("log")
         if log is None:
-            log_name = f"{self.module}.{self.kind}.{self.ident}"
+            log_name = f"{self.module}.{self.__class__.__name__}.{self.ident}"
         elif isinstance(log, str):
             log_name = f"{self.module}.{log}"
             log = None
@@ -216,8 +201,6 @@ class Family(Base):
 
         # pylint: disable=super-with-arguments
         super(Family, self).__init__(*args, **kwargs)
-
-        self.log.debug(f"__init__: Family/{self}")
 
         # Init family
         parent = kwargs.get("parent") or self.parent
@@ -314,6 +297,5 @@ class Hooks(Base):
         # pylint: disable=super-with-arguments
         super(Hooks, self).__init__(*args, **kwargs)
 
-        self.log.debug(f"__init__: Hooks/{self}")
         if callable(getattr(self, "_init", None)):
             self._init(*args, **kwargs)

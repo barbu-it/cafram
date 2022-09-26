@@ -14,11 +14,12 @@ import inspect
 import textwrap
 import json
 import logging
-from pprint import pprint
+
+# from pprint import pprint
 
 import jsonschema
 
-from cafram.utils import serialize, json_validate
+from cafram.utils import serialize, json_validate, truncate
 
 from cafram.base import (
     Base,
@@ -102,7 +103,6 @@ class NodeVal(Base):
         # Call parents
         # pylint: disable=super-with-arguments
         super(NodeVal, self).__init__(*args, **kwargs)
-        self.log.debug(f"__init__: NodeVal/{self}")
 
         # Register parent
         self._node_parent = parent or self
@@ -118,6 +118,21 @@ class NodeVal(Base):
 
         # Manage node level
         self._node_lvl = getattr(self._node_parent, "_node_lvl", -1) + 1
+
+        # Manage log indentation
+        class CustomAdapter(logging.LoggerAdapter):
+            "LoggerADpater to manage logging indentation"
+
+            def process(self, msg, kwargs):
+                indent = kwargs.pop("indent", self.extra["indent"])
+                return f"{indent}{msg}", kwargs
+
+            def __getattr__(self, name):
+                "Forward unknown attributes such as custom levels in logger"
+                return getattr(self.logger, name)
+
+        indent = "| " * self._node_lvl  # +  "  "
+        self.log = CustomAdapter(self.log, {"indent": indent})
 
         # Auto init object
         self.deserialize(payload)
@@ -135,6 +150,8 @@ class NodeVal(Base):
         self._nodes = self.__class__._nodes
         self._node_conf_raw = payload
 
+        self.log.info(f"> Deserialize Node: {self}")
+
         # 1. Parse config
         # -------------------
         # 1.1 Validate config against schema
@@ -142,14 +159,17 @@ class NodeVal(Base):
         # 1.3 Apply defaults from conf_children or conf_default
         # 1.4 User report
 
+        self.log.info(f"  1. Validate {self} config")
         payload1 = self._node_conf_validate(payload)
+        self.log.info(f"  2. Hook: node_hook_transform {self} config")
         payload2 = self.node_hook_transform(payload1)
+        self.log.info(f"  3. Apply conf defaults {self} config")
         payload3 = self._node_conf_defaults(payload2)
 
         if payload1 != payload3:
-            self.log.debug(
-                f"Payload transformation for: {self}\nFrom: {payload1}\nTo: {payload3}"
-            )
+            self.log.debug(f"    3.3 Payload transformation for: {self}")
+            self.log.debug(f"         in: {payload1}")
+            self.log.debug(f"        out: {payload3}")
 
         # 2. Apply config
         # -------------------
@@ -157,6 +177,7 @@ class NodeVal(Base):
         # 2.2 Run conf hook (node_hook_conf)
 
         self._node_conf_parsed = payload3
+        self.log.debug(f"  4. Hook: node_hook_conf {self} config")
         self.node_hook_conf()
 
         # 3. Create children
@@ -165,7 +186,9 @@ class NodeVal(Base):
         # 3.2 Run children hook (node_hook_children)
         # 3.3 Preset default ident
 
+        self.log.info(f"  5. Build {self} config")
         self._node_conf_build()
+        self.log.info(f"  6. Hook: node_hook_children {self} config")
         self.node_hook_children()
         if self.conf_ident:
             try:
@@ -173,6 +196,8 @@ class NodeVal(Base):
             except AttributeError as err:
                 msg = f"Bug: on '{self}.conf_ident={self.conf_ident}', {err.args[0]}"
                 raise ApplicationError(msg) from err
+
+        self.log.info(f"  7. Node {self} has been created")
 
     def serialize(self, mode="parsed"):
         "Transform object to json"
@@ -615,15 +640,15 @@ class NodeDictItemManager:
         # Conf_children default behavior: auto from dict
         # conf_children = self.conf_children or {}
         payload = payload or {}
+        log_prefix = "    3."
 
         # 1. Leave as is
         if isinstance(conf_children, list):
-            self.log.debug("    > Confstruct for list - As is")
+            log_mode = "Keep list as is"
 
         # 2. Direct generate
         elif inspect.isclass(conf_children):
-            self.log.debug(f"    > Confstruct for {conf_children} - Subcontainer")
-
+            log_mode = f"Create childs from class: {conf_children}"
             conf_children = [
                 {"key": key, "default": val, "cls": conf_children}
                 for key, val in payload.items()
@@ -631,8 +656,7 @@ class NodeDictItemManager:
 
         # 3. Auto generate
         elif autoconf != 0:
-            self.log.debug(f"    > Confstruct for {autoconf} - automap")
-
+            log_mode = "Automap sub containers"
             conf_children = [
                 {"key": key, "default": val, "cls": map_container_class(val)}
                 for key, val in payload.items()
@@ -640,15 +664,23 @@ class NodeDictItemManager:
 
         # 4. Auto guess from payload
         elif not conf_children:
-            self.log.debug("    > Confstruct for {} - autoguess payload")
+            log_mode = "Guess from payload types"
             conf_children = [
-                {"key": key, "default": val, "cls": type(val)}
+                {
+                    "key": key,
+                    "default": val,
+                    "cls": type(val) if val is not None else None,
+                }
                 for key, val in payload.items()
             ]
 
         # Actually build conf_Struct
-        self.log.debug(f"Confstruct for {payload}: {conf_children}")
+        _payload = str(payload)
+        self.log.info(
+            log_prefix + f"1 Children config: {log_mode} with {truncate(_payload)}"
+        )
         conf_struct = [NodeDictItem(**conf) for conf in conf_children]
+        self.log.debug(log_prefix + f"1 Children plan: {conf_struct}")
 
         # Developper sanity check
         if not isinstance(conf_struct, list):
@@ -662,7 +694,6 @@ class NodeDictItemManager:
         "Clean payload"
 
         for item_def in self.data:
-            # print ("YOOOOOOO")
 
             key = item_def.key
             attr = item_def.attr
@@ -683,10 +714,9 @@ class NodeDictItemManager:
                     del payload[attr]
                 continue
 
-            # print ("SAVE KEY", key)
+            # Remove old key
             payload[key] = value
             if key != attr and attr in payload:
-                print("DELETE ATTR", attr)
                 del payload[attr]
 
         return payload
@@ -695,6 +725,8 @@ class NodeDictItemManager:
         "Actually create children nodes/values"
 
         assert isinstance(node, NodeDict), f"BUG: Wrong type, expected NodeDict: {self}"
+        log_prefix = "    5."
+        self.log.debug(log_prefix + f"1 Build {node} children ...")
 
         # 2. Process each children
         for item_def in self.data:
@@ -718,14 +750,19 @@ class NodeDictItemManager:
                 elif action == "drop":
                     continue
 
+            log_msg = None
             if cls:
                 # Instanciate or cast value
                 if issubclass(cls, NodeVal):
-                    self.log.debug(
-                        f"    > Instanciate Node object: {attr}={cls}(payload={value})"
+
+                    self.log.info(
+                        log_prefix
+                        + f"2 Instanciate Node object: {attr}={cls}({truncate(value)})"
                     )
+                    self.log.info(" ")
                     child = cls(parent=node, ident=item_def.ident, payload=value)
 
+                    log_msg = f"Instanciated Node object: {attr}={cls}"
                     # Update parsed conf
                     if attr:
                         node.add_child(attr, child)
@@ -733,31 +770,28 @@ class NodeDictItemManager:
 
                 else:
                     if not value:
-                        self.log.debug(
-                            f"    > Instanciate null child object: {attr}={cls}()"
-                        )
+                        log_msg = f"Instanciate value: empty object: {attr}={cls}()"
                         value = cls()
                     elif isinstance(value, cls):
-                        self.log.debug(
-                            f"    > Instanciate child object: {attr}={cls}({value})"
-                        )
+                        log_msg = f"Instanciate value: cast value: {attr}={cls}({truncate(value)})"
                         value = cls(value)
                     else:
-                        self.log.debug(
-                            f"    > Instanciate empty child object: {attr}={cls}()"
-                        )
+                        log_msg = f"Instanciate value: raw class: {attr}={cls}()"
                         try:
                             value = cls(value)
                         except Exception as err:
                             self.log.critical(
-                                f"Type mismatch between: {cls} and {value}"
+                                f"{log_msg}\nType mismatch between for {self}: {cls} and {truncate(value)}"
                             )
                             raise NotExpectedType(err) from err
 
             else:
                 # Forward value
-                self.log.debug(f"    > Instanciate direct assignment: {attr}={value}")
+                log_msg = f"Instanciate direct assignment: {attr}={value}"
                 # value = value
+
+            if log_msg:
+                self.log.info(log_prefix + "3 " + log_msg)
 
             # Patch original configuration
             # pylint: disable=protected-access
@@ -768,7 +802,7 @@ class NodeDictItemManager:
 
             if hook:
                 fun = getattr(node, hook)
-                self.log.debug(f"Execute hook: {hook}, {fun}")
+                self.log.debug(log_prefix + f"3 Execute hook: {hook}, {fun}")
                 fun()
 
 
@@ -860,10 +894,10 @@ class NodeDict(NodeVal):
 
         # Init item constructor from current payload
         self._node_conf_struct = NodeDictItemManager(
-            self.conf_children, payload=payload, autoconf=self._node_autoconf
-        )
-        self.log.debug(
-            f"Applied conf_children for {self}: {self._node_conf_struct.data}"
+            self.conf_children,
+            payload=payload,
+            autoconf=self._node_autoconf,
+            log=self.log,
         )
         payload = self._node_conf_struct.clean(payload)
 
@@ -1019,9 +1053,9 @@ class NodeMapEnv(NodeMap):
         result = os.getenv(name)
 
         if result:
-            self.log.info(f"Fetch value from env: {name}={result}")
+            self.log.info(f"    3.2 Fetch value from env: {name}={result}")
         else:
-            self.log.debug(f"Skip value from env: {name}")
+            self.log.debug(f"    3.2 Skip value from env: {name}")
 
         return result
 
