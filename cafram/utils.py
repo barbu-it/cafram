@@ -93,7 +93,7 @@ def addLoggingLevel(levelName, levelNum, methodName=None):
         if self.isEnabledFor(levelNum):
             # Monkey patch for level below 10, dunno why this not work
             lvl = levelNum if levelNum >= 10 else 10
-            self._log(lvl, message, args, **kwargs)
+            self.log(lvl, message, args, **kwargs)
 
     def logToRoot(message, *args, **kwargs):
         logging.log(levelNum, message, *args, **kwargs)
@@ -151,11 +151,12 @@ def get_logger(logger_name=None, create_file=False, verbose=None):
             loglevel = logging.DEBUG
 
     # Create logger for prd_ci
-    log = logging.getLogger(logger_name)
-    log.setLevel(level=loglevel)
+    _log = logging.getLogger(logger_name)
+    _log.setLevel(level=loglevel)
 
     # Formatters
     format1 = "%(levelname)8s: %(message)s"
+    # pylint: disable=unused-variable
     format4 = "%(name)-32s%(levelname)8s: %(message)s"
     format2 = "%(asctime)s.%(msecs)03d|%(name)-16s%(levelname)8s: %(message)s"
     format3 = (
@@ -174,19 +175,19 @@ def get_logger(logger_name=None, create_file=False, verbose=None):
     stream = logging.StreamHandler()
     stream.setLevel(level=logging.DEBUG)
     stream.setFormatter(formatter)
-    log.addHandler(stream)
+    _log.addHandler(stream)
 
     # Create file handler for logger.
     if isinstance(create_file, str):
         handler = logging.FileHandler(create_file)
         handler.setLevel(level=logging.DEBUG)
         handler.setFormatter(formatter)
-        log.addHandler(handler)
+        _log.addHandler(handler)
 
     # print (f"Fetch logger name: {logger_name} (level={loglevel})")
 
     # Return objects
-    return log
+    return _log
 
 
 # =====================================================================
@@ -197,9 +198,11 @@ def get_logger(logger_name=None, create_file=False, verbose=None):
 def serialize(obj, fmt="json"):
     "Serialize anything, output json like compatible (destructive)"
 
+    # pylint: disable=unnecessary-lambda
+    obj = json.dumps(obj, default=lambda o: str(o), indent=2)
+
     if fmt in ["yaml", "yml"]:
         # Serialize object in json first
-        obj = json.dumps(obj, default=lambda o: str(o), indent=2)
         obj = json.loads(obj)
 
         # Convert json to yaml
@@ -209,31 +212,29 @@ def serialize(obj, fmt="json"):
         string_stream.close()
 
         # Remove 2 first lines of output
-        output_str = output_str.split("\n", 2)[2]
-    else:
-        output_str = json.dumps(obj, default=lambda o: str(o), indent=2)
+        obj = output_str.split("\n", 2)[2]
 
-    return output_str
+    return obj
 
 
 def duplicates(_list):
     """Check if given list contains duplicates"""
     known = set()
-    duplicates = set()
+    dup = set()
     for item in _list:
         if item in known:
-            duplicates.add(item)
+            dup.add(item)
         else:
             known.add(item)
 
-    if len(duplicates) > 0:
-        return list(duplicates)
+    if len(dup) > 0:
+        return list(dup)
     return []
 
 
 def read_file(file):
     "Read file content"
-    with open(file) as _file:
+    with open(file, encoding="utf-8") as _file:
         return "".join(_file.readlines())
 
 
@@ -244,7 +245,7 @@ def write_file(file, content):
     if not os.path.exists(file_folder):
         os.makedirs(file_folder)
 
-    with open(file, "w") as _file:
+    with open(file, "w", encoding="utf-8") as _file:
         _file.write(content)
 
 
@@ -266,9 +267,9 @@ def _extend_with_default(validator_class):
     validate_properties = validator_class.VALIDATORS["properties"]
 
     def set_defaults(validator, properties, instance, schema):
-        for property, subschema in properties.items():
+        for prop, subschema in properties.items():
             if "default" in subschema:
-                instance.setdefault(property, subschema["default"])
+                instance.setdefault(prop, subschema["default"])
 
         for error in validate_properties(
             validator,
@@ -325,6 +326,7 @@ def _exec(command, cli_args=None, logger=None, **kwargs):
     # Log command
     if logger:
         cmd_line = [f"{key}='{val}'" for key, val in sh_opts.get("_env", {}).items()]
+        # pylint: disable=protected-access
         cmd_line = (
             cmd_line
             + [cmd.__name__]

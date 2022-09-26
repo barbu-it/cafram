@@ -760,6 +760,7 @@ class NodeDictItemManager:
                 # value = value
 
             # Patch original configuration
+            # pylint: disable=protected-access
             if attr:
                 node._node_conf_parsed[attr] = value
             if key and attr != key:
