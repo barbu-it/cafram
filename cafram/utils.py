@@ -79,11 +79,11 @@ def addLoggingLevel(levelName, levelNum, methodName=None):
         methodName = levelName.lower()
 
     if hasattr(logging, levelName):
-        raise AttributeError("{levelName} already defined in logging module")
+        raise AttributeError(f"{levelName} already defined in logging module")
     if hasattr(logging, methodName):
-        raise AttributeError("{methodName} already defined in logging module")
+        raise AttributeError(f"{methodName} already defined in logging module")
     if hasattr(logging.getLoggerClass(), methodName):
-        raise AttributeError("{methodName} already defined in logger class")
+        raise AttributeError(f"{methodName} already defined in logger class")
 
     # This method was inspired by the answers to Stack Overflow post
     # http://stackoverflow.com/q/2183233/2988730, especially
@@ -93,7 +93,7 @@ def addLoggingLevel(levelName, levelNum, methodName=None):
         if self.isEnabledFor(levelNum):
             # Monkey patch for level below 10, dunno why this not work
             lvl = levelNum if levelNum >= 10 else 10
-            self.log(lvl, message, args, **kwargs)
+            self._log(lvl, message, args, **kwargs)
 
     def logToRoot(message, *args, **kwargs):
         logging.log(levelNum, message, *args, **kwargs)
