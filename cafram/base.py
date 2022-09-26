@@ -11,7 +11,7 @@ import textwrap
 
 from cafram.utils import serialize
 
-log = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 # See: https://stackoverflow.com/questions/328851/printing-all-instances-of-a-class
@@ -96,7 +96,7 @@ class Base:
     # ---------------------
 
     # Object shortcut to logger
-    log = log
+    log = _log
 
     def __init__(self, *args, **kwargs):
         self.log.debug(
@@ -136,6 +136,7 @@ class Base:
         return f"{self.__class__.__name__}.{id(self)} {self.ident}"
         # return f"Instance {id(self)}: {self.__class__.__name__}:{self.ident}"
 
+    # pylint: disable=redefined-builtin
     def dump(self, format="json", filter=None, **kwargs):
         "Show a dump of an object"
 
@@ -148,8 +149,8 @@ class Base:
         print(f"    ID: {id(self)}")
         print(f"    Kind: {self.kind}")
         print(f"    Ident: {self.ident}")
-        print(f"    Repr: {self.__repr__()}")
-        print(f"    String: {self.__str__()}")
+        print(f"    Repr: {repr(self)}")
+        print(f"    String: {str(self)}")
         classes = "-> ".join([x.__name__ for x in self.__class__.__mro__])
         print(f"    MRO: {classes}")
 
@@ -168,12 +169,13 @@ class Base:
 class Log(Base):
     "Provide a per instance logging"
 
-    log = log
+    log = _log
 
     def __init__(self, *args, **kwargs):
 
-        self.log.debug(f"__init__: Log/{self}")
+        self.log.debug("__init__: Log/%s", self)
 
+        # pylint: disable=redefined-outer-name
         log = kwargs.get("log")
         if log is None:
             log_name = f"{self.module}.{self.kind}.{self.ident}"
