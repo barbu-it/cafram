@@ -3,3 +3,5 @@ __pycache__
 .envrc
 poetry.lock
 *.code-workspace
+devel/*
+wip.py
