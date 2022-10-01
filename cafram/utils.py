@@ -199,9 +199,33 @@ def get_logger(logger_name=None, create_file=False, verbose=None):
 def truncate(data, max=72, txt=" ..."):
     "Truncate a text to max lenght and replace by txt"
     data = str(data)
+    if max < 0:
+        return data
     if len(data) > max:
         return data[: max + len(txt)] + txt
     return data
+
+
+# TODO: Add tests on this one
+def first(array):
+    "Return the first element of a list or None"
+    array = array or []
+    result = None
+    if len(array) > 0:
+        result = array[0]
+    return result
+
+
+# TODO: add tests
+def from_yaml(string):
+    "Transform YAML string to python dict"
+    return yaml.load(string)
+
+
+# TODO: add tests
+def from_json(string):
+    "Transform JSON string to python dict"
+    return json.loads(string)
 
 
 def serialize(obj, fmt="json"):
