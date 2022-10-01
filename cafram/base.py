@@ -106,7 +106,7 @@ class Base:
         if "ident" in kwargs:
             self.ident = kwargs.get("ident")
         if self.ident is None:
-            raise MissingIdent(f"Missing 'ident' for __init__: {self}")
+            raise MissingIdent(f"Missing 'ident' for __init__: {self}, {self.__dict__}")
 
         self.ident = self.ident or kwargs.get("ident") or self.kind
 

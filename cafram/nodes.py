@@ -35,6 +35,8 @@ from cafram.base import (
 
 _log = logging.getLogger(__name__)
 
+# Display complete payload in logs
+TRUNCATE = -1
 
 # Functions
 # =====================================
@@ -159,11 +161,11 @@ class NodeVal(Base):
         # 1.3 Apply defaults from conf_children or conf_default
         # 1.4 User report
 
-        self.log.info(f"  1. Validate {self} config")
+        self.log.debug(f"  1. Validate {self} config")
         payload1 = self._node_conf_validate(payload)
-        self.log.info(f"  2. Hook: node_hook_transform {self} config")
+        self.log.debug(f"  2. Hook: node_hook_transform {self} config")
         payload2 = self.node_hook_transform(payload1)
-        self.log.info(f"  3. Apply conf defaults {self} config")
+        self.log.debug(f"  3. Apply conf defaults {self} config")
         payload3 = self._node_conf_defaults(payload2)
 
         if payload1 != payload3:
@@ -186,9 +188,9 @@ class NodeVal(Base):
         # 3.2 Run children hook (node_hook_children)
         # 3.3 Preset default ident
 
-        self.log.info(f"  5. Build {self} config")
+        self.log.debug(f"  5. Build {self} config")
         self._node_conf_build()
-        self.log.info(f"  6. Hook: node_hook_children {self} config")
+        self.log.debug(f"  6. Hook: node_hook_children {self} config")
         self.node_hook_children()
         if self.conf_ident:
             try:
@@ -197,7 +199,7 @@ class NodeVal(Base):
                 msg = f"Bug: on '{self}.conf_ident={self.conf_ident}', {err.args[0]}"
                 raise ApplicationError(msg) from err
 
-        self.log.info(f"  7. Node {self} has been created")
+        self.log.debug(f"  7. Node {self} has been created")
 
     def serialize(self, mode="parsed"):
         "Transform object to json"
@@ -257,6 +259,7 @@ class NodeVal(Base):
             if "$schema" in self.conf_schema:
 
                 try:
+                    self.log.info("    1.2 Validate payload")
                     payload = json_validate(self.conf_schema, payload)
                 except jsonschema.exceptions.ValidationError as err:
 
@@ -440,26 +443,6 @@ class NodeVal(Base):
 # =====================================
 
 
-# class NodeListIterator:
-#     "NodeList iterator"
-
-#     def __init__(self, conf_inst):
-
-#         self._nodes = conf_inst._nodes
-#         self._current_index = 0
-#         self._max_index = len(conf_inst._nodes)
-
-#     def __iter__(self):
-#         return self
-
-#     def __next__(self):
-#         if self._current_index < self._max_index:
-#             result = self._nodes[self._current_index]
-#             self._current_index += 1
-#             return result
-#         raise StopIteration
-
-
 class NodeList(NodeVal):
     """NodeList"""
 
@@ -543,13 +526,11 @@ class NodeList(NodeVal):
 
     def __iter__(self):
         return self._nodes.__iter__()
-        # return NodeListIterator(self)
 
     def get_children(self, lvl=0, explain=False, leaves=False):
         "Return NodeList childs"
         result = []
         for child in self._nodes:
-            # if isinstance(child, NodeVal):
             if lvl != 0:
                 value = child.get_children(lvl=lvl - 1, explain=explain, leaves=leaves)
             else:
@@ -677,10 +658,13 @@ class NodeDictItemManager:
         # Actually build conf_Struct
         _payload = str(payload)
         self.log.info(
-            log_prefix + f"1 Children config: {log_mode} with {truncate(_payload)}"
+            log_prefix
+            + f"1 Children config: {log_mode} with {truncate(_payload, max=TRUNCATE)}"
         )
         conf_struct = [NodeDictItem(**conf) for conf in conf_children]
-        self.log.debug(log_prefix + f"1 Children plan: {conf_struct}")
+        self.log.debug(
+            log_prefix + f"1 Children plan: {truncate(conf_struct, max=TRUNCATE)}"
+        )
 
         # Developper sanity check
         if not isinstance(conf_struct, list):
@@ -752,17 +736,18 @@ class NodeDictItemManager:
 
             log_msg = None
             if cls:
+                # pylint: disable=line-too-long
                 # Instanciate or cast value
                 if issubclass(cls, NodeVal):
 
                     self.log.info(
                         log_prefix
-                        + f"2 Instanciate Node object: {attr}={cls}({truncate(value)})"
+                        + f"2 Instanciate Children Node object: {attr}={cls}({truncate(value, max=TRUNCATE)})"
                     )
                     self.log.info(" ")
                     child = cls(parent=node, ident=item_def.ident, payload=value)
 
-                    log_msg = f"Instanciated Node object: {attr}={cls}"
+                    log_msg = f"Instanciated Children Node object: {attr}={cls}({truncate(value, max=TRUNCATE)})"
                     # Update parsed conf
                     if attr:
                         node.add_child(attr, child)
@@ -773,7 +758,7 @@ class NodeDictItemManager:
                         log_msg = f"Instanciate value: empty object: {attr}={cls}()"
                         value = cls()
                     elif isinstance(value, cls):
-                        log_msg = f"Instanciate value: cast value: {attr}={cls}({truncate(value)})"
+                        log_msg = f"Instanciate value: cast value: {attr}={cls}({truncate(value, max=TRUNCATE)})"
                         value = cls(value)
                     else:
                         log_msg = f"Instanciate value: raw class: {attr}={cls}()"
@@ -781,7 +766,7 @@ class NodeDictItemManager:
                             value = cls(value)
                         except Exception as err:
                             self.log.critical(
-                                f"{log_msg}\nType mismatch between for {self}: {cls} and {truncate(value)}"
+                                f"{log_msg}\nType mismatch between for {self}: {cls} and {truncate(value, max=TRUNCATE)}"
                             )
                             raise NotExpectedType(err) from err
 
@@ -907,17 +892,15 @@ class NodeDict(NodeVal):
         "For NodeDict"
 
         payload = self._node_conf_parsed
-        self._nodes = {}
 
         # Developper sanity check
         if not isinstance(payload, dict):
-            self.log.warning(
-                "Developper must call node_hook_conf() first if data are not dict"
-            )
+            # Developper must call node_hook_conf() first if payload are not dict
             raise DictExpected(
                 f"A dictionnary was expected for {self}, got {type(payload).__name__}: {payload}"
             )
 
+        self._nodes = {}
         self._node_conf_struct.build_it(self)
 
     def add_child(self, ident, obj):
