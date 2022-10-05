@@ -99,6 +99,7 @@ class NodeVal(Base):
     _node_conf_parsed = None
     _node_autoconf = 0
     _node_lvl = 0
+    _node_kind = "Value"
 
     def __init__(self, *args, parent=None, payload=None, autoconf=None, **kwargs):
 
@@ -438,6 +439,36 @@ class NodeVal(Base):
 
         # print("\n")
 
+    def show_childs(self, lvl=0):
+        "Display a nice tree view of all objects"
+
+        lvl += 1
+        indent = "| " * lvl
+        col = 20 - lvl * len(indent)
+        children = self.get_children()
+
+        # pylint: disable=line-too-long
+        if isinstance(children, dict):
+            for name, child in children.items():
+                head = truncate(f"{indent}{name}:", 38)
+                val = truncate(f"{child.get_value()}")
+                print(
+                    f"{head:<40}{child._node_kind:<10}{id(child)}:{child.__class__.__name__:<30}{val}"
+                )
+                child.show_childs(lvl)
+        elif isinstance(children, list):
+            count = 0
+            for child in children:
+                head = truncate(f"{indent} - <item_{count}>:", 38)
+                val = truncate(f"{child.get_value()}")
+                print(
+                    f"{head:<40}{child._node_kind:<10}{id(child)}:{child.__class__.__name__:<30}{val}"
+                )
+                child.show_childs(lvl)
+                count += 1
+        else:
+            assert False, f"Damn: {self} => {children}"
+
 
 # Test Class Data
 # =====================================
@@ -448,6 +479,7 @@ class NodeList(NodeVal):
 
     _nodes = []
     _node_conf_parsed = []
+    _node_kind = "List"
 
     # Overrides
     # -------------------
@@ -797,6 +829,7 @@ class NodeDict(NodeVal):
     _nodes = {}
     _node_conf_struct = None
     _node_conf_parsed = {}
+    _node_kind = "Dict"
 
     # # TODO: https://www.pythonlikeyoumeanit.com/Module4_OOP/Special_Methods.html
     # __len__
