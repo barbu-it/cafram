@@ -10,6 +10,8 @@ import os
 
 import logging
 import json
+import re
+from io import StringIO
 
 # from pprint import pprint
 # from pathlib import Path
@@ -207,9 +209,24 @@ def truncate(data, max=72, txt=" ..."):
 
 
 # TODO: Add tests on this one
+def to_domain(string, sep=".", alt="-"):
+    "Transform any string to valid domain name"
+
+    domain = string.split(sep)
+    result = []
+    for part in domain:
+        part = re.sub("[^a-zA-Z0-9]", alt, part)
+        part.strip(alt)
+        result.append(part)
+
+    return ".".join(result)
+
+
+# TODO: Add tests on this one
 def first(array):
     "Return the first element of a list or None"
-    array = array or []
+    # return next(iter(array))
+    array = list(array) or []
     result = None
     if len(array) > 0:
         result = array[0]
@@ -223,9 +240,36 @@ def from_yaml(string):
 
 
 # TODO: add tests
+def to_yaml(obj, headers=False):
+    "Transform obj to YAML"
+    options = {}
+    string_stream = StringIO()
+
+    if isinstance(obj, str):
+        obj = json.loads(obj)
+
+    yaml.dump(obj, string_stream, **options)
+    output_str = string_stream.getvalue()
+    string_stream.close()
+    if not headers:
+        output_str = output_str.split("\n", 2)[2]
+    return output_str
+
+
+# TODO: add tests
 def from_json(string):
     "Transform JSON string to python dict"
     return json.loads(string)
+
+
+# TODO: add tests
+def to_dict(obj):
+    """Transform JSON obj/string to python dict
+
+    Useful to transofmr nested dicts as well"""
+    if not isinstance(obj, str):
+        obj = json.dumps(obj)
+    return json.loads(obj)
 
 
 def serialize(obj, fmt="json"):
