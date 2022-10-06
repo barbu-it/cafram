@@ -208,6 +208,16 @@ def truncate(data, max=72, txt=" ..."):
     return data
 
 
+def merge_dicts(dict1, dict2):
+    """Given two dictionaries, merge them into a new dict as a shallow copy.
+
+    Compatibility for Python 3.5 and above"""
+    # Source: https://stackoverflow.com/a/26853961/2352890
+    result = dict1.copy()
+    result.update(dict2)
+    return result
+
+
 # TODO: Add tests on this one
 def to_domain(string, sep=".", alt="-"):
     "Transform any string to valid domain name"
@@ -254,6 +264,14 @@ def to_yaml(obj, headers=False):
     if not headers:
         output_str = output_str.split("\n", 2)[2]
     return output_str
+
+
+# TODO: add tests
+def to_json(obj, nice=True):
+    "Transform JSON string to python dict"
+    if nice:
+        return json.dumps(obj, indent=2)
+    return json.dumps(obj)
 
 
 # TODO: add tests

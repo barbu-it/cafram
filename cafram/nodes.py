@@ -444,7 +444,6 @@ class NodeVal(Base):
 
         lvl += 1
         indent = "| " * lvl
-        col = 20 - lvl * len(indent)
         children = self.get_children()
 
         # pylint: disable=line-too-long
@@ -831,7 +830,7 @@ class NodeDict(NodeVal):
     _node_conf_parsed = {}
     _node_kind = "Dict"
 
-    # # TODO: https://www.pythonlikeyoumeanit.com/Module4_OOP/Special_Methods.html
+    # TODO: https://www.pythonlikeyoumeanit.com/Module4_OOP/Special_Methods.html
     # __len__
     # __getitem__(self, key)
     # __setitem__(self, key, item)
@@ -971,7 +970,7 @@ class NodeMap(NodeDict):
             # print (f"Get value: {key} for {id(self)} from _conf_parsed")
             return self._node_conf_parsed[key]
 
-        # Todo: Implement nice warning for dropped childrens !!!
+        # TODO: Implement nice warning for dropped childrens !!!
         # if self.conf_children:
         #     matches = [ remap.attr for remap in self.conf_children if remap.attr]
         #     self.conf_children
