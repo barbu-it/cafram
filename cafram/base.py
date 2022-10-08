@@ -153,37 +153,67 @@ class Base:
 # --------------------------
 
 
-class Log(Base):
+class MixInLog:
     "Provide a per instance logging"
 
     log = _log
+    module = "cafram"
+    conf_logger = None
 
     def __init__(self, *args, **kwargs):
 
-        # pylint: disable=redefined-outer-name
-        log = kwargs.get("log")
-        if log is None:
-            log_name = f"{self.module}.{self.__class__.__name__}.{self.ident}"
-        elif isinstance(log, str):
-            log_name = f"{self.module}.{log}"
-            log = None
+        self.conf_logger = kwargs.get("log") or self.conf_logger
+        self.set_logger()
+
+    def set_logger(self, conf_logger=None):
+        "Set instance logger name or instance"
+
+        log = None
+        log_name = None
+        conf_logger = conf_logger or self.conf_logger
+
+        if conf_logger is None or conf_logger == "__AUTO__":
+            ident = getattr(self, "ident", None)
+            log_name = f"cafram.{self.__class__.__name__}"
+            if ident:
+                log_name = f"cafram.{self.__class__.__name__}.{ident}"
+        elif isinstance(conf_logger, str):
+            log_name = f"{conf_logger}"
         elif log.__class__.__name__ == "Logger":
-            pass
+            log = conf_logger
+
         else:
-            raise Exception("Log not allowed here")
+            raise Exception(f"Log not allowed here: {conf_logger}")
 
         if not log:
             log = logging.getLogger(log_name)
 
+        # print ("Create logger", log_name, conf_logger, self.conf_logger)
         self.log = log
-
-        # pylint: disable=super-with-arguments
-        super(Log, self).__init__(*args, **kwargs)
 
 
 # =====================================================================
 # Post Base Class helpers
 # =====================================================================
+
+
+# Hooks
+# --------------------------
+
+
+class Hooks:
+    """Provides a _init hook feature
+
+    DEPRECATED
+    """
+
+    def __init__(self, *args, **kwargs):
+
+        # pylint: disable=super-with-arguments
+        # super(Hooks, self).__init__(*args, **kwargs)
+
+        if callable(getattr(self, "_init", None)):
+            self._init(*args, **kwargs)
 
 
 # Family
@@ -280,22 +310,3 @@ class Family(Base):
             print(textwrap.indent(children, "      "))
 
         print("\n")
-
-
-# Hooks
-# --------------------------
-
-
-class Hooks(Base):
-    """Provides a _init hook feature
-
-    DEPRECATED
-    """
-
-    def __init__(self, *args, **kwargs):
-
-        # pylint: disable=super-with-arguments
-        super(Hooks, self).__init__(*args, **kwargs)
-
-        if callable(getattr(self, "_init", None)):
-            self._init(*args, **kwargs)

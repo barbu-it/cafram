@@ -94,6 +94,7 @@ class NodeVal(Base):
     _nodes = None
     _node_root = None
     _node_parent = None
+    _node_parent_kind = []
 
     _node_conf_raw = None
     _node_conf_parsed = None
@@ -113,6 +114,13 @@ class NodeVal(Base):
             self._node_parent, NodeVal
         ), f"Parent of {self} is not a NodeVal descendant object, got: {self._node_parent}"
         self._node_root = getattr(parent, "_node_root", None) or self
+
+        # Enforce parrent type
+        if self._node_parent_kind:
+            cls_name = self._node_parent.__class__.__name__
+            assert (
+                cls_name in self._node_parent_kind
+            ), f"Bug: Parent node '{self._node_parent}' allowed to create {self}, only: {self._node_parent_kind}"
 
         # Manage autoconf levels
         if autoconf is None:
