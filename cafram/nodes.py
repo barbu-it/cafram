@@ -210,6 +210,8 @@ class NodeVal(Base):
 
         self.log.debug(f"  7. Node {self} has been created")
 
+        self.node_hook_final()
+
     def serialize(self, mode="parsed"):
         "Transform object to json"
 
@@ -244,6 +246,9 @@ class NodeVal(Base):
 
     def node_hook_children(self):
         "Placeholder to transform object once onfig has been done"
+
+    def node_hook_final(self):
+        "Placeholder to transform object once everything done"
 
     # Configuration parser
     # -----------------
@@ -805,8 +810,9 @@ class NodeDictItemManager:
                             value = cls(value)
                         except Exception as err:
                             self.log.critical(
-                                f"{log_msg}\nType mismatch between for {self}: {cls} and {truncate(value, max=TRUNCATE)}"
+                                f"{log_msg}\nType mismatch between for {self}: {cls} and {truncate(value, max=TRUNCATE)}."
                             )
+                            assert False, f"Set correctly the exception: {err.__class__}"
                             raise NotExpectedType(err) from err
 
             else:
@@ -967,6 +973,7 @@ class NodeMap(NodeDict):
         # pylint: disable=super-with-arguments
         super(NodeMap, self).add_child(ident, obj)
         setattr(self, ident, obj)
+        #print ("SET ATTR", self, ident, obj)
 
     def __getattr__(self, key):
 

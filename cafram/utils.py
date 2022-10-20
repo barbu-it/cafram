@@ -172,7 +172,7 @@ def get_logger(logger_name=None, create_file=False, verbose=None):
     tformat1 = "%H:%M:%S"
     # tformat2 = "%Y-%m-%d %H:%M:%S"
     # formatter = logging.Formatter(format4, tformat1)
-    formatter = MultiLineFormatter(format4, tformat1)
+    formatter = MultiLineFormatter(format1, tformat1)
 
     # Create console handler for logger.
     stream = logging.StreamHandler()
