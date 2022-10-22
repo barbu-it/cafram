@@ -146,6 +146,7 @@ class NodeVal(Base):
         self.log = CustomAdapter(self.log, {"indent": indent})
 
         # Auto init object
+        self.node_hook_init()
         self.deserialize(payload)
 
     # Serialization
@@ -236,6 +237,9 @@ class NodeVal(Base):
     #   - Payload is done, preset values
     # node_hook_children
     #   - Once the children has been created
+
+    def node_hook_init(self):
+        "Placeholder to executes in __init__ object"
 
     def node_hook_transform(self, payload):
         "Placeholder to transform config after validation"
