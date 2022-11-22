@@ -980,6 +980,11 @@ class NodeMap(NodeDict):
         #print ("SET ATTR", self, ident, obj)
 
     def __getattr__(self, key):
+        """Fetch attribute from config nodes"""
+
+        # TODO:
+        # Linter reports an issue when accessing attributes
+        # not defined at the class/instance level. How to to fix this?
 
         if key in self._nodes:
             # print (f"Get value: {key} for {id(self)} from _nodes")
