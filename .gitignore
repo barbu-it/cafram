@@ -4,6 +4,7 @@ poetry.lock
 
 *.code-workspace
 .envrc.*
+.task
 
 devel/*
 wip.py
