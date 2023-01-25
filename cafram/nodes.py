@@ -143,7 +143,7 @@ class NodeVal(Base):
                 return getattr(self.logger, name)
 
         indent = "| " * self._node_lvl  # +  "  "
-        self.log = CustomAdapter(self.log, {"indent": indent})
+        self._node_log = CustomAdapter(logging.getLogger('cafram'), {"indent": indent})
 
         # Auto init object
         self.node_hook_init()
@@ -162,7 +162,7 @@ class NodeVal(Base):
         self._nodes = self.__class__._nodes
         self._node_conf_raw = payload
 
-        self.log.info(f"> Deserialize Node: {self}")
+        self._node_log.info(f"> Deserialize Node: {self}")
 
         # 1. Parse config
         # -------------------
@@ -171,17 +171,17 @@ class NodeVal(Base):
         # 1.3 Apply defaults from conf_children or conf_default
         # 1.4 User report
 
-        self.log.debug(f"  1. Validate {self} config")
+        self._node_log.debug(f"  1. Validate {self} config")
         payload1 = self._node_conf_validate(payload)
-        self.log.debug(f"  2. Hook: node_hook_transform {self} config")
+        self._node_log.debug(f"  2. Hook: node_hook_transform {self} config")
         payload2 = self.node_hook_transform(payload1)
-        self.log.debug(f"  3. Apply conf defaults {self} config")
+        self._node_log.debug(f"  3. Apply conf defaults {self} config")
         payload3 = self._node_conf_defaults(payload2)
 
         if payload1 != payload3:
-            self.log.debug(f"    3.3 Payload transformation for: {self}")
-            self.log.debug(f"         in: {payload1}")
-            self.log.debug(f"        out: {payload3}")
+            self._node_log.debug(f"    3.3 Payload transformation for: {self}")
+            self._node_log.debug(f"         in: {payload1}")
+            self._node_log.debug(f"        out: {payload3}")
 
         # 2. Apply config
         # -------------------
@@ -189,7 +189,7 @@ class NodeVal(Base):
         # 2.2 Run conf hook (node_hook_conf)
 
         self._node_conf_parsed = payload3
-        self.log.debug(f"  4. Hook: node_hook_conf {self} config")
+        self._node_log.debug(f"  4. Hook: node_hook_conf {self} config")
         self.node_hook_conf()
 
         # 3. Create children
@@ -198,9 +198,9 @@ class NodeVal(Base):
         # 3.2 Run children hook (node_hook_children)
         # 3.3 Preset default ident
 
-        self.log.debug(f"  5. Build {self} config")
+        self._node_log.debug(f"  5. Build {self} config")
         self._node_conf_build()
-        self.log.debug(f"  6. Hook: node_hook_children {self} config")
+        self._node_log.debug(f"  6. Hook: node_hook_children {self} config")
         self.node_hook_children()
         if self.conf_ident:
             try:
@@ -209,7 +209,7 @@ class NodeVal(Base):
                 msg = f"Bug: on '{self}.conf_ident={self.conf_ident}', {err.args[0]}"
                 raise ApplicationError(msg) from err
 
-        self.log.debug(f"  7. Node {self} has been created")
+        self._node_log.debug(f"  7. Node {self} has been created")
 
         self.node_hook_final()
 
@@ -277,12 +277,12 @@ class NodeVal(Base):
             if "$schema" in self.conf_schema:
 
                 try:
-                    self.log.info("    1.2 Validate payload")
+                    self._node_log.info("    1.2 Validate payload")
                     payload = json_validate(self.conf_schema, payload)
                 except jsonschema.exceptions.ValidationError as err:
 
-                    self.log.critical(f"Value: {err.instance}")
-                    self.log.critical(f"Payload: {payload}")
+                    self._node_log.critical(f"Value: {err.instance}")
+                    self._node_log.critical(f"Payload: {payload}")
                     raise SchemaError(
                         f"Schema validation error for {self}: {err.message}"
                     ) from err
@@ -655,7 +655,7 @@ class NodeDictItemManager:
     "Manage DictItemChildren"
 
     def __init__(self, conf_children, payload=None, autoconf=None, log=None):
-        self.log = log or _log
+        self._node_log = log or _log
 
         self.data = self.load_conf(conf_children, payload=payload, autoconf=autoconf)
 
@@ -705,12 +705,12 @@ class NodeDictItemManager:
 
         # Actually build conf_Struct
         _payload = str(payload)
-        self.log.info(
+        self._node_log.info(
             log_prefix
             + f"1 Children config: {log_mode} with {truncate(_payload, max=TRUNCATE)}"
         )
         conf_struct = [NodeDictItem(**conf) for conf in conf_children]
-        self.log.debug(
+        self._node_log.debug(
             log_prefix + f"1 Children plan: {truncate(conf_struct, max=TRUNCATE)}"
         )
 
@@ -758,7 +758,7 @@ class NodeDictItemManager:
 
         assert isinstance(node, NodeDict), f"BUG: Wrong type, expected NodeDict: {self}"
         log_prefix = "    5."
-        self.log.debug(log_prefix + f"1 Build {node} children ...")
+        self._node_log.debug(log_prefix + f"1 Build {node} children ...")
 
         # 2. Process each children
         for item_def in self.data:
@@ -788,11 +788,11 @@ class NodeDictItemManager:
                 # Instanciate or cast value
                 if issubclass(cls, NodeVal):
 
-                    self.log.info(
+                    self._node_log.info(
                         log_prefix
                         + f"2 Instanciate Children Node object: {attr}={cls}({truncate(value, max=TRUNCATE)})"
                     )
-                    self.log.info(" ")
+                    self._node_log.info(" ")
                     child = cls(parent=node, ident=item_def.ident, payload=value)
 
                     log_msg = f"Instanciated Children Node object: {attr}={cls}({truncate(value, max=TRUNCATE)})"
@@ -813,7 +813,7 @@ class NodeDictItemManager:
                         try:
                             value = cls(value)
                         except Exception as err:
-                            self.log.critical(
+                            self._node_log.critical(
                                 f"{log_msg}\nType mismatch between for {self}: {cls} and {truncate(value, max=TRUNCATE)}."
                             )
                             assert False, f"Set correctly the exception: {err.__class__}"
@@ -825,7 +825,7 @@ class NodeDictItemManager:
                 # value = value
 
             if log_msg:
-                self.log.info(log_prefix + "3 " + log_msg)
+                self._node_log.info(log_prefix + "3 " + log_msg)
 
             # Patch original configuration
             # pylint: disable=protected-access
@@ -836,7 +836,7 @@ class NodeDictItemManager:
 
             if hook:
                 fun = getattr(node, hook)
-                self.log.debug(log_prefix + f"3 Execute hook: {hook}, {fun}")
+                self._node_log.debug(log_prefix + f"3 Execute hook: {hook}, {fun}")
                 fun()
 
 
@@ -932,7 +932,7 @@ class NodeDict(NodeVal):
             self.conf_children,
             payload=payload,
             autoconf=self._node_autoconf,
-            log=self.log,
+            log=self._node_log,
         )
         payload = self._node_conf_struct.clean(payload)
 
@@ -1092,9 +1092,9 @@ class NodeMapEnv(NodeMap):
         result = os.getenv(name)
 
         if result:
-            self.log.info(f"    3.2 Fetch value from env: {name}={result}")
+            self._node_log.info(f"    3.2 Fetch value from env: {name}={result}")
         else:
-            self.log.debug(f"    3.2 Skip value from env: {name}")
+            self._node_log.debug(f"    3.2 Skip value from env: {name}")
 
         return result
 
