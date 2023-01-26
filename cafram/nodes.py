@@ -473,15 +473,15 @@ class NodeVal(Base):
                 )
                 child.show_childs(lvl)
         elif isinstance(children, list):
-            count = 0
+            count = -1
             for child in children:
+                count += 1
                 head = truncate(f"{indent} - <item_{count}>:", 38)
                 val = truncate(f"{child.get_value()}")
                 print(
                     f"{head:<40}{child._node_kind:<10}{id(child)}:{child.__class__.__name__:<30}{val}"
                 )
                 child.show_childs(lvl)
-                count += 1
         else:
             assert False, f"Damn: {self} => {children}"
 
@@ -520,10 +520,10 @@ class NodeList(NodeVal):
         cls = self.conf_children
 
         results = []
-        count = 0
+        count = -1
         are_children = False
         for item in payload:
-
+            count += 1
             ident = f"{self.ident}_{count}"
 
             if self._node_autoconf != 0:
@@ -565,7 +565,6 @@ class NodeList(NodeVal):
             else:
                 results.append(item)
 
-            count = +1
 
         if are_children:
             self._nodes = results
