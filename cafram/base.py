@@ -97,6 +97,7 @@ class Base:
 
     # Object shortcut to logger
     log = None
+    _node_log = None
 
     def __init__(self, *args, **kwargs):
 
@@ -165,18 +166,29 @@ class MixInLog:
         self.conf_logger = kwargs.get("log") or self.conf_logger
         self.set_logger()
 
-    def set_logger(self, conf_logger=None):
-        "Set instance logger name or instance"
+    def set_logger(self, conf_logger=None, attribute_name='log'):
+        """Set instance logger name or instance
+
+        If never called, the default logger the cafram one
+
+        attribute_name:
+        * The attribute where to store the logger
+        conf_logger:
+        * None: Use default logging.getLogger()
+        * "__AUTO__": Set to {self.module}.{self.__class__.__name__}.{ident}, and skip ident if absent
+        * str: The name of your logger, as string
+        * Logger: Directly a logger instance
+        """
 
         log = None
         log_name = None
         conf_logger = conf_logger or self.conf_logger
 
-        if conf_logger is None or conf_logger == "__AUTO__":
+        if conf_logger is None:
+            log_name = f"{self.module}.{self.__class__.__name__}"
             ident = getattr(self, "ident", None)
-            log_name = f"cafram.{self.__class__.__name__}"
             if ident:
-                log_name = f"cafram.{self.__class__.__name__}.{ident}"
+                log_name = f"{self.module}.{self.__class__.__name__}.{ident}"
         elif isinstance(conf_logger, str):
             log_name = f"{conf_logger}"
         elif log.__class__.__name__ == "Logger":
@@ -189,7 +201,7 @@ class MixInLog:
             log = logging.getLogger(log_name)
 
         # print ("Create logger", log_name, conf_logger, self.conf_logger)
-        self.log = log
+        setattr(self, attribute_name, log)
 
 
 # =====================================================================

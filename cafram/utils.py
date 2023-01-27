@@ -136,7 +136,7 @@ class MultiLineFormatter(logging.Formatter):
         return head + "".join(indent + line for line in trailing)
 
 
-def get_logger(logger_name=None, create_file=False, verbose=None):
+def get_logger(logger_name=None, create_file=False, verbose=None, sformat='default', tformat='default'):
     """Create CmdApp logger"""
 
     # Take default app name
@@ -158,21 +158,26 @@ def get_logger(logger_name=None, create_file=False, verbose=None):
     _log.setLevel(level=loglevel)
 
     # Formatters
-    format1 = "%(levelname)8s: %(message)s"
-    # pylint: disable=unused-variable
-    format4 = "%(name)-32s%(levelname)8s: %(message)s"
-    format2 = "%(asctime)s.%(msecs)03d|%(name)-16s%(levelname)8s: %(message)s"
-    format3 = (
-        "%(asctime)s.%(msecs)03d"
-        + " (%(process)d/%(thread)d) "
-        + "%(pathname)s:%(lineno)d:%(funcName)s"
-        + ": "
-        + "%(levelname)s: %(message)s"
-    )
-    tformat1 = "%H:%M:%S"
-    # tformat2 = "%Y-%m-%d %H:%M:%S"
+    # See: https://docs.python.org/3/library/logging.html#logrecord-attributes
+    sformats = {
+        "default": "%(levelname)8s: %(message)s",
+        "struct": "%(name)-40s%(levelname)8s: %(message)s",
+        "time": "%(asctime)s.%(msecs)03d|%(name)-16s%(levelname)8s: %(message)s",
+        "precise": (
+            "%(asctime)s.%(msecs)03d"
+            + " (%(process)d/%(thread)d) "
+            + "%(pathname)s:%(lineno)d:%(funcName)s"
+            + ": "
+            + "%(levelname)s: %(message)s"
+        ),
+        }
+    tformats = {
+        "default": "%H:%M:%S",
+        "precise": "%Y-%m-%d %H:%M:%S",
+        }
+
     # formatter = logging.Formatter(format4, tformat1)
-    formatter = MultiLineFormatter(format1, tformat1)
+    formatter = MultiLineFormatter(sformats[sformat], tformats[tformat])
 
     # Create console handler for logger.
     stream = logging.StreamHandler()
