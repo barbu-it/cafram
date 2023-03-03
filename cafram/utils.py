@@ -136,7 +136,13 @@ class MultiLineFormatter(logging.Formatter):
         return head + "".join(indent + line for line in trailing)
 
 
-def get_logger(logger_name=None, create_file=False, verbose=None, sformat='default', tformat='default'):
+def get_logger(
+    logger_name=None,
+    create_file=False,
+    verbose=None,
+    sformat="default",
+    tformat="default",
+):
     """Create CmdApp logger"""
 
     # Take default app name
@@ -170,11 +176,11 @@ def get_logger(logger_name=None, create_file=False, verbose=None, sformat='defau
             + ": "
             + "%(levelname)s: %(message)s"
         ),
-        }
+    }
     tformats = {
         "default": "%H:%M:%S",
         "precise": "%Y-%m-%d %H:%M:%S",
-        }
+    }
 
     # formatter = logging.Formatter(format4, tformat1)
     formatter = MultiLineFormatter(sformats[sformat], tformats[tformat])
