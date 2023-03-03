@@ -1,5 +1,3 @@
-
-
 # Values/Containers mixins
 ################################################################
 
@@ -14,15 +12,18 @@ from typing import MutableSequence, MutableSet, MutableMapping
 from pprint import pprint
 
 from . import BaseMixin
-#from cafram2.mixins import BaseMixin
+
+# from cafram2.mixins import BaseMixin
 from ..common import CaframMixin, CaframNode
-#from cafram2.common import CaframMixin, CaframNode
+
+# from cafram2.common import CaframMixin, CaframNode
 
 from ..nodes import Node
 from .. import errors
 
 import json
 import logging
+
 log = logging.getLogger(__name__)
 
 from .base import MapAttrMixin
@@ -64,7 +65,7 @@ class PayloadMixin(BaseMixin):
             "name_param": {
                 "title": "Mixin name parameter",
                 "description": "Name of the parameter to load name from",
-                "default":name_param,
+                "default": name_param,
             },
             "value_alias": {
                 "title": "Value alias name",
@@ -97,21 +98,18 @@ class PayloadMixin(BaseMixin):
         },
     }
 
-
     def _init(self, **kwargs):
 
         super()._init(**kwargs)
-        
+
         self._value = None
         self._payload = kwargs.get(self.name_param, None)
         self.set_value(self._payload)
         self._register_alias()
 
-
     def _register_alias(self):
         if self.value_alias:
             self.node_ctrl.alias_register(self.value_alias, self.value)
-
 
     # Generic value handler
     # ---------------------
@@ -126,19 +124,17 @@ class PayloadMixin(BaseMixin):
     @value.deleter
     def value(self):
         self.set_value(None)
-    
 
     def get_value(self):
         "Get a value"
         return self._value
-    
+
     def set_value(self, value):
         "Set a value"
         conf = self.transform(value)
         conf = self.validate(conf)
         self._value = conf
         return self._value
-
 
     # Transformers/Validators
     # ---------------------
@@ -147,15 +143,14 @@ class PayloadMixin(BaseMixin):
         "Transform payload before"
         return payload
 
-
     def validate(self, payload):
         "Validate config against json schema"
-        
+
         schema = self.payload_schema
         if isinstance(schema, dict):
             valid = True
             if not valid:
-                raise errors.CaframException(f"Can't validate: {payload}")    
+                raise errors.CaframException(f"Can't validate: {payload}")
 
         return payload
 
@@ -164,10 +159,9 @@ class PayloadMixin(BaseMixin):
         return self.payload_schema
 
 
-
-
 # Hier mixins
 ################################################################
+
 
 class HierParentMixin(BaseMixin):
     "Hier mixin that manage parent relationships"
@@ -182,7 +176,6 @@ class HierParentMixin(BaseMixin):
 
         # print ("INIT PARENT", self._parent)
 
-
     def get_parent(self, ctrl=True):
         "Return direct parent"
 
@@ -191,7 +184,7 @@ class HierParentMixin(BaseMixin):
                 return self._parent.node_ctrl
             else:
                 return self._parent
-        
+
         return None
 
     def get_parents(self, ctrl=True, level=-1):
@@ -201,12 +194,12 @@ class HierParentMixin(BaseMixin):
 
         parent = self.get_parent(ctrl=False)
         while level != 0:
-            
+
             if parent:
                 parents.append(parent)
 
             # Prepare next iteration
-            #if isinstance(parent, self.__class__):
+            # if isinstance(parent, self.__class__):
             if isinstance(parent, HierParentMixin):
                 parent = parent.get_parent(ctrl=False)
             else:
@@ -234,10 +227,10 @@ class HierChildrenMixin(BaseMixin):
 
     # Overrides
     # -----------------
-    
+
     children = {}
     children_param = "children"
-    
+
     def _init(self, **kwargs):
 
         super()._init(**kwargs)
@@ -253,7 +246,6 @@ class HierChildrenMixin(BaseMixin):
         for index, child in self.children.items():
             self.add_child(child, index=index)
 
-
     def add_child(self, child, index=None, alias=True):
         "Add a new child to mixin"
 
@@ -268,11 +260,9 @@ class HierChildrenMixin(BaseMixin):
         elif isinstance(children, list):
             index = index or len(children)
             self._children.insert(index, child)
-            
+
         if alias:
             self.node_ctrl.alias_register(index, child)
-
-
 
     def get_children(self, level=0):
         children = self._children
@@ -310,16 +300,9 @@ class HierMixin(HierParentMixin, HierChildrenMixin):
     "Hier mixin that manage parent and children relationships"
 
 
-
-
-
-
-
-
 # Conf mixins (Composed classes)
 ################################################################
 
-        
 
 class ConfMixin(HierParentMixin, PayloadMixin):
     "Conf mixin that manage a basic serializable value"
@@ -362,7 +345,6 @@ class ConfMixin(HierParentMixin, PayloadMixin):
         if not isinstance(value, valid):
             assert False, f"TYPE ERROR, got: {type(value)}"
 
-
     # Converter methods
     # -----------------
 
@@ -400,8 +382,6 @@ class ConfMixin(HierParentMixin, PayloadMixin):
     def from_yaml(self, payload):
         "Import value from yaml string"
         self.set_value(from_yaml(payload))
-
-
 
     # Additional methods
     # -----------------
@@ -452,7 +432,6 @@ class ConfContainerMixin(HierChildrenMixin, ConfMixin):
 
 class ConfDictMixin(ConfContainerMixin):
     "Conf mixin that manage a serializable dict of values"
-    
 
     def _parse_children(self):
 
@@ -487,13 +466,13 @@ class ConfDictMixin(ConfContainerMixin):
         name_param = self.name_param
         parent_param = self.parent_param
         for child_key, child_cls in children_map.items():
-            
+
             child_value = value.get(child_key)
             if child_cls is None:
                 child = child_value
                 msg = f"Create child '{child_key}': {type(child_value).__name__}({child_value})"
                 log.info(msg)
-                #print (msg)
+                # print (msg)
             else:
                 child_args = {
                     name_param: child_value,
@@ -501,23 +480,24 @@ class ConfDictMixin(ConfContainerMixin):
                 }
                 msg = f"Create child '{child_key}': {child_cls.__name__}({child_args})"
                 log.info(msg)
-                #print (msg)
+                # print (msg)
 
                 assert issubclass(child_cls, CaframNode)
                 child = child_cls(self, **child_args)
-                #child = self.create_child(child_cls, child_value, child_key=child_key, **child_args)
+                # child = self.create_child(child_cls, child_value, child_key=child_key, **child_args)
 
             self.add_child(child, index=child_key, alias=True)
 
 
 class ConfListMixin(ConfContainerMixin):
     """Conf mixin that manage a serializable list of values
-    
+
     Usage:
       ConfListMixin(node_ctrl, mixin_conf=None)
       ConfListMixin(node_ctrl, mixin_conf=[ConfDictMixin])
 
     """
+
     def _parse_children(self):
 
         # Get data
@@ -532,7 +512,7 @@ class ConfListMixin(ConfContainerMixin):
 
             name_param = self.name_param
             parent_param = self.parent_param
-            
+
             log.info(f"Children configs is automatic")
             for child_key, child_value in enumerate(value):
                 child_cls = map_node_class(child_value)
@@ -545,7 +525,7 @@ class ConfListMixin(ConfContainerMixin):
                     }
                     msg = f"Create child '{child_key}': {child_cls.__name__}({child_args})"
                     log.info(msg)
-                    #print (msg)
+                    # print (msg)
 
                     assert issubclass(child_cls, CaframNode)
                     child = child_cls(self, **child_args)
@@ -555,7 +535,7 @@ class ConfListMixin(ConfContainerMixin):
         elif children_conf is None:
             log.info(f"Children configs is None")
             for child_key, child_value in enumerate(value):
-                #children_map[child_key] = None
+                # children_map[child_key] = None
                 self.add_child(child_value)
                 log.info(f"Child '{child_key}' config is native {type(child_value)}")
         elif children_conf is False:
@@ -568,38 +548,26 @@ class ConfListMixin(ConfContainerMixin):
 # Application helpers
 ################################################################
 
+
 class NodePayload(Node):
-    
-    _node_conf = [
-        {
-            "mixin": PayloadMixin
-        }
-    ]
+
+    _node_conf = [{"mixin": PayloadMixin}]
+
 
 class NodeConf(NodePayload):
-    
-    _node_conf = [
-        {
-            "mixin": ConfMixin
-        }
-    ]
+
+    _node_conf = [{"mixin": ConfMixin}]
 
 
 class NodeConfDict(NodeConf):
-    
-    _node_conf = [
-        {
-            "mixin": ConfDictMixin
-        }
-    ]
+
+    _node_conf = [{"mixin": ConfDictMixin}]
+
 
 class NodeConfList(NodeConf):
-    
-    _node_conf = [
-        {
-            "mixin": ConfListMixin
-        }
-    ]
+
+    _node_conf = [{"mixin": ConfListMixin}]
+
 
 def map_node_class_full(payload):
     "Map anything to cafram classes"
@@ -607,19 +575,20 @@ def map_node_class_full(payload):
     if isinstance(payload, dict):
         return NodeConfDict
     if isinstance(payload, list):
-        #return NodeConf
+        # return NodeConf
         # TEMPORARY
         return NodeConfList
 
     return NodeConf
-    
+
+
 def map_node_class(payload):
     "Map anything to cafram classes"
 
     if isinstance(payload, dict):
         return NodeConfDict
     if isinstance(payload, list):
-        #return None
+        # return None
         return NodeConfList
 
     return None

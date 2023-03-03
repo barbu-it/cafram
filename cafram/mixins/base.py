@@ -1,10 +1,8 @@
-
-
 import types
 import logging
 from pprint import pprint
 
-#from cafram2.mixins import BaseMixin
+# from cafram2.mixins import BaseMixin
 from . import BaseMixin
 
 
@@ -15,10 +13,9 @@ log = logging.getLogger(__name__)
 ################################################################
 
 
-
 class MapAttrMixin(BaseMixin):
 
-    #key = "attr"
+    # key = "attr"
     mixin_map = {}
 
     # default_conf = {
@@ -30,7 +27,7 @@ class MapAttrMixin(BaseMixin):
     #             # "conf": None,
     #             # "log": "log2",
     #         },
-        
+
     #     # Set True to map obj attributes to known mixins
     #     "attr_forward": False,
 
@@ -42,20 +39,19 @@ class MapAttrMixin(BaseMixin):
 
     # Set your static mapping here
     attr_map = {
-            # "conf": None,
-            # "log": "log2",
-        }
-    
+        # "conf": None,
+        # "log": "log2",
+    }
+
     # Set True to map obj attributes to known mixins
-    #attr_forward = False
+    # attr_forward = False
 
     # Set a function to forward unknown attr
     attr_forward = True
 
-
     def _init(self, *args, **kwargs):
 
-        #attr_map = self.conf["attr_map"]
+        # attr_map = self.conf["attr_map"]
         attr_map = self.attr_map
 
         # Init manual mapping
@@ -70,6 +66,7 @@ class MapAttrMixin(BaseMixin):
 
         # Add hooks
         this = self
+
         def func(name):
             "Hook gettattr"
             if name in this.mixin_map:
@@ -80,11 +77,16 @@ class MapAttrMixin(BaseMixin):
 
         # Patch object __getattr__
         if self.attr_forward is True:
+
             def func2(self, name):
                 "Hook gettattr for top object"
                 return getattr(this.node_ctrl, name)
-            self.node_ctrl._obj.__class__.__getattr__ = types.MethodType(func2, self.node_ctrl._obj.__class__)
-            
+
+            self.node_ctrl._obj.__class__.__getattr__ = types.MethodType(
+                func2, self.node_ctrl._obj.__class__
+            )
+
+
 class LoggerMixin(BaseMixin):
 
     key = "logger"
@@ -93,20 +95,15 @@ class LoggerMixin(BaseMixin):
     default_conf = {
         # Set True to map to known mixins
         "logger_key": "log",
-
         # Define the logger name, class name if not used
         "logger_name": None,
-
         # Define the logger name prefix, None for internal use
         "logger_prefix": None,
-
         # Define if this config is inherited by children
         "logger_propagate": True,
-
-        # Define logging format 
+        # Define logging format
         "logger_sformat": "default",
-    
-        # Define time format 
+        # Define time format
         "logger_tformat": "default",
     }
 
@@ -122,12 +119,11 @@ class LoggerMixin(BaseMixin):
             + ": "
             + "%(levelname)s: %(message)s"
         ),
-        }
+    }
     tformats = {
         "default": "%H:%M:%S",
         "precise": "%Y-%m-%d %H:%M:%S",
-        }
-
+    }
 
     def _init(self, *args, **kwargs):
 
@@ -145,13 +141,13 @@ class LoggerMixin(BaseMixin):
         #     # #parent_logger = self.node_ctrl.mixin_get(self.key)
         #     print ("PARENT LOGGER CONFIG:", parent_logger)
 
-        #self.log = 
+        # self.log =
         self.set_logger()
 
         # Register logger into node_ctrl
-        #self.node_ctrl._mixin_dict[logger_key] = self.log
-        #if self.node_ctrl:
-        
+        # self.node_ctrl._mixin_dict[logger_key] = self.log
+        # if self.node_ctrl:
+
         # print (self)
         # pprint (self.__dict__)
         self.node_ctrl.mixin_set(self.log, name=logger_key, shortcut=True)
@@ -168,13 +164,12 @@ class LoggerMixin(BaseMixin):
         formatter = logging.Formatter(_sformat)
         ch.setFormatter(formatter)
 
-        #ch.setLevel(logging.DEBUG)
+        # ch.setLevel(logging.DEBUG)
 
         self.log.addHandler(ch)
 
-    def set_logger(self, conf_logger=None, attribute_name='log'):
-        """Set instance logger name or instance
-        """
+    def set_logger(self, conf_logger=None, attribute_name="log"):
+        """Set instance logger name or instance"""
 
         logger_name = self.conf["logger_name"]
         logger_prefix = self.conf["logger_prefix"]
@@ -185,14 +180,14 @@ class LoggerMixin(BaseMixin):
             logger_prefix = __name__
 
         logger_fqdn = f"{logger_prefix}.{logger_name}"
-        
+
         self.logger_name = logger_name
         self.logger_prefix = logger_prefix
         self.logger_fqdn = logger_fqdn
 
         # Get logger
         self.log = logging.getLogger(logger_fqdn)
-        #pprint (self.log.__dict__)
+        # pprint (self.log.__dict__)
 
         # Set level
         self.log.setLevel(logging.DEBUG)
@@ -222,6 +217,3 @@ class LoggerMixin(BaseMixin):
         #     log = logging.getLogger(log_name)
 
         # return log
-
-
-

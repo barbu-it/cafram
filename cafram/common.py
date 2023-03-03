@@ -16,7 +16,3 @@ class CaframMixin(CaframObj):
 class CaframNode(CaframObj):
     "An empty root class to determine a cafram object or not"
     pass
-
-
-
-

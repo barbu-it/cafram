@@ -6,13 +6,13 @@ from pprint import pprint, pformat
 import textwrap
 import inspect
 
-#import .errors as errors
-from . import errors #as errors
+# import .errors as errors
+from . import errors  # as errors
 from .mixins import BaseMixin
 from .common import CaframCtrl, CaframNode  # CaframObj, CaframCtrl, CaframMixin
 
 # from cafram2.mixins import Instance
-#from cafram2.mixins import BaseMixin
+# from cafram2.mixins import BaseMixin
 # from cafram2.mixins.base import LoggerMixin, MapAttrMixin
 # from cafram2.mixins.tree import (
 #     ValueMixin,
@@ -26,11 +26,11 @@ from .common import CaframCtrl, CaframNode  # CaframObj, CaframCtrl, CaframMixin
 ################################################################
 
 # Only relevant for entrypoints
-#logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(level=logging.INFO)
 
 log = logging.getLogger(__name__)
-#log = logging.getLogger(__name__)
-#log = logging.getLogger("cafram2")
+# log = logging.getLogger(__name__)
+# log = logging.getLogger("cafram2")
 
 
 # Base classes
@@ -80,7 +80,7 @@ class NodeCtrl(CaframCtrl):
                     }
                     conf = _payload
 
-                conf["name"] = index    
+                conf["name"] = index
                 ret.append(conf)
 
         elif isinstance(payload, list):
@@ -94,11 +94,10 @@ class NodeCtrl(CaframCtrl):
                         "mixin": conf,
                     }
                     conf = _payload
-                    #payload[index] = conf
-                #payload.append(conf)
+                    # payload[index] = conf
+                # payload.append(conf)
                 ret.append(conf)
 
-        
         # if payload != ret:
         #     print("Transform")
         #     pprint (ret)
@@ -110,10 +109,11 @@ class NodeCtrl(CaframCtrl):
         # Save arguments in instance
         self._obj = node_obj
         self._obj_attr = node_attr or self._obj_attr
-        #setattr(self, f"{self._obj_attr}_conf", list(self._obj_conf))
-        _obj_conf = node_conf or getattr(node_obj, f"{self._obj_attr}_conf", list(self._obj_conf))
+        # setattr(self, f"{self._obj_attr}_conf", list(self._obj_conf))
+        _obj_conf = node_conf or getattr(
+            node_obj, f"{self._obj_attr}_conf", list(self._obj_conf)
+        )
         self._obj_conf = self._transform(_obj_conf)
-        
 
         # Sanity checks
         assert isinstance(self._obj_attr, str), f"Got: {self._obj_attr}"
@@ -125,8 +125,7 @@ class NodeCtrl(CaframCtrl):
         self._mixin_hooks = {
             "__getattr__": [],
             "child_create": [],
-            }
-
+        }
 
         # Auto-Attach itself to parent, only works if a derived class of cafram actually :/
         self._obj_has_attr = False
@@ -136,7 +135,6 @@ class NodeCtrl(CaframCtrl):
             log.info(f"New Node attached to {self._obj} as '{self._obj_attr}'")
         except AttributeError:
             log.warning(f"WEAK Node linked to '{self._obj}' as '{self._obj_attr}'")
-
 
         # # Patch object __getattr__
         # self._obj_has_forward = False
@@ -153,16 +151,15 @@ class NodeCtrl(CaframCtrl):
 
         #     # print ("OBJ ATTR", this._node)
         #     # pprint(this._node.__dict__)
-            
+
         #     #print (this._node.value)
         #     #return this._node[name]
         #     return getattr( this._node, name)
         #     # return getattr(self, name)
-        
+
         # self._obj.__class__.__getattr__ = types.MethodType(func2, self._obj)
         # #self._obj.__getattr__ = types.MethodType(func2, self._obj.__class__)
         # self._obj_has_forward = True
-
 
         # Instanciate mixins
         log.info(f"Instanciate mixins for: {self._obj}")
@@ -182,21 +179,17 @@ class NodeCtrl(CaframCtrl):
                 mixin_cls = mixin_name
 
             # Sanity checks
-            assert (
-                issubclass(mixin_cls, BaseMixin)
+            assert issubclass(
+                mixin_cls, BaseMixin
             ), f"Mixin class {mixin_cls} is not an instance of 'BaseMixin'"
-            log.info(
-                f"  Instanciate mixin: {type(self._obj)}, {mixin_conf}"
-            )
+            log.info(f"  Instanciate mixin: {type(self._obj)}, {mixin_conf}")
 
             # Instanciate mixin and register
             mixin_inst = mixin_cls(self, mixin_conf=mixin_conf, **kwargs)
-            #self.mixin_set(mixin_inst, mixin_inst.instance, shortcut=False)
+            # self.mixin_set(mixin_inst, mixin_inst.instance, shortcut=False)
             self.mixin_register(mixin_inst)
 
         return
-  
-
 
     def alias_register(self, name, value, override=False):
         "Register mixin instance"
@@ -232,7 +225,6 @@ class NodeCtrl(CaframCtrl):
         # Register mixin
         self._mixin_dict[name] = mixin_inst
 
-
     def mixin_list(self, mixin=False, shortcuts=False):
         "Get mixin names"
 
@@ -246,7 +238,7 @@ class NodeCtrl(CaframCtrl):
             targets.append(self._mixin_shortcuts)
 
         ret = []
-        for mixin_dict in targets:  #[self._mixin_dict, self._mixin_shortcuts]:
+        for mixin_dict in targets:  # [self._mixin_dict, self._mixin_shortcuts]:
             ret.extend(list(mixin_dict.keys()))
 
         return ret
@@ -339,7 +331,6 @@ class NodeCtrl(CaframCtrl):
     #     return f"Ctrl: <{self.__class__.__name__}:{hex(id(self))}>[{keys_mixins}|{keys_aliases}]"
     #     # return f"<{self.__class__.__module__} object at {hex(id(self))}> with mixins: {keys_mixins}|{keys_aliases}"
 
-
     def dump(self, details=False, doc=False, mixins=True, stdout=True):
 
         out = []
@@ -354,8 +345,12 @@ class NodeCtrl(CaframCtrl):
         out.append(f"          linked == {self._obj_has_attr}")
         out.append(f"            type == {type(self._obj)}")
         out.append(f"           value == {self._obj}")
-        out.append(f"          mixins == {self.mixin_list(mixin=True, shortcuts=False)}")
-        out.append(f"         aliases == {self.mixin_list(mixin=False, shortcuts=True)}")
+        out.append(
+            f"          mixins == {self.mixin_list(mixin=True, shortcuts=False)}"
+        )
+        out.append(
+            f"         aliases == {self.mixin_list(mixin=False, shortcuts=True)}"
+        )
 
         out.append("")
         out.append("  Mixin Configs:")
@@ -370,48 +365,34 @@ class NodeCtrl(CaframCtrl):
 
         out.append("")
 
-
-
         # Mixins part !
         ################
         out.append("")
         out.append("  Mixins Instances:")
         ignore = ["_schema"]
 
-         
         for name, value in self._mixin_shortcuts.items():
 
             value_ = pformat(value)
 
             # Reformat ouput if more than 1 line
-            if len(value_.split('\n')) > 1:
-                value_ = '\n' + textwrap.indent(value_, "      ")
+            if len(value_.split("\n")) > 1:
+                value_ = "\n" + textwrap.indent(value_, "      ")
 
-            out.append (f"    {name}: {value_}")
-
+            out.append(f"    {name}: {value_}")
 
         for name, value in self._mixin_dict.items():
-            out.append (f"    {name}:")
+            out.append(f"    {name}:")
             if mixins:
                 dump = value.dump(stdout=False, details=details, ignore=ignore)
                 out.append(textwrap.indent(dump, "      "))
 
-
         out.append("-" * 40)
         out.append("")
 
-        #pprint (out)
+        # pprint (out)
 
         ret = "\n".join(out)
         if stdout:
-            print (ret)
+            print(ret)
         return ret
-
-
-        
-
-        
-
-
-
-

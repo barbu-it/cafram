@@ -1,23 +1,20 @@
-
-
-
 import logging
 import textwrap
 from inspect import signature
 
 from pprint import pprint, pformat
 from ..common import CaframMixin, CaframCtrl
-#import ...errors as errors
+
+# import ...errors as errors
 from .. import errors
 import inspect
 
 log = logging.getLogger(__name__)
 
 
-
 class BaseMixin(CaframMixin):
     """Parent class of Cafram Mixins
-    
+
     Usage:
       BaseMixin(node_ctrl, mixin_conf=None)
       BaseMixin(node_ctrl, mixin_conf=[BaseMixin])
@@ -58,11 +55,11 @@ class BaseMixin(CaframMixin):
             },
         },
     }
-    
+
     def __init__(self, node_ctrl, mixin_conf=None, **kwargs):
 
         # Update config from params
-        #assert False, ""
+        # assert False, ""
         mixin_conf = mixin_conf or {}
         for key, value in mixin_conf.items():
             if hasattr(self, key):
@@ -83,7 +80,6 @@ class BaseMixin(CaframMixin):
     #     return f"Mixin: <{self.__class__.__name__}:{hex(id(self))}>[{self.name}] of {self.node_ctrl}"
     #     # return f"<{self.__class__.__module__}.{self.__class__.__name__} object at {hex(id(self))}> named '{self.name}' in {self.node_ctrl}"
 
-
     def _dump_attr(self, details=False, ignore=None):
 
         ignore = ignore or []
@@ -102,17 +98,21 @@ class BaseMixin(CaframMixin):
             if attr_name.startswith("__"):
                 continue
             elif attr_name.startswith("_"):
-                
+
                 value = getattr(self, attr_name)
                 target = out["private_fn"]
-                if isinstance(value, (type(None), bool, int, str, list, dict, set, tuple)):
+                if isinstance(
+                    value, (type(None), bool, int, str, list, dict, set, tuple)
+                ):
                     target = out["private_var"]
 
                 target[attr_name] = getattr(self, attr_name)
             else:
                 value = getattr(self, attr_name)
 
-                if isinstance(value, (type(None), bool, int, str, list, dict, set, tuple)):
+                if isinstance(
+                    value, (type(None), bool, int, str, list, dict, set, tuple)
+                ):
                     out["params"][attr_name] = value
                 else:
                     out["methods"][attr_name] = value
@@ -123,46 +123,41 @@ class BaseMixin(CaframMixin):
 
         return out
 
-
     def doc(self, details=False):
         "Show mixin internal documentation"
 
         fqdn = f"{self.__class__.__module__}.{self.__class__.__name__}"
-        print (f"Documentation for: {fqdn}")
+        print(f"Documentation for: {fqdn}")
 
-        print ("  Usage:")
-        #print ("TESTSSS", self.__doc__, "SEP" , self.__class__.__doc__)
+        print("  Usage:")
+        # print ("TESTSSS", self.__doc__, "SEP" , self.__class__.__doc__)
         head_doc = self.__doc__ or self.__class__.__doc__ or "<Missing>"
         head_doc = textwrap.indent(head_doc, "    ")
         print(head_doc)
 
-        
         other = {}
         ignore = ["payload_schema", "mixin", "_schema"]
         data = self._dump_attr(details=True, ignore=ignore)
 
-
         bases = inspect.getmro(self.__class__)
-        print ("  Mixins inheritance:")
+        print("  Mixins inheritance:")
         for cls in reversed(bases):
-            print (f"    - {cls.__module__}.{cls.__name__}")
-
+            print(f"    - {cls.__module__}.{cls.__name__}")
 
         if "params" in data:
             sec = data["params"]
-            print ("\n  Parameters:")
+            print("\n  Parameters:")
             for key, val in sec.items():
-                print (f"    {key}: {val}")
+                print(f"    {key}: {val}")
 
-        
         if "methods" in data:
             sec = data["methods"]
-            print ("\n  Methods:")
+            print("\n  Methods:")
             for key, val in sec.items():
                 sign = type(val)
                 try:
                     sign = signature(val)
-                    
+
                 except:
                     other[key] = val
                     continue
@@ -170,45 +165,43 @@ class BaseMixin(CaframMixin):
                     other[key] = val
                     continue
 
-                print (f"    {key}{sign}:")
+                print(f"    {key}{sign}:")
                 head_doc = textwrap.indent(val.__doc__ or "<Missing>", "      ")
                 print(head_doc)
 
         if len(other) > 0:
             sec = other
-            print ("\n  Other:")
+            print("\n  Other:")
             for key, val in sec.items():
                 sign = type(val).__name__
-                print (f"    {key}({sign}): {val}")
+                print(f"    {key}({sign}): {val}")
                 # head_doc = textwrap.indent(val.__class__.__doc__ or "N", "      ")
                 # print(head_doc)
 
-        
         if self._schema:
             schema = self._doc_jsonschema_get()
             if details:
-                print ("\n  JSON Schema:")
-                #data = pformat(self.payload_schema)
-                
-                data = json.dumps(schema, indent = 4) 
+                print("\n  JSON Schema:")
+                # data = pformat(self.payload_schema)
+
+                data = json.dumps(schema, indent=4)
                 head_doc = textwrap.indent(data, "      ")
                 print(head_doc)
             else:
 
-                print ("\n  JSON Doc:")
+                print("\n  JSON Doc:")
                 props = schema.get("properties")
                 for key, val in props.items():
 
                     title = val.get("title", None)
                     default = val.get("default", None)
-                    print (f"    {key}({default}): {title}")
+                    print(f"    {key}({default}): {title}")
 
                     desc = val.get("description", "")
-                    head_doc = '\n'.join(textwrap.wrap(desc, width=50))
+                    head_doc = "\n".join(textwrap.wrap(desc, width=50))
                     head_doc = textwrap.indent(head_doc, "      ")
-                    print(head_doc + '\n')
-                
-    
+                    print(head_doc + "\n")
+
     def _doc_jsonschema_get(self):
         "Build json schema from mro"
 
@@ -225,7 +218,6 @@ class BaseMixin(CaframMixin):
         out["properties"] = props
         return out
 
-
     def dump(self, stdout=True, details=False, ignore=None):
         "Dump mixin for debugging purpose"
 
@@ -240,12 +232,10 @@ class BaseMixin(CaframMixin):
 
         ret = "\n".join(out)
         if stdout:
-            print (ret)
+            print(ret)
         return ret
 
-
     #     ######### OLD
-        
 
     #     out.append(f"Dump of mixin: {self.__class__.__name__}")
 
@@ -271,7 +261,7 @@ class BaseMixin(CaframMixin):
     #     if stdout:
     #         print (ret)
     #     return ret
-        
+
     # def _dump_mixin(self, data):
 
     #     out = []
