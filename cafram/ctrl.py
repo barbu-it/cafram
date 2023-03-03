@@ -6,9 +6,10 @@ from pprint import pprint, pformat
 import textwrap
 import inspect
 
-import cafram2.errors as errors
-from cafram2.mixins import BaseMixin
-from cafram2.common import CaframCtrl, CaframNode  # CaframObj, CaframCtrl, CaframMixin
+#import .errors as errors
+from . import errors #as errors
+from .mixins import BaseMixin
+from .common import CaframCtrl, CaframNode  # CaframObj, CaframCtrl, CaframMixin
 
 # from cafram2.mixins import Instance
 #from cafram2.mixins import BaseMixin

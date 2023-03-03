@@ -4,7 +4,8 @@ import types
 import logging
 from pprint import pprint
 
-from cafram2.mixins import BaseMixin
+#from cafram2.mixins import BaseMixin
+from . import BaseMixin
 
 
 log = logging.getLogger(__name__)

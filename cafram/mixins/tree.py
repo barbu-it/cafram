@@ -12,16 +12,20 @@ from pprint import pformat
 from typing import MutableSequence, MutableSet, MutableMapping
 
 from pprint import pprint
-from cafram2.mixins import BaseMixin
-from cafram2.common import CaframMixin, CaframNode
-from cafram2.nodes import Node2
-import cafram2.errors as errors
+
+from . import BaseMixin
+#from cafram2.mixins import BaseMixin
+from ..common import CaframMixin, CaframNode
+#from cafram2.common import CaframMixin, CaframNode
+
+from ..nodes import Node
+from .. import errors
 
 import json
 import logging
 log = logging.getLogger(__name__)
 
-from cafram2.mixins.base import MapAttrMixin
+from .base import MapAttrMixin
 
 # Payload mixins
 ################################################################
@@ -564,7 +568,7 @@ class ConfListMixin(ConfContainerMixin):
 # Application helpers
 ################################################################
 
-class NodePayload(Node2):
+class NodePayload(Node):
     
     _node_conf = [
         {

@@ -6,33 +6,13 @@ import textwrap
 from inspect import signature
 
 from pprint import pprint, pformat
-from cafram2.common import CaframMixin, CaframCtrl
-import cafram2.errors as errors
+from ..common import CaframMixin, CaframCtrl
+#import ...errors as errors
+from .. import errors
 import inspect
 
 log = logging.getLogger(__name__)
 
-
-
-# from cafram2.nodes import Node2
-# from cafram2.mixins import BaseMixin
-
-
-# class MixinLoader():
-
-#     def __init__(self, mixin):
-
-#         self._mixin_src = mixin or BaseMixin
-#         self._start()
-
-#     def _start(self):
-#         self._mixin = Node2(node_conf=[self._mixin_src])
-
-#     def dump(self, **kwargs):
-#         self._mixin.dump(**kwargs)
-
-#     def doc(self, **kwargs):
-#         self._mixin._doc(**kwargs)
 
 
 class BaseMixin(CaframMixin):

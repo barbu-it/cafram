@@ -1,6 +1,6 @@
 
-from cafram2.nodes import Node2
-from cafram2.mixins import BaseMixin
+from .nodes import Node
+from .mixins import BaseMixin
 
 
 class MixinLoader():
@@ -16,7 +16,7 @@ class MixinLoader():
             name = "debug"
 
         # Instanciate empty node
-        self._mixin = Node2(node_conf=[MixinLoaderInst])
+        self._mixin = Node(node_conf=[MixinLoaderInst])
         self.ctrl = self._mixin._node
 
 

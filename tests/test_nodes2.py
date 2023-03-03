@@ -19,7 +19,7 @@ from cafram2.mixins.base import LoggerMixin, MapAttrMixin
 
 #from cafram2.mixins.tree import  _ContainerMixin
 
-from cafram2.nodes import Node, Node2
+from cafram2.nodes import Node, Node
 from cafram2.mixins.tree import NodePayload, NodeConf, NodeConfDict, NodeConfList
 
 from cafram2.mixins.tree import HierMixin, HierParentMixin, HierChildrenMixin
@@ -51,7 +51,7 @@ EX_PAYLOAD1 = {
 
 def test_node_empty(tester=None):
 
-    tester = tester or Node2()
+    tester = tester or Node()
 
     assert isinstance(tester._node._mixin_dict, dict)
     assert isinstance(tester._node._mixin_hooks, dict)
@@ -92,7 +92,7 @@ def test_node_payload(tester=None, payload=None):
             "mixin": PayloadMixin,
         }
     ]
-    tester = tester or Node2(node_conf=node_conf, payload=payload)
+    tester = tester or Node(node_conf=node_conf, payload=payload)
 
     # Run new tests
     # --------------
@@ -116,7 +116,7 @@ def test_node_payload(tester=None, payload=None):
 #         },
         
 #     ]
-#     tester = tester or Node2(node_conf=node_conf, payload=payload)
+#     tester = tester or Node(node_conf=node_conf, payload=payload)
 
 #     # Test alias access
 #     assert tester._node.value == payload
@@ -136,7 +136,7 @@ def test_node_conf(tester=None):
         },
         
     ]
-    tester = tester or Node2(node_conf=node_conf, payload=payload)
+    tester = tester or Node(node_conf=node_conf, payload=payload)
 
     # This should fail as we removed "name"="payload" in conf
     try:
@@ -344,7 +344,7 @@ def test_node_dict_get_children(tester=None):
     assert isinstance(ret["ex_dict"]["ex_dict1"], dict)
 
     ret = tester.conf.get_children(level=1)
-    assert isinstance(ret["ex_dict"]["ex_dict1"], Node2)
+    assert isinstance(ret["ex_dict"]["ex_dict1"], Node)
 
 
 
@@ -373,7 +373,7 @@ def test_node_conf_variants(tester=None):
     ]
 
     for node_conf in node_confs:
-        tester = Node2(node_conf=node_conf, payload=payload)
+        tester = Node(node_conf=node_conf, payload=payload)
         tester.dump(stdout=False)
 
 
@@ -502,7 +502,7 @@ def test_node_conf_variants(tester=None):
 #                     "mixin": PayloadMixin,
 #                 }
 #             ]
-#         tester = Node2(node_mixins=mixin_confs, payload=payload)
+#         tester = Node(node_mixins=mixin_confs, payload=payload)
 
 
 

@@ -1,9 +1,9 @@
 
-from cafram2.common import CaframNode
-from cafram2.ctrl import NodeCtrl
+from .common import CaframNode
+from .ctrl import NodeCtrl
 
 
-class Node(CaframNode):
+class NodeOLD(CaframNode):
 
     _node_confs = []
     _node_attr = "_node"
@@ -32,7 +32,7 @@ class Node(CaframNode):
 
 from pprint import pprint
 
-class Node2(CaframNode):
+class Node(CaframNode):
 
     #, _node_attr = "_test"
     _node_conf = []
