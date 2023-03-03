@@ -9,21 +9,21 @@ import logging
 import pytest
 
 
-import cafram2.errors as errors
-from cafram2.ctrl import NodeCtrl
+import cafram.errors as errors
+from cafram.ctrl import NodeCtrl
 
-from cafram2.mixins import BaseMixin
-from cafram2.mixins.base import LoggerMixin, MapAttrMixin
-# from cafram2.mixins.tree import PayloadMixin, DictConfMixin, ListConfMixin, SimpleConfMixin #, HierMixin
+from cafram.mixins import BaseMixin
+from cafram.mixins.base import LoggerMixin, MapAttrMixin
+# from cafram.mixins.tree import PayloadMixin, DictConfMixin, ListConfMixin, SimpleConfMixin #, HierMixin
 
 
-#from cafram2.mixins.tree import  _ContainerMixin
+#from cafram.mixins.tree import  _ContainerMixin
 
-from cafram2.nodes import Node, Node
-from cafram2.mixins.tree import NodePayload, NodeConf, NodeConfDict, NodeConfList
+from cafram.nodes import Node, Node
+from cafram.mixins.tree import NodePayload, NodeConf, NodeConfDict, NodeConfList
 
-from cafram2.mixins.tree import HierMixin, HierParentMixin, HierChildrenMixin
-from cafram2.mixins.tree import PayloadMixin, ConfMixin, ConfDictMixin, ConfListMixin
+from cafram.mixins.tree import HierMixin, HierParentMixin, HierChildrenMixin
+from cafram.mixins.tree import PayloadMixin, ConfMixin, ConfDictMixin, ConfListMixin
 
 
 # Test payloads

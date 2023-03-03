@@ -6,7 +6,7 @@
 # import json
 # import yaml # pyyaml
 
-from cafram2.utils import to_json, from_json, to_yaml, from_yaml
+from ..utils import to_json, from_json, to_yaml, from_yaml
 
 from pprint import pformat
 from typing import MutableSequence, MutableSet, MutableMapping
