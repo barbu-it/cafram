@@ -1,12 +1,152 @@
+"""
+Base mixins
+"""
+
 import types
 import logging
 from pprint import pprint
 
-# from cafram2.mixins import BaseMixin
+from ..nodes import Node
 from . import BaseMixin
 
 
 log = logging.getLogger(__name__)
+
+
+# Core Mixins
+################################################################
+
+
+class PayloadMixin(BaseMixin):
+
+    name = "payload"
+    name_param = "payload"
+    value_alias = "value"
+
+    payload_schema = False
+    _schema = {
+        # "$defs": {
+        #     "AppProject": PaasifyProject.conf_schema,
+        # },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "title": "Mixin: PayloadMixin",
+        "description": "PayloadMixin Configuration",
+        "default": {},
+        "properties": {
+            "name": {
+                "title": "Mixin name",
+                "description": "Name of the mixin. Does not keep alias if name is set to `None` or starting with a `.` (dot)",
+                "default": name,
+                "oneOf": [
+                    {
+                        "type": "string",
+                    },
+                    {
+                        "type": "null",
+                    },
+                ],
+            },
+            "name_param": {
+                "title": "Mixin name parameter",
+                "description": "Name of the parameter to load name from",
+                "default": name_param,
+            },
+            "value_alias": {
+                "title": "Value alias name",
+                "description": "Name of the alias to retrieve value. Absent if set to None",
+                "default": value_alias,
+                "oneOf": [
+                    {
+                        "type": "string",
+                    },
+                    {
+                        "type": "null",
+                    },
+                ],
+            },
+            "payload_schema": {
+                "title": "Payload schema",
+                "description": "Json schema that must validate payload",
+                "default": payload_schema,
+                "oneOf": [
+                    {
+                        "title": "JSONschema definition",
+                        "type": "dict",
+                    },
+                    {
+                        "title": "Disabled",
+                        "type": "null",
+                    },
+                ],
+            },
+        },
+    }
+
+    def _init(self, **kwargs):
+
+        super()._init(**kwargs)
+
+        self._value = None
+        self._payload = kwargs.get(self.name_param, None)
+        self.set_value(self._payload)
+        self._register_alias()
+
+    def _register_alias(self):
+        if self.value_alias:
+            self.node_ctrl.alias_register(self.value_alias, self.value)
+
+    # Generic value handler
+    # ---------------------
+    @property
+    def value(self):
+        return self.get_value()
+
+    @value.setter
+    def value(self, value):
+        self.set_value(value)
+
+    @value.deleter
+    def value(self):
+        self.set_value(None)
+
+    def get_value(self):
+        "Get a value"
+        return self._value
+
+    def set_value(self, value):
+        "Set a value"
+        conf = self.transform(value)
+        conf = self.validate(conf)
+        self._value = conf
+        return self._value
+
+    # Transformers/Validators
+    # ---------------------
+
+    def transform(self, payload):
+        "Transform payload before"
+        return payload
+
+    def validate(self, payload):
+        "Validate config against json schema"
+
+        schema = self.payload_schema
+        if isinstance(schema, dict):
+            valid = True
+            if not valid:
+                raise errors.CaframException(f"Can't validate: {payload}")
+
+        return payload
+
+    def schema(self):
+        "Return json schema for payload"
+        return self.payload_schema
+
+
+class NodePayload(Node):
+
+    _node_conf = [{"mixin": PayloadMixin}]
 
 
 # Utils Mixins
@@ -15,26 +155,10 @@ log = logging.getLogger(__name__)
 
 class MapAttrMixin(BaseMixin):
 
-    # key = "attr"
+    # Mapping rules
     mixin_map = {}
 
-    # default_conf = {
-    #     # Allow mixin map overrides
-    #     "attr_override": False,
-
-    #     # Set your static mapping here
-    #     "attr_map": {
-    #             # "conf": None,
-    #             # "log": "log2",
-    #         },
-
-    #     # Set True to map obj attributes to known mixins
-    #     "attr_forward": False,
-
-    #     # Set a function to forward unknown attr
-    #     "attr_forward": True,
-    # }
-
+    # Allow mixin map overrides
     attr_override = False
 
     # Set your static mapping here
@@ -43,15 +167,11 @@ class MapAttrMixin(BaseMixin):
         # "log": "log2",
     }
 
-    # Set True to map obj attributes to known mixins
-    # attr_forward = False
-
-    # Set a function to forward unknown attr
+    # Set a function to forward unknown attr, can be Tue/False or a function
     attr_forward = True
 
     def _init(self, *args, **kwargs):
 
-        # attr_map = self.conf["attr_map"]
         attr_map = self.attr_map
 
         # Init manual mapping
@@ -128,28 +248,9 @@ class LoggerMixin(BaseMixin):
     def _init(self, *args, **kwargs):
 
         logger_key = self.conf["logger_key"]
-
-        # Try to get node_ctrl logger
-
-        # parent = self.node_ctrl._parent
-        # #print ("PARENT")
-        # #pprint(self.node_ctrl.__dict__)
-        # if parent:
-        #     parent_logger = "WIP"
-        #     print ("YOOOO ", self)
-        #     pprint (parent)
-        #     # #parent_logger = self.node_ctrl.mixin_get(self.key)
-        #     print ("PARENT LOGGER CONFIG:", parent_logger)
-
-        # self.log =
         self.set_logger()
 
         # Register logger into node_ctrl
-        # self.node_ctrl._mixin_dict[logger_key] = self.log
-        # if self.node_ctrl:
-
-        # print (self)
-        # pprint (self.__dict__)
         self.node_ctrl.mixin_set(self.log, name=logger_key, shortcut=True)
 
     def set_format(self, sformat=None, tformat=None):
@@ -163,7 +264,6 @@ class LoggerMixin(BaseMixin):
         ch = logging.StreamHandler()
         formatter = logging.Formatter(_sformat)
         ch.setFormatter(formatter)
-
         # ch.setLevel(logging.DEBUG)
 
         self.log.addHandler(ch)
@@ -187,33 +287,8 @@ class LoggerMixin(BaseMixin):
 
         # Get logger
         self.log = logging.getLogger(logger_fqdn)
-        # pprint (self.log.__dict__)
 
         # Set level
         self.log.setLevel(logging.DEBUG)
 
         self.set_format()
-
-        # log = None
-        # log_name = None
-        # conf_logger = conf_logger or self.conf_logger
-
-        # if conf_logger is None:
-        #     #log_name = f"{self.module}.{self.__class__.__name__}"
-        #     log_name = f"{self.__class__.__name__}"
-        #     ident = getattr(self, "ident", None)
-        #     if ident:
-        #         #log_name = f"{self.module}.{self.__class__.__name__}.{ident}"
-        #         log_name = f"{self.__class__.__name__}.{ident}"
-        # elif isinstance(conf_logger, str):
-        #     log_name = f"{conf_logger}"
-        # elif log.__class__.__name__ == "Logger":
-        #     log = conf_logger
-
-        # else:
-        #     raise Exception(f"Log not allowed here: {conf_logger}")
-
-        # if not log:
-        #     log = logging.getLogger(log_name)
-
-        # return log

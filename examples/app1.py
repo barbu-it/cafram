@@ -1,5 +1,5 @@
-from cafram2.mixins.tree import ConfDictMixin, NodeConfDict
-from cafram2.nodes import Node
+from cafram.mixins.tree import ConfDictMixin, NodeConfDict
+from cafram.nodes import Node
 
 app_config = {
         "namespace": "username",        
@@ -33,10 +33,7 @@ app_config = {
     }
 
 # You can either configure manually your class
-
-
 class MyApp(Node):
-
     _node_conf = [
         {
             "mixin": ConfDictMixin,
@@ -47,7 +44,9 @@ class MyApp(Node):
 class MyApp(NodeConfDict):
     pass
 
-# Start app this way:
-# app = MyApp(payload=app_config)
 
+if __name__ == "__main__":
+    # Start app this way:
+    app = MyApp(payload=app_config)
 
+    app._node.dump(details=True)

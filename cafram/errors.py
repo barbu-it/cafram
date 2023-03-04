@@ -1,3 +1,8 @@
+"""
+Cafram Exceptions
+"""
+
+
 class CaframException(Exception):
     """Generic cafram exception"""
 

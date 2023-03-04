@@ -20,10 +20,10 @@ from cafram.mixins.base import LoggerMixin, MapAttrMixin
 #from cafram.mixins.tree import  _ContainerMixin
 
 from cafram.nodes import Node, Node
+from cafram.mixins.base import PayloadMixin
+from cafram.mixins.hier import HierMixin, HierParentMixin, HierChildrenMixin
 from cafram.mixins.tree import NodePayload, NodeConf, NodeConfDict, NodeConfList
-
-from cafram.mixins.tree import HierMixin, HierParentMixin, HierChildrenMixin
-from cafram.mixins.tree import PayloadMixin, ConfMixin, ConfDictMixin, ConfListMixin
+from cafram.mixins.tree import ConfMixin, ConfDictMixin, ConfListMixin
 
 
 # Test payloads

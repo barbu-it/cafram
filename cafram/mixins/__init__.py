@@ -1,15 +1,23 @@
+"""
+Base Mixin Class definition
+"""
+
 import logging
 import textwrap
-from inspect import signature
-
-from pprint import pprint, pformat
-from ..common import CaframMixin, CaframCtrl
-
-# import ...errors as errors
-from .. import errors
 import inspect
 
+from pprint import pprint, pformat
+
+from .. import errors
+from ..common import CaframMixin, CaframCtrl
+from ..utils import SPrint
+
+
 log = logging.getLogger(__name__)
+
+
+# Base mixins
+################################################################
 
 
 class BaseMixin(CaframMixin):
@@ -59,7 +67,6 @@ class BaseMixin(CaframMixin):
     def __init__(self, node_ctrl, mixin_conf=None, **kwargs):
 
         # Update config from params
-        # assert False, ""
         mixin_conf = mixin_conf or {}
         for key, value in mixin_conf.items():
             if hasattr(self, key):
@@ -76,9 +83,24 @@ class BaseMixin(CaframMixin):
     def _init(self, **kwargs):
         pass
 
-    # def __repr__(self):
-    #     return f"Mixin: <{self.__class__.__name__}:{hex(id(self))}>[{self.name}] of {self.node_ctrl}"
-    #     # return f"<{self.__class__.__module__}.{self.__class__.__name__} object at {hex(id(self))}> named '{self.name}' in {self.node_ctrl}"
+    # Troubleshooting
+    # -------------------
+
+    def dump(self, stdout=True, details=False, ignore=None):
+        "Dump mixin for debugging purpose"
+
+        sprint = SPrint()
+        sprint(f"Dump of mixin: {self.__class__.__name__}:{hex(id(self))}")
+
+        attr = self._dump_attr(details=details, ignore=ignore)
+        for section in ["params", "methods", "private_var", "private_fn"]:
+            value = attr.get(section, None)
+            if value:
+                value_ = textwrap.indent(pformat(value), "      ")
+                sprint(f"  {section}:\n{value_}")
+
+        ret = sprint.render(stdout=stdout)
+        return ret
 
     def _dump_attr(self, details=False, ignore=None):
 
@@ -123,6 +145,9 @@ class BaseMixin(CaframMixin):
 
         return out
 
+    # Documentation
+    # -------------------
+
     def doc(self, details=False):
         "Show mixin internal documentation"
 
@@ -156,7 +181,7 @@ class BaseMixin(CaframMixin):
             for key, val in sec.items():
                 sign = type(val)
                 try:
-                    sign = signature(val)
+                    sign = inspect.signature(val)
 
                 except:
                     other[key] = val
@@ -203,8 +228,9 @@ class BaseMixin(CaframMixin):
                     print(head_doc + "\n")
 
     def _doc_jsonschema_get(self):
-        "Build json schema from mro"
+        "Build json schema from python mro"
 
+        # Fetch schema from parent classes
         bases = inspect.getmro(self.__class__)
         props = {}
         for base in reversed(bases):
@@ -214,60 +240,7 @@ class BaseMixin(CaframMixin):
                 for key, val in schema_props.items():
                     props[key] = val
 
+        # Overrides parent properties in final schema
         out = dict(self._schema)
         out["properties"] = props
         return out
-
-    def dump(self, stdout=True, details=False, ignore=None):
-        "Dump mixin for debugging purpose"
-
-        out = []
-        out.append(f"Dump of mixin: {self.__class__.__name__}:{hex(id(self))}")
-
-        attr = self._dump_attr(details=details, ignore=ignore)
-        for section, value in attr.items():
-
-            value_ = textwrap.indent(pformat(value), "      ")
-            out.append(f"  {section}:\n{value_}")
-
-        ret = "\n".join(out)
-        if stdout:
-            print(ret)
-        return ret
-
-    #     ######### OLD
-
-    #     out.append(f"Dump of mixin: {self.__class__.__name__}")
-
-    #     data = { **self.__class__.__dict__ , **dict(self.__dict__)}
-    #     data = dict(self.__dict__)
-    #     #pprint (data)
-
-    #     out.append (f"  class: {self}")
-    #     name = data.pop("name")
-    #     out.append (f"  name: {name}")
-    #     node_ctrl = data.pop("node_ctrl")
-    #     out.append (f"  node_ctrl: {node_ctrl}")
-    #     # conf = data.pop("conf")
-    #     conf = textwrap.indent(pformat(data), "      ")
-    #     out.append (f"  conf:\n{conf}")
-
-    #     attr = self._dump_attr()
-    #     attr = textwrap.indent(pformat(attr), "      ")
-    #     out.append(f"  attr:\n{attr}")
-    #     #out.extend(self._dump_mixin(data))
-
-    #     ret = "\n".join(out)
-    #     if stdout:
-    #         print (ret)
-    #     return ret
-
-    # def _dump_mixin(self, data):
-
-    #     out = []
-
-    #     data = pformat(data)
-    #     data = textwrap.indent(data, "      ")
-    #     out.append (f"  other:\n{data}")
-
-    #     return out
