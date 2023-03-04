@@ -35,6 +35,7 @@ class Node(CaframNode):
         """
 
         # Create NodeCtrl instance
+        node_conf = node_conf or self.__class__._node_conf
         node_obj = node_obj or self
         self._node = NodeCtrl(
             node_obj=node_obj, node_attr=node_attr, node_conf=node_conf, *args, **kwargs

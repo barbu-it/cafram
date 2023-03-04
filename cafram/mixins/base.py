@@ -153,6 +153,131 @@ class NodePayload(Node):
 ################################################################
 
 
+class LoggerMixin(BaseMixin):
+
+    name = "logger"
+
+    # Logger instance
+    log = None
+
+    # Logger config
+    log_alias = "log"
+
+    # Logger level: Logging level, can be object, string or number
+    log_level = None
+
+    # Logger name, if none, set to the Node Class name
+    log_name = None
+
+    # Prefix to use, if None, set to the module name
+    log_prefix = None
+
+    # FQDN of logger, generated from log_name and log_prefix
+    log_fqdn = None
+
+    # Define logging format
+    log_sformat = "default"
+    # Define time format
+    log_tformat = "default"
+
+    # Log and time formats db
+    log_sformats = {
+        "default": "%(levelname)8s: %(message)s",
+        "struct": "%(name)-20s%(levelname)8s: %(message)s",
+        "time": "%(asctime)s.%(msecs)03d|%(name)-16s%(levelname)8s: %(message)s",
+        "precise": (
+            "%(asctime)s.%(msecs)03d"
+            + " (%(process)d/%(thread)d) "
+            + "%(pathname)s:%(lineno)d:%(funcName)s"
+            + ": "
+            + "%(levelname)s: %(message)s"
+        ),
+    }
+    log_tformats = {
+        "default": "%H:%M:%S",
+        "precise": "%Y-%m-%d %H:%M:%S",
+    }
+
+    def _init(self, **kwargs):
+
+        # Fetch from params
+        self.log = kwargs.get("logger", None) or self.log
+
+        # Init logger if not provided in params
+        if not self.log:
+            self.set_logger()
+
+        # Customize Logger
+        self.set_format()
+        self.set_level()
+
+        # Register logger into node_ctrl
+        self.node_ctrl.alias_register(self.log_alias, self.log)
+
+    def set_logger(self):
+        """Set instance logger name or instance"""
+
+        log_fqdn = self.get_fqdn()
+        self.log = logging.getLogger(log_fqdn)
+
+    def get_fqdn(self, name=None, prefix=None):
+        "Return the logger FQDN"
+
+        # Check fqdn TODO
+        if self.log:
+            assert False, "Not supported yet"
+
+        # Return fqdn first
+        if self.log_fqdn:
+            return self.log_fqdn
+
+        # Process logger FQDN
+        log_name = name or self.log_name
+        log_prefix = name or self.log_prefix
+
+        if not log_name or not log_prefix:
+
+            if self.node_ctrl._obj:
+                target = self.node_ctrl._obj
+            else:
+                target = self
+            target = type(target)
+
+            if not log_prefix:
+                log_prefix = target.__module__ + "."
+
+            if not log_name:
+                log_name = target.__name__
+
+        return f"{log_prefix}{log_name}"
+
+    def set_level(self, level=None):
+        "Set logger level"
+
+        log_level = level or self.log_level
+        if isinstance(log_level, str):
+            log_level = logging.getLevelName(log_level)
+
+        if log_level:
+            self.log.setLevel(log_level)
+
+    def set_format(self, sformat=None, tformat=None):
+        "Change logger format"
+
+        sformat = sformat or self.log_sformat
+        tformat = tformat or self.log_tformat
+
+        _sformat = self.log_sformats[sformat]
+        _tformat = self.log_sformats[tformat]
+
+        ch = logging.StreamHandler()
+        formatter = logging.Formatter(_sformat)
+        ch.setFormatter(formatter)
+        # ch.setLevel(logging.DEBUG)
+
+        self.log.addHandler(ch)
+
+
 class MapAttrMixin(BaseMixin):
 
     # Mapping rules
@@ -205,90 +330,3 @@ class MapAttrMixin(BaseMixin):
             self.node_ctrl._obj.__class__.__getattr__ = types.MethodType(
                 func2, self.node_ctrl._obj.__class__
             )
-
-
-class LoggerMixin(BaseMixin):
-
-    key = "logger"
-    conf_logger = None
-
-    default_conf = {
-        # Set True to map to known mixins
-        "logger_key": "log",
-        # Define the logger name, class name if not used
-        "logger_name": None,
-        # Define the logger name prefix, None for internal use
-        "logger_prefix": None,
-        # Define if this config is inherited by children
-        "logger_propagate": True,
-        # Define logging format
-        "logger_sformat": "default",
-        # Define time format
-        "logger_tformat": "default",
-    }
-
-    # Log and time formats
-    sformats = {
-        "default": "%(levelname)8s: %(message)s",
-        "struct": "%(name)-40s%(levelname)8s: %(message)s",
-        "time": "%(asctime)s.%(msecs)03d|%(name)-16s%(levelname)8s: %(message)s",
-        "precise": (
-            "%(asctime)s.%(msecs)03d"
-            + " (%(process)d/%(thread)d) "
-            + "%(pathname)s:%(lineno)d:%(funcName)s"
-            + ": "
-            + "%(levelname)s: %(message)s"
-        ),
-    }
-    tformats = {
-        "default": "%H:%M:%S",
-        "precise": "%Y-%m-%d %H:%M:%S",
-    }
-
-    def _init(self, *args, **kwargs):
-
-        logger_key = self.conf["logger_key"]
-        self.set_logger()
-
-        # Register logger into node_ctrl
-        self.node_ctrl.mixin_set(self.log, name=logger_key, shortcut=True)
-
-    def set_format(self, sformat=None, tformat=None):
-
-        sformat = sformat or self.conf["logger_sformat"]
-        tformat = tformat or self.conf["logger_tformat"]
-
-        _sformat = self.sformats.get(sformat, sformat)
-        _tformat = self.sformats.get(tformat, tformat)
-
-        ch = logging.StreamHandler()
-        formatter = logging.Formatter(_sformat)
-        ch.setFormatter(formatter)
-        # ch.setLevel(logging.DEBUG)
-
-        self.log.addHandler(ch)
-
-    def set_logger(self, conf_logger=None, attribute_name="log"):
-        """Set instance logger name or instance"""
-
-        logger_name = self.conf["logger_name"]
-        logger_prefix = self.conf["logger_prefix"]
-        if not logger_name:
-            logger_name = self.node_ctrl._obj.__class__.__name__
-            logger_name = self.ident
-        if not logger_prefix:
-            logger_prefix = __name__
-
-        logger_fqdn = f"{logger_prefix}.{logger_name}"
-
-        self.logger_name = logger_name
-        self.logger_prefix = logger_prefix
-        self.logger_fqdn = logger_fqdn
-
-        # Get logger
-        self.log = logging.getLogger(logger_fqdn)
-
-        # Set level
-        self.log.setLevel(logging.DEBUG)
-
-        self.set_format()
