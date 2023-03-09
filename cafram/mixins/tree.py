@@ -5,8 +5,8 @@ Tree mixins
 # Imports
 ################################################################
 
+import inspect
 import json
-import logging
 from typing import MutableSequence, MutableSet, MutableMapping
 
 from pprint import pprint, pformat
@@ -14,13 +14,13 @@ from pprint import pprint, pformat
 
 from .. import errors
 from ..utils import to_json, from_json, to_yaml, from_yaml
-from ..nodes import Node
+#from ..nodes import Node
+from ..nodes2 import Node
 from ..common import CaframMixin, CaframNode
 
 from .base import PayloadMixin, NodePayload, MapAttrMixin
 from .hier import HierParentMixin, HierChildrenMixin
 
-log = logging.getLogger(__name__)
 
 
 # Conf mixins (Composed classes)
@@ -34,7 +34,9 @@ class ConfMixinGroup(PayloadMixin, HierParentMixin):
 class ConfMixin(ConfMixinGroup):
     "Conf mixin that manage a basic serializable value"
 
-    name = "conf"
+    #name = "conf"
+    #key = "conf"
+    mixin_key = "conf"
 
     _schema = {
         # "$defs": {
@@ -46,10 +48,10 @@ class ConfMixin(ConfMixinGroup):
         "description": "PayloadMixin Configuration",
         "default": {},
         "properties": {
-            "name": {
-                "title": "Mixin name",
-                "description": "Name of the mixin. Does not keep alias if name is set to `None` or starting with a `.` (dot)",
-                "default": name,
+            "mixin_key": {
+                "title": "Mixin key",
+                "description": "Name of the mixin. Does not keep alias if key is set to `None` or starting with a `.` (dot)",
+                "default": mixin_key,
                 "oneOf": [
                     {
                         "type": "string",
@@ -62,9 +64,9 @@ class ConfMixin(ConfMixinGroup):
         },
     }
 
-    def _init(self, **kwargs):
 
-        super()._init(**kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         # Value check
         value = self.get_value()
@@ -155,46 +157,60 @@ class ConfDictMixin(_ConfContainerMixin):
         self._children = {}
 
         # Sanity checks
-        assert isinstance(value, dict), f"Got: {value}"
+        if not isinstance(value, dict):
+            msg = f"Got {type(value)} instead: {value}"
+            raise errors.DictExpected(msg)
 
         # Parse children
         children_conf = self.children
         children_map = {}
-        if children_conf is True:
-            log.info(f"Children configs is automatic")
+        if children_conf is False:
+            pass
+        elif children_conf is True:
+            self._log.info(f"Children configs is automatic")
             for child_key, child_value in value.items():
                 child_cls = map_node_class(child_value)
                 children_map[child_key] = child_cls
-                log.info(f"Child '{child_key}' config is {child_cls}")
+                self._log.info(f"Child '{child_key}' config is {child_cls}")
         elif children_conf is None:
-            log.info(f"Children configs is None")
+            self._log.info(f"Children configs is None")
             for child_key, child_value in value.items():
                 children_map[child_key] = None
-                log.info(f"Child '{child_key}' config is native {type(child_value)}")
-        elif children_conf is False:
-            pass
+                self._log.info(f"Child '{child_key}' config is native {type(child_value)}")
+        elif isinstance(children_conf, dict):
+            self._log.info(f"Children configs is Dict")
+            for child_key, child_cls in children_conf.items():
+                children_map[child_key] = child_cls
+                self._log.info(f"Child '{child_key}' config is mapped to {child_cls}")
         else:
-            msg = f"Invalid configuration for children: {children_conf}"
+            msg = f"Invalid configuration for Dict children: {children_conf}"
             raise errors.CaframException(msg)
 
         # Instanciate children
-        name_param = self.name_param
-        parent_param = self.parent_param
+        payload_param = self._param__payload
+        parent_param = self._param__parent
+        ident_param = self._param_ident
         for child_key, child_cls in children_map.items():
+
 
             child_value = value.get(child_key)
             if child_cls is None:
                 child = child_value
-                msg = f"Create child '{child_key}': {type(child_value).__name__}({child_value})"
-                log.info(msg)
+                msg = f"Create native child '{child_key}': {type(child_value).__name__}({child_value})"
+                self._log.info(msg)
                 # print (msg)
             else:
                 child_args = {
-                    name_param: child_value,
+                    ident_param: child_key,
+                    payload_param: child_value,
                     parent_param: self,
                 }
-                msg = f"Create child '{child_key}': {child_cls.__name__}({child_args})"
-                log.info(msg)
+
+                #logger_name = f"{self.node_ctrl._obj_logger_prefix}.{child_key}"
+                                
+                msg = f"Create Node child '{child_key}': {child_cls.__name__}"
+                self._log.info(msg)
+                #pprint (child_args)
                 # print (msg)
 
                 assert issubclass(child_cls, CaframNode)
@@ -224,42 +240,51 @@ class ConfListMixin(_ConfContainerMixin):
         self._children = []
 
         # Sanity checks
-        assert isinstance(value, list), f"Got: {value}"
+        if not isinstance(value, list):
+            msg = f"Got {type(value)} instead: {value}"
+            raise errors.ListExpected(msg)
 
         children_conf = self.children
-        if children_conf is True:
-
-            name_param = self.name_param
-            parent_param = self.parent_param
-
-            log.info(f"Children configs is automatic")
+        if children_conf is False:
+            pass
+        elif children_conf is None:
+            self._log.info(f"Children configs is None")
             for child_key, child_value in enumerate(value):
-                child_cls = map_node_class(child_value)
+                self.add_child(child_value)
+                self._log.info(f"Child '{child_key}' config is native {type(child_value)}")
+
+        elif children_conf:
+
+            name_param = self._param__payload
+            parent_param = self._param__parent
+
+            default_cls = children_conf if inspect.isclass(children_conf) else None
+
+            self._log.info(f"Children configs is automatic")
+            for child_key, child_value in enumerate(value):
+                
+                if default_cls is None:
+                    child_cls = map_node_class(child_value)
+                else:
+                    child_cls = default_cls
+                    
                 if child_cls is None:
                     child = child_value
                 else:
                     child_args = {
+                        "name": child_key,
                         name_param: child_value,
                         parent_param: self,
                     }
                     msg = f"Create child '{child_key}': {child_cls.__name__}({child_args})"
-                    log.info(msg)
-                    # print (msg)
+                    self._log.info(msg)
 
                     assert issubclass(child_cls, CaframNode)
                     child = child_cls(self, **child_args)
 
                 self.add_child(child_value)
-                log.info(f"Child '{child_key}' config is {child_cls}")
-        elif children_conf is None:
-            log.info(f"Children configs is None")
-            for child_key, child_value in enumerate(value):
-                # children_map[child_key] = None
-                self.add_child(child_value)
-                log.info(f"Child '{child_key}' config is native {type(child_value)}")
-        elif children_conf is False:
-            pass
-        else:
+                self._log.info(f"Child '{child_key}' config is {child_cls}")
+        else:            
             msg = f"Invalid configuration for children: {children_conf}"
             raise errors.CaframException(msg)
 

@@ -5,7 +5,8 @@ Tree mixins
 # Imports
 ################################################################
 
-from ..nodes import Node
+#from ..nodes import Node
+from ..nodes2 import Node
 
 from . import BaseMixin
 from .base import PayloadMixin, NodePayload
@@ -23,12 +24,7 @@ class HierParentMixin(HierMixinGroup):
     "Hier mixin that manage parent relationships"
 
     _parent = None
-    parent_param = "parent"
-
-    def _init(self, **kwargs):
-
-        super()._init(**kwargs)
-        self._parent = kwargs.get(self.parent_param, None) or self._parent
+    _param__parent = "parent"
 
     def get_parent(self, ctrl=True):
         "Return direct parent"
@@ -40,6 +36,12 @@ class HierParentMixin(HierMixinGroup):
                 return self._parent
 
         return None
+
+    # def get_parents2(self, select=None, level=-1, value=None):
+    #     "Return first parent that match criteria"
+    #     assert False, "TODO: Make tests"
+    #     value = value or HierParentMixin
+    #     pass
 
     def get_parents(self, ctrl=True, level=-1):
         "Return all parents"
@@ -74,19 +76,30 @@ class HierParentMixin(HierMixinGroup):
             return parents
 
 
+    def get_child_level(self):
+        "Return the node deepness from root node"
+        assert False, "TODO: Make tests"
+        parents = self.get_parents(ctrl=False, level=-1)
+        return len(parents)
+
+
+
+
+
 class HierChildrenMixin(HierMixinGroup):
     "Hier mixin that manage children relationships"
 
     # Overrides
     # -----------------
 
+    # This hold the children configuration
     children = {}
-    children_param = "children"
 
-    def _init(self, **kwargs):
+    # In which param to look the children conf
+    _param_children = "children"
 
-        super()._init(**kwargs)
-        self.children = kwargs.get(self.children_param, None) or self.children
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._parse_children()
 
     # Additional methods
@@ -105,7 +118,7 @@ class HierChildrenMixin(HierMixinGroup):
 
         if isinstance(children, dict):
             ret = {}
-            index = index or getattr(child, "name", None)
+            index = index or getattr(child, "mixin_key", None)
             assert index, "Index is required when children are dict"
             self._children[index] = child
 

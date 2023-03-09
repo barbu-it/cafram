@@ -6,21 +6,96 @@ import types
 import logging
 from pprint import pprint
 
-from ..nodes import Node
-from . import BaseMixin
+# from ..nodes import Node
+from ..lib import log_colors
+
+from ..nodes2 import Node
+from ..common import CaframObj
+from . import BaseMixin, LoadingOrder
 
 
-log = logging.getLogger(__name__)
+#log = logging.getLogger(__name__)
+
+
+# def add_positional_arg(func):
+#     def wrapper(*args, **kwargs):
+#         args = list(args)
+#         args.insert(1, 'extra_arg')
+#         return func(*args, **kwargs)
+#     return wrapper
+
+
 
 
 # Core Mixins
 ################################################################
 
+class IdentMixin(BaseMixin):
 
-class PayloadMixin(BaseMixin):
+    #key = "ident"
+    mixin_key = "ident"
 
-    name = "payload"
-    name_param = "payload"
+    # Config
+    ident = None
+    ident_suffix = None
+    ident_prefix = None
+
+    # Parameters
+    _param_ident = "ident"
+    _param_ident_suffix = "ident_suffix"
+    _param_ident_prefix = "ident_prefix"
+
+    def _get_name_target(self):
+        "Try to catch CaframObj reference for naming, fall back on current class"
+
+        target = self
+
+        obj = self.node_ctrl._obj
+        if issubclass(type(obj), CaframObj):    
+            target = obj
+
+        return target
+
+    def get_ident_name(self):
+        "Return the last part of the ident, including suffix"
+
+        ident = self.ident
+        if not ident:
+            target = self._get_name_target()
+            ident = target.get_name()
+
+        suffix = self.ident_suffix
+        if suffix:
+            ident += str(suffix)
+        return ident
+
+    def get_ident_prefix(self):
+        "Return the first part of the ident"
+
+        prefix = self.ident_prefix
+        if not prefix:
+            target = self._get_name_target()
+            prefix = target.get_prefix()
+        return prefix
+
+
+
+    def get_ident(self):
+        "Return the full ident"
+        return ".".join([self.get_ident_prefix(), self.get_ident_name()])
+        
+
+
+
+class PayloadMixin(IdentMixin):
+
+    #name = "payload"
+    mixin_key = "payload"
+    #name_param = "payload"
+
+
+    _param__payload = "payload"
+
     value_alias = "value"
 
     payload_schema = False
@@ -34,10 +109,10 @@ class PayloadMixin(BaseMixin):
         "description": "PayloadMixin Configuration",
         "default": {},
         "properties": {
-            "name": {
-                "title": "Mixin name",
+            "key": {
+                "title": "Mixin key",
                 "description": "Name of the mixin. Does not keep alias if name is set to `None` or starting with a `.` (dot)",
-                "default": name,
+                "default": mixin_key,
                 "oneOf": [
                     {
                         "type": "string",
@@ -47,11 +122,11 @@ class PayloadMixin(BaseMixin):
                     },
                 ],
             },
-            "name_param": {
-                "title": "Mixin name parameter",
-                "description": "Name of the parameter to load name from",
-                "default": name_param,
-            },
+            # "name_param": {
+            #     "title": "Mixin name parameter",
+            #     "description": "Name of the parameter to load name from",
+            #     "default": name_param,
+            # },
             "value_alias": {
                 "title": "Value alias name",
                 "description": "Name of the alias to retrieve value. Absent if set to None",
@@ -83,18 +158,20 @@ class PayloadMixin(BaseMixin):
         },
     }
 
-    def _init(self, **kwargs):
 
-        super()._init(**kwargs)
+    
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         self._value = None
-        self._payload = kwargs.get(self.name_param, None)
+        #self._payload = kwargs.get(self.name_param, None)
         self.set_value(self._payload)
         self._register_alias()
 
     def _register_alias(self):
         if self.value_alias:
-            self.node_ctrl.alias_register(self.value_alias, self.value)
+            self.node_ctrl.alias_register(self.value_alias, self.get_value())
 
     # Generic value handler
     # ---------------------
@@ -116,10 +193,12 @@ class PayloadMixin(BaseMixin):
 
     def set_value(self, value):
         "Set a value"
+
         conf = self.transform(value)
         conf = self.validate(conf)
         self._value = conf
         return self._value
+
 
     # Transformers/Validators
     # ---------------------
@@ -127,6 +206,7 @@ class PayloadMixin(BaseMixin):
     def transform(self, payload):
         "Transform payload before"
         return payload
+
 
     def validate(self, payload):
         "Validate config against json schema"
@@ -153,9 +233,16 @@ class NodePayload(Node):
 ################################################################
 
 
-class LoggerMixin(BaseMixin):
+class LoggerMixin(IdentMixin):
 
-    name = "logger"
+    #name = "logger"
+    #key = "logger"
+
+    mixin_order = LoadingOrder.PRE
+    mixin_key = "logger"
+
+    _logger = None
+    _param__logger = "logger"
 
     # Logger instance
     log = None
@@ -174,6 +261,10 @@ class LoggerMixin(BaseMixin):
 
     # FQDN of logger, generated from log_name and log_prefix
     log_fqdn = None
+
+    # # If true, logging 
+    # log_node = True
+    log_colors = True
 
     # Define logging format
     log_sformat = "default"
@@ -198,14 +289,16 @@ class LoggerMixin(BaseMixin):
         "precise": "%Y-%m-%d %H:%M:%S",
     }
 
-    def _init(self, **kwargs):
 
-        # Fetch from params
-        self.log = kwargs.get("logger", None) or self.log
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+ 
 
         # Init logger if not provided in params
-        if not self.log:
+        if not self._logger:
             self.set_logger()
+        else:
+            self.log = self._logger
 
         # Customize Logger
         self.set_format()
@@ -217,39 +310,17 @@ class LoggerMixin(BaseMixin):
     def set_logger(self):
         """Set instance logger name or instance"""
 
-        log_fqdn = self.get_fqdn()
-        self.log = logging.getLogger(log_fqdn)
+        name = self.get_logger_fqdn()
+        self.log = logging.getLogger(name)
 
-    def get_fqdn(self, name=None, prefix=None):
+        # Disable log propagation
+        self.log.propagate = False
+
+    def get_logger_fqdn(self, name=None, prefix=None):
         "Return the logger FQDN"
 
-        # Check fqdn TODO
-        if self.log:
-            assert False, "Not supported yet"
+        return self.get_ident()
 
-        # Return fqdn first
-        if self.log_fqdn:
-            return self.log_fqdn
-
-        # Process logger FQDN
-        log_name = name or self.log_name
-        log_prefix = name or self.log_prefix
-
-        if not log_name or not log_prefix:
-
-            if self.node_ctrl._obj:
-                target = self.node_ctrl._obj
-            else:
-                target = self
-            target = type(target)
-
-            if not log_prefix:
-                log_prefix = target.__module__ + "."
-
-            if not log_name:
-                log_name = target.__name__
-
-        return f"{log_prefix}{log_name}"
 
     def set_level(self, level=None):
         "Set logger level"
@@ -262,7 +333,7 @@ class LoggerMixin(BaseMixin):
             self.log.setLevel(log_level)
 
     def set_format(self, sformat=None, tformat=None):
-        "Change logger format"
+        "Change logger format"  
 
         sformat = sformat or self.log_sformat
         tformat = tformat or self.log_tformat
@@ -270,13 +341,32 @@ class LoggerMixin(BaseMixin):
         _sformat = self.log_sformats[sformat]
         _tformat = self.log_sformats[tformat]
 
-        ch = logging.StreamHandler()
+
+
         formatter = logging.Formatter(_sformat)
+        if self.log_colors:
+            formatter = log_colors.ColorizedArgsFormatter(_sformat)
+
+        # Get current handle
+        if len(self.log.handlers) > 0:
+            #pprint (self.log.__dict__)
+            ch = self.log.handlers[0]
+            self.log.removeHandler(ch)
+        else:
+            ch = logging.StreamHandler()
+
         ch.setFormatter(formatter)
         # ch.setLevel(logging.DEBUG)
 
+        #self.log.handlers[0] = ch
+        #self.log.handlers.insert(0, ch)
         self.log.addHandler(ch)
 
+    def traceback(self):
+        "Print traceback to stdout"
+        traceback.print_stack()
+
+        
 
 class MapAttrMixin(BaseMixin):
 
@@ -295,7 +385,9 @@ class MapAttrMixin(BaseMixin):
     # Set a function to forward unknown attr, can be Tue/False or a function
     attr_forward = True
 
-    def _init(self, *args, **kwargs):
+    #def _init(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         attr_map = self.attr_map
 
@@ -318,6 +410,7 @@ class MapAttrMixin(BaseMixin):
                 return True, this.mixin_map[name]
             return False, None
 
+        # The methods has changed !
         self.node_ctrl.mixin_hooks("__getattr__", func)
 
         # Patch object __getattr__

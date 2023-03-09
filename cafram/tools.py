@@ -2,7 +2,7 @@
 Cafram tools
 """
 
-from .nodes import Node
+from .nodes2 import Node
 from .mixins import BaseMixin
 
 

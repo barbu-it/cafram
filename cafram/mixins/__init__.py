@@ -2,22 +2,31 @@
 Base Mixin Class definition
 """
 
-import logging
 import textwrap
 import inspect
+from enum import IntEnum
 
 from pprint import pprint, pformat
 
 from .. import errors
-from ..common import CaframMixin, CaframCtrl
+from ..lib.utils import truncate
+from ..common import CaframObj, CaframMixin, CaframCtrl
 from ..utils import SPrint
-
-
-log = logging.getLogger(__name__)
 
 
 # Base mixins
 ################################################################
+
+
+
+class LoadingOrder(IntEnum):
+    "Helper class to determine mixin loading order"
+
+    FIRST = 10
+    PRE = 30
+    NORMAL = 50
+    POST = 70
+    LAST = 90
 
 
 class BaseMixin(CaframMixin):
@@ -31,7 +40,11 @@ class BaseMixin(CaframMixin):
 
     # If key is None, register as ephemeral mixin, if string as persistant.
     mixin = None
-    name = None
+    #key = None
+    mixin_order = LoadingOrder.NORMAL
+    mixin_key = None
+
+    name_from_obj = False
 
     _schema = {
         # "$defs": {
@@ -43,10 +56,10 @@ class BaseMixin(CaframMixin):
         "description": "PayloadMixin Configuration",
         "default": {},
         "properties": {
-            "name": {
-                "title": "Mixin name",
+            "mixin_key": {
+                "title": "Mixin key",
                 "description": "Name of the mixin. Does not keep alias if name is set to `None` or starting with a `.` (dot)",
-                "default": name,
+                "default": mixin_key,
                 "oneOf": [
                     {
                         "type": "string",
@@ -66,22 +79,165 @@ class BaseMixin(CaframMixin):
 
     def __init__(self, node_ctrl, mixin_conf=None, **kwargs):
 
-        # Update config from params
+        # super().__init__(**kwargs)
+
+        self.node_ctrl = node_ctrl
+        self.mixin = self.mixin or type(self) # TODO: Is it relevant ????
+        self._init_logger(prefix=self.node_ctrl._obj_logger_prefix)
+
+
+        # # Update name
+        # self.name_prefix = None
+        # if self.name_from_obj:
+        #     obj = self.node_ctrl._obj
+        #     if issubclass(type(obj), CaframObj):
+        #         self.name_prefix = obj.get_fqn()
+
+
+
+
+        # Update mixin requested config 
         mixin_conf = mixin_conf or {}
         for key, value in mixin_conf.items():
+
+            # Check for bound methods
+            if callable(value) and hasattr(value, '__self__'):
+                cls = value.__self__.__class__
+
+                # If not a CaframMixin class, add mixin as second param
+                if not issubclass(cls, CaframMixin):
+                    func = value
+                    def wrapper(*args, **kwargs):
+                        return func(self, *args, **kwargs)
+                    self._log.info (f"Overriden method is now available '{key}': {value}")
+                    value =  wrapper
+
             if hasattr(self, key):
+                self._log.debug(f"Update mixin from config '{key}' with: {truncate(value)}")
                 setattr(self, key, value)
 
         # Save arguments in instance
-        self.mixin = self.mixin or type(self)
-        self.node_ctrl = node_ctrl
         self.mixin_conf = mixin_conf
 
-        # Mixin initialization
-        self._init(**kwargs)
+        # Fetch kwargs parameters for live parameters (_param_)
+        for attr in dir(self):
+            
+            if not attr.startswith("_param_"):
+                continue
+            
+            attr_name = attr.replace("_param_", "")
+            attr_param = getattr(self, attr)
+            #print ("SCAN ", attr_param)
+            if attr_param and attr_param in kwargs:
+                attr_value = kwargs.get(attr_param)
+                self._log.debug(f"Update mixin from param '{attr_name}' with: {truncate(attr_value)}")
+                setattr(self, attr_name, attr_value)
 
-    def _init(self, **kwargs):
-        pass
+
+        # # TEMP, deprecation process
+        # if hasattr(self, "_init"):
+        #     mro = self.get_mro()
+        #     cls = None
+        #     for cls in mro:
+        #         if hasattr(cls, '_init'):
+        #             break
+        #     assert False, f"_init is deprecated on: {self.get_fqn()}, problematic classes: cls"
+
+
+    # Override CaframObj methods
+    # -------------------
+
+    # def _get_name_target(self):
+    #     "Try to catch CaframObj reference for naming, fall back on current class"
+
+    #     target = self
+
+    #     obj = self.node_ctrl._obj
+    #     if issubclass(type(obj), CaframObj):    
+    #         target = obj
+
+    #     return target
+
+    # def get_name(self):
+    #     "Get name from CaframObj first or get back to class name"
+    #     target = self._get_name_target()        
+
+    #     name = target.name or target.__class__.__name__
+    #     inst = target.name_inst
+    #     if inst:
+    #         name += str(inst)
+    #     return name
+
+
+
+    # def get_fqn(self):
+    #     "Get FQN from CaframObj first or get back to class name"
+
+    #     # TODO: Transform into 
+    #     name_prefix = self.name_prefix
+
+    #     if name_prefix:
+    #         obj = self.node_ctrl._obj
+    #         if issubclass(type(obj), CaframObj):
+    #             print ("FQN FROM OBJ")  
+    #             return obj.get_fqn()
+
+    #     print ("FQN FROM MIXIN")
+    #     return super().get_fqn()
+
+
+    # def get_fqn__2(self):
+    #     "Get FQN from CaframObj first or get back to class name"
+
+    #     target = self._get_name_target()
+
+    #     log_name = self.get_name()
+    #     log_prefix = self.name_prefix
+
+    #     if not log_name or not log_prefix:
+
+    #         if self.node_ctrl._obj:
+    #             target = self.node_ctrl._obj
+    #         else:
+    #             target = self
+    #         target = type(target)
+
+    #         if not log_prefix:
+    #             log_prefix = target.__module__ + "."
+
+    #         if not log_name:
+    #             log_name = target.__name__
+
+    #     return f"{log_prefix}{log_name}"
+
+
+
+
+    # Generic
+    # -------------------
+
+
+
+
+    # v1
+    # def __getattribute__(self, name):
+        
+    #     attr = super().__getattribute__(name)
+
+    #     if callable(attr):
+    #         try:
+    #             cls = attr.__self__.__class__
+    #         except AttributeError:
+    #             cls = None
+
+    #         if cls and not issubclass(cls, CaframMixin):
+    #             #print ("====> CATCH ALL", name, cls)
+    #             #pprint (attr)
+    #             def wrapper(*args, **kwargs):
+    #                 return attr(self, *args, **kwargs)
+    #             return wrapper
+    #     #else:
+    #     return attr
 
     # Troubleshooting
     # -------------------
@@ -231,7 +387,8 @@ class BaseMixin(CaframMixin):
         "Build json schema from python mro"
 
         # Fetch schema from parent classes
-        bases = inspect.getmro(self.__class__)
+        bases = self.get_mro()
+        #bases = inspect.getmro(self.__class__)
         props = {}
         for base in reversed(bases):
             schema = getattr(base, "_schema", None)
