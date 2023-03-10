@@ -18,5 +18,6 @@ class AttributeError(CaframException, AttributeError):
 class DictExpected(CaframException):
     "Raised when a dict was expected"
 
+
 class ListExpected(CaframException):
     "Raised when a list was expected"

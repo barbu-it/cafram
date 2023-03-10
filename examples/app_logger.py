@@ -6,17 +6,15 @@ from cafram.mixins.base import LoggerMixin
 from cafram.nodes2 import Node
 
 
-
-
-
 # Only relevant for entrypoints, configure root logger, get log of
 # all sublibraries because it configure root logger
 logging.basicConfig(level=logging.INFO)
 
 
 log = logging.getLogger()
-#log = logging.getLogger(__name__)
+# log = logging.getLogger(__name__)
 log.setLevel("INFO")
+
 
 class MyApp(Node):
 
@@ -41,41 +39,40 @@ class MyApp(Node):
 
     def test_logging(self):
 
-        print ("=> Get info")
-        print (self.log.name)
+        print("=> Get info")
+        print(self.log.name)
 
         print("=> Change log level on road")
-        print ("DEBUG")
+        print("DEBUG")
         self.logger.set_level("DEBUG")
-        self.log_demo()        
+        self.log_demo()
 
-        print ("INFO")
+        print("INFO")
         self.logger.set_level("INFO")
-        self.log_demo()      
+        self.log_demo()
 
-        print ("ERROR")
+        print("ERROR")
         self.logger.set_level("ERROR")
-        self.log_demo()      
-
+        self.log_demo()
 
         # Change log format on road
         print("\n=> Change log format on road")
-        print ("STRUCT")
+        print("STRUCT")
         self.logger.set_format("struct")
-        self.log_demo()        
+        self.log_demo()
 
-        print ("TIME")
+        print("TIME")
         self.logger.set_format("time")
         self.log_demo()
 
-        print ("PRECISE")
+        print("PRECISE")
         self.logger.set_format("precise")
         self.log_demo()
 
         # Regular still works
         log.warning("Regular logger Warning message")
 
-        print ("End of demo\n")
+        print("End of demo\n")
 
 
 # Instanciate app

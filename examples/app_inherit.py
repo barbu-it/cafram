@@ -7,51 +7,42 @@ from cafram.mixins.tree import ConfDictMixin, ConfListMixin, NodeConfDict, NodeC
 from cafram.nodes2 import Node
 
 
-
-
 app_config = {
-        "shared_dict": {
-            "enabled": True,
-            "desc": "This is a description",
-            "remote": "http://gitlab.com/",
-            "branches": [
-                    "main"
-                ],
-            "var_files": [
-                "first.env",
-                "second.env",
-            ],
-        },
-        "repos": [
-            {
-                "name": "my_repo1.git",
-                "nested1": {
-                    "nested2": {
-                        "nested3": {},
-                    },
+    "shared_dict": {
+        "enabled": True,
+        "desc": "This is a description",
+        "remote": "http://gitlab.com/",
+        "branches": ["main"],
+        "var_files": [
+            "first.env",
+            "second.env",
+        ],
+    },
+    "repos": [
+        {
+            "name": "my_repo1.git",
+            "nested1": {
+                "nested2": {
+                    "nested3": {},
                 },
             },
-            {
-                "name": "my_repo2.git",
-                "branches": [
-                    "main",
-                    "develop"
-                ],
-                "enabled": False,
-            },
-            # NOT IMPLEMENTED YET"my_repo3.git",
-        ],
-           
-    }
+        },
+        {
+            "name": "my_repo2.git",
+            "branches": ["main", "develop"],
+            "enabled": False,
+        },
+        # NOT IMPLEMENTED YET"my_repo3.git",
+    ],
+}
 
 
 class Repo(NodeConfDict):
 
     _node_conf = [
-
         {
             "mixin": ConfDictMixin,
-            #"children": Repo,
+            # "children": Repo,
         },
     ]
 
@@ -68,7 +59,6 @@ class Repo(NodeConfDict):
 class Repos(NodeConfList):
 
     _node_conf = [
-
         {
             "mixin": ConfListMixin,
             "children": Repo,
@@ -79,7 +69,8 @@ class Repos(NodeConfList):
         return self.conf.value
 
     def names(self):
-        return [ repo["name"] for repo in self.conf.value]
+        return [repo["name"] for repo in self.conf.value]
+
 
 class MyApp(Node):
 
@@ -91,7 +82,7 @@ class MyApp(Node):
             "mixin": ConfDictMixin,
             "children": {
                 "repos": Repos,
-            }
+            },
         },
     ]
 
@@ -121,7 +112,7 @@ app = MyApp(payload=app_config)
 # app.dump()
 
 ret = app.repos.list()
-pprint (ret)
+pprint(ret)
 
 ret = app.repos.names()
-pprint (ret)
+pprint(ret)

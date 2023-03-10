@@ -34,7 +34,6 @@ class Node(CaframNode):
     # _node
     # children_create ?
 
-    
     _node_conf = {
         # "KEY": {
         #     "mixin": "MyMixin",
@@ -42,40 +41,35 @@ class Node(CaframNode):
         # }
     }
 
-
     # Set a string for logger name prefix, if None, detected automatically
-    #_node_logger_prefix = None
+    # _node_logger_prefix = None
 
     # By default, cafram logs are not visible, because logs are below 'cafram2'.
     # To show cafram logs, set this to True.
     # False: Set logger_prefix to cafram.<Obj>
-    # True: Set logger_prefix to your/this Node name Node.<Obj> 
-    #_node_logger_integrate = False
-    #_node_logger_integrate = True
-    
-    
+    # True: Set logger_prefix to your/this Node name Node.<Obj>
+    # _node_logger_integrate = False
+    # _node_logger_integrate = True
 
     def __init__(self, node_conf=None, *args, **kwargs):
         """
         Create a new Node object.
         """
 
-
         # logger_prefix = self._node_logger_prefix
         # if not logger_prefix:
         #     logger_prefix = self.__class__.__name__ if self._node_logger_integrate else None
 
-
         NodeCtrl(
             node_obj=self,
-            #node_conf=node_conf or self._node_conf,
-            node_attr="_node", 
-            #node_logger_prefix=logger_prefix,
-            **kwargs)
+            # node_conf=node_conf or self._node_conf,
+            node_attr="_node",
+            # node_logger_prefix=logger_prefix,
+            **kwargs
+        )
 
         # Instanciate class
         self._init(*args, **kwargs)
-
 
     def _init(self, *args, **kwargs):
         """
@@ -83,16 +77,13 @@ class Node(CaframNode):
         """
         pass
 
-
     def __getitem__(self, name):
         "Handle dict notation"
         return self._node.mixin_get(name)
 
-
-
     def __getattr__(self, name):
         """Dunder to foward all unknown attributes to the NodeCtrl instance"""
-        
+
         return self._node.mixin_get(name)
 
         # if "_node" in self.__dict__:
@@ -100,7 +91,6 @@ class Node(CaframNode):
 
         # msg = f"No such node attribute '{name}' in {self}"
         # raise errors.AttributeError(msg)
-
 
         # # if name in self._node.__dict__:
         # #     return self._node.__dict__[name]

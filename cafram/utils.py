@@ -209,8 +209,6 @@ def get_logger(
 # =====================================================================
 
 
-
-
 def merge_dicts(dict1, dict2):
     """Given two dictionaries, merge them into a new dict as a shallow copy.
 

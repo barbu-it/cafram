@@ -19,7 +19,6 @@ from ..utils import SPrint
 ################################################################
 
 
-
 class LoadingOrder(IntEnum):
     "Helper class to determine mixin loading order"
 
@@ -41,11 +40,11 @@ class BaseMixin(CaframMixin):
 
     # If key is None, register as ephemeral mixin, if string as persistant.
     mixin = None
-    #key = None
+    # key = None
     mixin_order = LoadingOrder.NORMAL
     mixin_key = None
 
-    #name_from_obj = False
+    # name_from_obj = False
 
     _schema = {
         # "$defs": {
@@ -83,28 +82,33 @@ class BaseMixin(CaframMixin):
         # super().__init__(**kwargs)
 
         self.node_ctrl = node_ctrl
-        self.mixin = self.mixin or type(self) # TODO: Is it relevant ????
+        self.mixin = self.mixin or type(self)  # TODO: Is it relevant ????
         self._init_logger(prefix=self.node_ctrl._obj_logger_prefix)
 
-
-        # Update mixin requested config 
+        # Update mixin requested config
         mixin_conf = mixin_conf or {}
         for key, value in mixin_conf.items():
 
             # Check for bound methods
-            if callable(value) and hasattr(value, '__self__'):
+            if callable(value) and hasattr(value, "__self__"):
                 cls = value.__self__.__class__
 
                 # If not a CaframMixin class, add mixin as second param
                 if not issubclass(cls, CaframMixin):
                     func = value
+
                     def wrapper(*args, **kwargs):
                         return func(self, *args, **kwargs)
-                    self._log.info (f"Overriden method is now available '{key}': {value}")
-                    value =  wrapper
+
+                    self._log.info(
+                        f"Overriden method is now available '{key}': {value}"
+                    )
+                    value = wrapper
 
             if hasattr(self, key):
-                self._log.debug(f"Update mixin from config '{key}' with: {truncate(value)}")
+                self._log.debug(
+                    f"Update mixin from config '{key}' with: {truncate(value)}"
+                )
                 setattr(self, key, value)
 
         # Save arguments in instance
@@ -112,18 +116,19 @@ class BaseMixin(CaframMixin):
 
         # Fetch kwargs parameters for live parameters (_param_)
         for attr in dir(self):
-            
+
             if not attr.startswith("_param_"):
                 continue
-            
+
             attr_name = attr.replace("_param_", "")
             attr_param = getattr(self, attr)
-            #print ("SCAN ", attr_param)
+            # print ("SCAN ", attr_param)
             if attr_param and attr_param in kwargs:
                 attr_value = kwargs.get(attr_param)
-                self._log.debug(f"Update mixin from param '{attr_name}' with: {truncate(attr_value)}")
+                self._log.debug(
+                    f"Update mixin from param '{attr_name}' with: {truncate(attr_value)}"
+                )
                 setattr(self, attr_name, attr_value)
-
 
     # Troubleshooting
     # -------------------
@@ -211,7 +216,7 @@ class BaseMixin(CaframMixin):
         for cls in reversed(bases):
             print(f"    - {cls.__module__}.{cls.__name__}")
 
-        pprint (data)
+        pprint(data)
         if "params" in data:
             sec = data["params"]
             print("\n  Parameters:")
@@ -237,14 +242,12 @@ class BaseMixin(CaframMixin):
                 head_doc = textwrap.indent(val.__doc__ or "<Missing>", "      ")
                 print(head_doc)
 
-
         if "private_var" in data:
             # TODO: Show up _param vars
             sec = data["private_var"]
             print("\n  Private vars:")
             for key, val in sec.items():
                 print(f"    {key}: {val}")
-
 
         if len(other) > 0:
             sec = other
@@ -284,7 +287,7 @@ class BaseMixin(CaframMixin):
 
         # Fetch schema from parent classes
         bases = self.get_mro()
-        #bases = inspect.getmro(self.__class__)
+        # bases = inspect.getmro(self.__class__)
         props = {}
         for base in reversed(bases):
             schema = getattr(base, "_schema", None)

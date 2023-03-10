@@ -17,7 +17,7 @@ from .. import errors
 from . import BaseMixin, LoadingOrder
 
 
-#log = logging.getLogger(__name__)
+# log = logging.getLogger(__name__)
 
 
 # def add_positional_arg(func):
@@ -28,14 +28,13 @@ from . import BaseMixin, LoadingOrder
 #     return wrapper
 
 
-
-
 # Core Mixins
 ################################################################
 
+
 class IdentMixin(BaseMixin):
 
-    #key = "ident"
+    # key = "ident"
     mixin_key = "ident"
 
     # Config
@@ -54,7 +53,7 @@ class IdentMixin(BaseMixin):
         target = self
 
         obj = self.node_ctrl._obj
-        if issubclass(type(obj), CaframObj):    
+        if issubclass(type(obj), CaframObj):
             target = obj
 
         return target
@@ -81,13 +80,9 @@ class IdentMixin(BaseMixin):
             prefix = target.get_prefix()
         return prefix
 
-
-
     def get_ident(self):
         "Return the full ident"
         return ".".join([self.get_ident_prefix(), self.get_ident_name()])
-        
-
 
 
 class PayloadMixin(IdentMixin):
@@ -160,9 +155,6 @@ class PayloadMixin(IdentMixin):
         },
     }
 
-
-    
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -201,7 +193,6 @@ class PayloadMixin(IdentMixin):
         self._value = conf
         return self._value
 
-
     # Transformers/Validators
     # ---------------------
 
@@ -209,11 +200,9 @@ class PayloadMixin(IdentMixin):
         "Update defaults"
         return payload or copy.copy(self.default)
 
-
     def transform(self, payload):
         "Transform payload before"
         return payload
-
 
     def validate(self, payload):
         "Validate config against json schema"
@@ -242,8 +231,8 @@ class NodePayload(Node):
 
 class LoggerMixin(IdentMixin):
 
-    #name = "logger"
-    #key = "logger"
+    # name = "logger"
+    # key = "logger"
 
     mixin_order = LoadingOrder.PRE
     mixin_key = "logger"
@@ -269,7 +258,7 @@ class LoggerMixin(IdentMixin):
     # FQDN of logger, generated from log_name and log_prefix
     log_fqdn = None
 
-    # # If true, logging 
+    # # If true, logging
     # log_node = True
     log_colors = True
 
@@ -296,10 +285,8 @@ class LoggerMixin(IdentMixin):
         "precise": "%Y-%m-%d %H:%M:%S",
     }
 
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
- 
 
         # Init logger if not provided in params
         if not self._logger:
@@ -328,7 +315,6 @@ class LoggerMixin(IdentMixin):
 
         return self.get_ident()
 
-
     def set_level(self, level=None):
         "Set logger level"
 
@@ -340,7 +326,7 @@ class LoggerMixin(IdentMixin):
             self.log.setLevel(log_level)
 
     def set_format(self, sformat=None, tformat=None):
-        "Change logger format"  
+        "Change logger format"
 
         sformat = sformat or self.log_sformat
         tformat = tformat or self.log_tformat
@@ -348,15 +334,13 @@ class LoggerMixin(IdentMixin):
         _sformat = self.log_sformats[sformat]
         _tformat = self.log_sformats[tformat]
 
-
-
         formatter = logging.Formatter(_sformat)
         if self.log_colors:
             formatter = log_colors.ColorizedArgsFormatter(_sformat)
 
         # Get current handle
         if len(self.log.handlers) > 0:
-            #pprint (self.log.__dict__)
+            # pprint (self.log.__dict__)
             ch = self.log.handlers[0]
             self.log.removeHandler(ch)
         else:
@@ -365,15 +349,14 @@ class LoggerMixin(IdentMixin):
         ch.setFormatter(formatter)
         # ch.setLevel(logging.DEBUG)
 
-        #self.log.handlers[0] = ch
-        #self.log.handlers.insert(0, ch)
+        # self.log.handlers[0] = ch
+        # self.log.handlers.insert(0, ch)
         self.log.addHandler(ch)
 
     def traceback(self):
         "Print traceback to stdout"
         traceback.print_stack()
 
-        
 
 class MapAttrMixin(BaseMixin):
 
@@ -392,7 +375,7 @@ class MapAttrMixin(BaseMixin):
     # Set a function to forward unknown attr, can be Tue/False or a function
     attr_forward = True
 
-    #def _init(self, *args, **kwargs):
+    # def _init(self, *args, **kwargs):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

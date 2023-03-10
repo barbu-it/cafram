@@ -14,10 +14,11 @@ from cafram.ctrl2 import NodeCtrl
 
 from cafram.mixins import BaseMixin
 from cafram.mixins.base import LoggerMixin, MapAttrMixin
+
 # from cafram.mixins.tree import PayloadMixin, DictConfMixin, ListConfMixin, SimpleConfMixin #, HierMixin
 
 
-#from cafram.mixins.tree import  _ContainerMixin
+# from cafram.mixins.tree import  _ContainerMixin
 
 from cafram.nodes2 import Node, Node
 from cafram.mixins.base import PayloadMixin
@@ -31,18 +32,17 @@ from cafram.mixins.tree import ConfMixin, ConfDictMixin, ConfListMixin
 
 
 EX_PAYLOAD1 = {
-        "ex_val": "Hello World!",
-        "ex_dict": {
-            "ex_key1": "This is a string",
-            "ex_list1": [
-                "ex_bool1=True",
-            ],
-            "ex_dict1": {
-                "ex_bool2": True,
-            },       
-        }
-    }
-
+    "ex_val": "Hello World!",
+    "ex_dict": {
+        "ex_key1": "This is a string",
+        "ex_list1": [
+            "ex_bool1=True",
+        ],
+        "ex_dict1": {
+            "ex_bool2": True,
+        },
+    },
+}
 
 
 # Test Bases/Units
@@ -61,7 +61,6 @@ def test_node_empty(tester=None):
     assert isinstance(tester._node._obj_has_attr, bool)
 
 
-
 # Test Payload
 # ------------------------
 
@@ -73,7 +72,7 @@ def run_payload_base(tester, payload):
     # Test mixin methods
     ret = tester._node.conf.get_value()
     assert ret == payload
-    
+
     # Test mixin methods
     ret = tester._node.conf.set_value("123")
     assert ret == "123"
@@ -86,7 +85,7 @@ def run_payload_base(tester, payload):
 
 def test_node_payload(tester=None, payload=None):
 
-    payload=payload or EX_PAYLOAD1
+    payload = payload or EX_PAYLOAD1
     # node_conf = [
     #     {
     #         "mixin": PayloadMixin,
@@ -104,13 +103,13 @@ def test_node_payload(tester=None, payload=None):
 
     # Run new tests
     # --------------
-    #pprint (tester._node.__dict__)
+    # pprint (tester._node.__dict__)
 
     # Run previous tests
     test_node_empty(tester=tester)
 
     # Run partial tests
-    #run_payload_base(tester, payload)
+    # run_payload_base(tester, payload)
 
     # Test alias access
     assert tester.conf.value == payload
@@ -123,13 +122,12 @@ def test_node_payload(tester=None, payload=None):
 #         {
 #             "mixin": _ContainerMixin,
 #         },
-        
+
 #     ]
 #     tester = tester or Node(node_conf=node_conf, payload=payload)
 
 #     # Test alias access
 #     assert tester._node.value == payload
-
 
 
 # Test ConfMixin
@@ -138,12 +136,12 @@ def test_node_payload(tester=None, payload=None):
 
 def test_node_conf(tester=None):
 
-    payload=EX_PAYLOAD1
+    payload = EX_PAYLOAD1
     # node_conf = [
     #     {
     #         "mixin": ConfMixin,
     #     },
-        
+
     # ]
 
     class TestClass(Node):
@@ -162,7 +160,7 @@ def test_node_conf(tester=None):
     # except errors.AttributeError:
     #     pass
 
-    #pprint (tester._node.__dict__)
+    # pprint (tester._node.__dict__)
 
     # Test json deserializer/serializer
     val1 = tester._node.conf.get_value()
@@ -173,18 +171,15 @@ def test_node_conf(tester=None):
     assert val1 == val2
 
 
-
-
 # Test NodeDict Children
 # ------------------------
-
 
 
 def test_node_dict_children_false(tester=None):
     "Test when children=False, disable aliases and disable containers"
 
     # When children = True
-    payload=EX_PAYLOAD1
+    payload = EX_PAYLOAD1
 
     class TestClass(Node):
         _node_conf = [
@@ -193,6 +188,7 @@ def test_node_dict_children_false(tester=None):
                 "children": False,
             },
         ]
+
     tester = tester or TestClass(payload=payload)
 
     # tester.dump()
@@ -200,17 +196,17 @@ def test_node_dict_children_false(tester=None):
     # print ("UUUUUUUUUUUUUU")
     # tester.ex_dict.dump()
 
-    # Generic mixin API works    
+    # Generic mixin API works
     assert tester.conf.value == payload
     assert tester.value == payload
 
     # Generic aliases works
-    #pprint (tester._node.__dict__)
-    #assert tester.ex_dict == payload["ex_dict"]
+    # pprint (tester._node.__dict__)
+    # assert tester.ex_dict == payload["ex_dict"]
 
     # Mixins/aliases are not filled with dict keys
     ret = tester._node.mixin_list(mixin=True, shortcuts=True)
-    assert set(ret) == set(["conf", "value"]) 
+    assert set(ret) == set(["conf", "value"])
 
     try:
         ret = tester.ex_dict.value
@@ -225,13 +221,13 @@ def test_node_dict_children_false(tester=None):
 
     # Test children count
     assert len(tester.conf.get_children()) == 0
-   
+
 
 def test_node_dict_children_none(tester=None):
     "Test when children=None, enable alias, disable containers"
 
     # When children = None
-    payload=EX_PAYLOAD1
+    payload = EX_PAYLOAD1
 
     class TestClass(Node):
         _node_conf = [
@@ -240,8 +236,8 @@ def test_node_dict_children_none(tester=None):
                 "children": None,
             },
         ]
-    tester = tester or TestClass(payload=payload)
 
+    tester = tester or TestClass(payload=payload)
 
     # Generic mixin API works
     assert tester.conf.value == payload
@@ -270,8 +266,8 @@ def test_node_dict_children_true(tester=None):
     "Test when children=True, enable alias, enable containers and children"
 
     # When children = True
-    payload=EX_PAYLOAD1
-    
+    payload = EX_PAYLOAD1
+
     class TestClass(Node):
         _node_conf = [
             {
@@ -279,6 +275,7 @@ def test_node_dict_children_true(tester=None):
                 "children": True,
             },
         ]
+
     tester = tester or TestClass(payload=payload)
 
     # tester.dump()
@@ -286,7 +283,7 @@ def test_node_dict_children_true(tester=None):
     # print ("UUUUUUUUUUUUUU")
     # tester.ex_dict.dump()
 
-    # Generic mixin API works    
+    # Generic mixin API works
     assert tester.conf.value == payload
     assert tester.value == payload
 
@@ -298,22 +295,20 @@ def test_node_dict_children_true(tester=None):
     assert tester.ex_dict.ex_key1 == payload["ex_dict"]["ex_key1"]
 
     # Dict and lists are now containers
-   # assert tester.ex_dict.ex_list1 == payload["ex_dict"]["ex_list1"], "To be fixed when conflist is implemetned"
-    
+    # assert tester.ex_dict.ex_list1 == payload["ex_dict"]["ex_list1"], "To be fixed when conflist is implemetned"
+
     assert tester.ex_dict.ex_list1 != payload["ex_dict"]["ex_list1"]
     assert tester.ex_dict.ex_list1.value == payload["ex_dict"]["ex_list1"]
-    
+
     assert tester.ex_dict.ex_dict1 != payload["ex_dict"]["ex_dict1"]
     assert tester.ex_dict.ex_dict1.value == payload["ex_dict"]["ex_dict1"]
-
-    
 
 
 def test_node_dict_get_parents(tester=None):
     "Test when children=True, enable alias, enable containers and children"
 
     # When children = True
-    payload=EX_PAYLOAD1
+    payload = EX_PAYLOAD1
 
     class TestClass(Node):
         _node_conf = [
@@ -322,11 +317,11 @@ def test_node_dict_get_parents(tester=None):
                 "children": True,
             },
         ]
+
     tester = tester or TestClass(payload=payload)
 
-
     ret_test = tester.ex_dict.ex_dict1.conf.get_parents()
-    #pprint (ret_test)
+    # pprint (ret_test)
 
     # Test get_parent and get_parents
     ret1 = tester.ex_dict.ex_dict1.conf.get_parents(1)[0]
@@ -334,16 +329,24 @@ def test_node_dict_get_parents(tester=None):
     ret3 = tester.ex_dict.ex_dict1.conf.get_parents(1)[-1]
 
     # Ensure relationships
-    assert ret1 == tester.ex_dict.ex_dict1.conf.get_parent(), "Ensure first element of get_parents is get_parent"
-    assert ret1 == ret2[0], "Ensure first element is the element returned by get_parent()"
+    assert (
+        ret1 == tester.ex_dict.ex_dict1.conf.get_parent()
+    ), "Ensure first element of get_parents is get_parent"
+    assert (
+        ret1 == ret2[0]
+    ), "Ensure first element is the element returned by get_parent()"
     assert tester._node == ret2[-1], f"Ensure last element is root node"
     assert tester.ex_dict._node == ret2[-2], f"Ensure last element is root node"
     assert len(ret2) == 2, "Ensure there are 2 parents for this node"
 
     assert ret3 == ret2[-1], "Ensure get_root_parent return the top parent only"
-    assert tester.ex_dict.ex_dict1._node != ret1, "Ensure the current node is not included in result"
-    assert not tester.ex_dict.ex_dict1._node in ret2, "Ensure the current node is not included in results"
-    
+    assert (
+        tester.ex_dict.ex_dict1._node != ret1
+    ), "Ensure the current node is not included in result"
+    assert (
+        not tester.ex_dict.ex_dict1._node in ret2
+    ), "Ensure the current node is not included in results"
+
     # Ensure parents returns correct number of args
     assert len(tester.ex_dict.ex_dict1.conf.get_parents()) == 2
     assert len(tester.ex_dict.ex_dict1.conf.get_parents(level=0)) == 0
@@ -351,14 +354,13 @@ def test_node_dict_get_parents(tester=None):
     assert len(tester.ex_dict.ex_dict1.conf.get_parents(level=2)) == 2
     assert len(tester.ex_dict.ex_dict1.conf.get_parents(level=3)) == 2
     assert len(tester.ex_dict.ex_dict1.conf.get_parents(level=50)) == 2
-    
 
 
 def test_node_dict_get_children(tester=None):
     "Test when children=True, enable alias, enable containers and children"
 
     # When children = True
-    payload=EX_PAYLOAD1
+    payload = EX_PAYLOAD1
 
     class TestClass(Node):
         _node_conf = [
@@ -367,24 +369,28 @@ def test_node_dict_get_children(tester=None):
                 "children": True,
             },
         ]
+
     tester = tester or TestClass(payload=payload)
 
-    assert tester.conf.get_children() == tester.conf.get_children(level=0), "Ensure optional param works as expected"
-    
+    assert tester.conf.get_children() == tester.conf.get_children(
+        level=0
+    ), "Ensure optional param works as expected"
+
     ret = tester.conf.get_children(level=-1)
-    assert ret == payload, "Ensure the whole payload can be retrieved on infinite recursion"
+    assert (
+        ret == payload
+    ), "Ensure the whole payload can be retrieved on infinite recursion"
     assert isinstance(ret["ex_dict"]["ex_dict1"], dict)
 
     ret = tester.conf.get_children(level=1)
     assert isinstance(ret["ex_dict"]["ex_dict1"], Node)
 
 
-
 def test_node_conf_variants(tester=None):
     "Test various forms of node_confs"
 
     # When children = True
-    payload=EX_PAYLOAD1
+    payload = EX_PAYLOAD1
     node_confs = [
         [
             {
@@ -401,25 +407,21 @@ def test_node_conf_variants(tester=None):
             "conf": {
                 "mixin": ConfDictMixin,
             }
-        }
+        },
     ]
 
     for node_conf in node_confs:
 
         class TestClass(Node):
             _node_conf = node_conf
+
         tester = tester or TestClass(payload=payload)
 
-
-        #tester = Node(node_conf=node_conf, payload=payload)
+        # tester = Node(node_conf=node_conf, payload=payload)
         tester._node.dump(stdout=False)
 
 
-
-
 # ########### OOOLDDD D??
-
-
 
 
 # class CollectionTester():
@@ -436,7 +438,7 @@ def test_node_conf_variants(tester=None):
 
 #     def get_mixin(self, name):
 #         return getattr(self.node._node, name, None)
-        
+
 
 #     def get_mixin_tester(self, name):
 #         cls = self.__class__
@@ -461,7 +463,7 @@ def test_node_conf_variants(tester=None):
 #     ]
 #     tester = tester or NodeConf(node_conf=node_conf, payload=payload)
 
-#     # Test basics    
+#     # Test basics
 #     ret = tester._node.conf._payload
 #     assert ret == payload
 
@@ -481,7 +483,7 @@ def test_node_conf_variants(tester=None):
 
 #     # Features: None, mixins and shortcuts list should be empty
 #     ret = tester._node.mixin_list(mixin=True, shortcuts=False)
-#     assert ret == ["conf"] 
+#     assert ret == ["conf"]
 #     ret = tester._node.mixin_list(mixin=False, shortcuts=True)
 #     assert set(ret) == set(["ex_val", "ex_dict"])
 #     assert tester._node.conf.value == payload
@@ -490,7 +492,7 @@ def test_node_conf_variants(tester=None):
 #     tester_ = CollectionTester(tester)
 #     tester_.test_value(payload)
 #     tester_.test_payload(payload)
-    
+
 #     ex_dict_ = tester_.get_mixin_tester("ex_dict")
 #     ex_dict_.test_value(payload["ex_dict"])
 #     ex_dict_.test_payload(payload["ex_dict"])
@@ -500,28 +502,11 @@ def test_node_conf_variants(tester=None):
 #     assert ret == payload["ex_val"]
 
 
-
-
-
-
-
-
 ######## VERY OLD
 
 
-
-
-
-
-
-
-
-
-
-
-
-    # ret = tester._node.payload
-    # print (ret)
+# ret = tester._node.payload
+# print (ret)
 
 
 # {
@@ -543,7 +528,6 @@ def test_node_conf_variants(tester=None):
 #         tester = Node(node_mixins=mixin_confs, payload=payload)
 
 
-
 #     # Tests low level APIs
 #     ret = tester._node.conf.value()
 #     assert ret == payload, f"Got: {ret}"
@@ -556,5 +540,3 @@ def test_node_conf_variants(tester=None):
 
 #     ret = tester._node.conf.children["ex_dict"]._node.conf.value()["ex_key1"]
 #     assert ret == payload["ex_dict"]["ex_key1"], f"Got: {ret}"
-
-

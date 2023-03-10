@@ -3,18 +3,19 @@ import logging
 from pprint import pprint
 import pytest
 
-#from cafram.mixins.base import LoggerMixin, IdentMixin, PayloadMixin
+# from cafram.mixins.base import LoggerMixin, IdentMixin, PayloadMixin
 
 from cafram.mixins.hier import HierParentMixin, HierChildrenMixin
 from cafram.nodes2 import Node
 from cafram.ctrl2 import NodeCtrl
 
 
-print ("Run test suite !")
+print("Run test suite !")
 
 
 # Test mixin: HierParentMixin
 # ===============================================
+
 
 def get_mixin_hierparent_conf():
 
@@ -30,23 +31,22 @@ def get_mixin_hierparent_conf():
     return [
         {
             "desc": "basic payload",
-            #"obj": Node(),
+            # "obj": Node(),
             "kwargs": {
-            #    "payload": payload1,
+                #    "payload": payload1,
             },
-
             "result_get_parents": [],
             "result_get_child_level": 0,
         },
     ]
 
 
-@pytest.mark.parametrize('mixin_config', get_mixin_hierparent_conf())
+@pytest.mark.parametrize("mixin_config", get_mixin_hierparent_conf())
 def test_mixin_hierparent(mixin_config):
 
     # print ("")
     # print ("run parametrized test", mixin_config)
-    
+
     # Extract data
 
     # Extract data
@@ -58,7 +58,7 @@ def test_mixin_hierparent(mixin_config):
     mock_node_ctrl = NodeCtrl(node_obj=obj)
     mixin_inst = HierParentMixin(mock_node_ctrl, **kwargs)
 
-    pprint (mixin_inst.__dict__)
+    pprint(mixin_inst.__dict__)
 
     # Test methods
     ret = mixin_inst.get_parents()
@@ -70,10 +70,9 @@ def test_mixin_hierparent(mixin_config):
     assert ret == expected, f"[{test_name}] Expected: {expected}, got: {ret}"
 
 
-
-
 # Test mixin: HierChildrenMixin
 # ===============================================
+
 
 def get_mixin_hierchildren_conf():
 
@@ -89,23 +88,22 @@ def get_mixin_hierchildren_conf():
     return [
         {
             "desc": "basic payload",
-            #"obj": Node(),
+            # "obj": Node(),
             "kwargs": {
-            #    "payload": payload1,
+                #    "payload": payload1,
             },
-
             "result_get_children": [],
-           # "result_get_child_level": 0,
+            # "result_get_child_level": 0,
         },
     ]
 
 
-@pytest.mark.parametrize('mixin_config', get_mixin_hierchildren_conf())
+@pytest.mark.parametrize("mixin_config", get_mixin_hierchildren_conf())
 def test_mixin_hierparent(mixin_config):
 
     # print ("")
     # print ("run parametrized test", mixin_config)
-    
+
     # Extract data
 
     # Extract data

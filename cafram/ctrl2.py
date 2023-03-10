@@ -28,11 +28,8 @@ from .lib.utils import truncate
 # log = logging.getLogger("cafram2")
 
 
-
 # functions
 ################################################################
-
-
 
 
 # NodeCtrl Public classe
@@ -48,29 +45,24 @@ class NodeCtrl(CaframCtrl):
     # New config
     _obj_name = None
     _obj_prefix = "node"
-    _obj_prefix_ctrl = f"_{_obj_prefix}" # Ie: _node__<mixin>__<conf_key>
-    _obj_prefix_conf = f"_{_obj_prefix}__" # Ie: _node__<mixin>__<conf_key>
-    _obj_prefix_method = f"_{_obj_prefix}" # Ie: _node__<mixin>__transform
-
-
-    
+    _obj_prefix_ctrl = f"_{_obj_prefix}"  # Ie: _node__<mixin>__<conf_key>
+    _obj_prefix_conf = f"_{_obj_prefix}__"  # Ie: _node__<mixin>__<conf_key>
+    _obj_prefix_method = f"_{_obj_prefix}"  # Ie: _node__<mixin>__transform
 
     # Other example config
     # _obj_prefix_conf = f"_" # Ie: _<mixin>__<conf_key>
     # _obj_prefix_method = f"_" # Ie: _<mixin>__transform
     # _obj_prefix_conf = "" # Ie: <mixin>__<conf_key>
     # _obj_prefix_method = "" # Ie: <mixin>__transform
-    
+
     _obj_conf = {}
 
     # Controller Configuration Manager
     # -------------------
 
-
-
     def _1_get_node_conf_obj(self, obj, prefix=None):
         """Scan object and return a Node config
-        
+
         format:
             - "(PREFIX)_(CONF)"
         """
@@ -87,17 +79,15 @@ class NodeCtrl(CaframCtrl):
 
         return ret
 
-
     def _2_get_node_conf_param(self, payload, prefix=None):
-        """Extract from dict all keys starting with prefix
-        """
+        """Extract from dict all keys starting with prefix"""
         prefix = prefix or ""
         if prefix:
             prefix += "_"
 
         ret = {}
         for key, val in payload.items():
-            
+
             if key.startswith(prefix):
                 key_name = key.replace(prefix, "")
                 ret[key_name] = val
@@ -106,7 +96,7 @@ class NodeCtrl(CaframCtrl):
 
     def _3_get_mixin_conf_obj(self, obj, prefix=None):
         """Scan _obj and return a dict config
-        
+
         format:
             - "(PREFIX)__(MIXIN_KEY)__(CONF)"
         """
@@ -119,15 +109,15 @@ class NodeCtrl(CaframCtrl):
         for attr in dir(obj):
 
             # Filter out uneeded vars
-            attr_orig = attr     
+            attr_orig = attr
             if prefix:
                 if not attr.startswith(prefix):
                     continue
-                
+
                 attr = attr.replace(prefix, "", 1)
 
             # Parse var names
-            parts = attr.split('__', 2)
+            parts = attr.split("__", 2)
             if len(parts) != 2:
                 continue
             attr_name, attr_conf = parts[0], parts[1]
@@ -140,7 +130,6 @@ class NodeCtrl(CaframCtrl):
             ret[attr_name][attr_conf] = getattr(obj, attr_orig)
 
         return ret
-
 
     def _4_transform_obj_conf(self, payload):
         "Transform NodeCtl config"
@@ -160,14 +149,16 @@ class NodeCtrl(CaframCtrl):
                     conf = _payload
 
                 # Auto set name
-                name = index #or conf.get(attr_ident, getattr(conf["mixin"], attr_ident))
+                name = (
+                    index  # or conf.get(attr_ident, getattr(conf["mixin"], attr_ident))
+                )
                 conf[attr_ident] = name
 
                 # Append to mixin config
                 ret[name] = conf
 
         elif isinstance(payload, list):
-            #assert False, "List config is not supported anymore"
+            # assert False, "List config is not supported anymore"
             ret = {}
             for index, conf in enumerate(payload):
                 # Convert short forms
@@ -194,7 +185,6 @@ class NodeCtrl(CaframCtrl):
         assert isinstance(ret, dict)
         return ret
 
-
     def _5_merge_mixin_configs(self, *args):
         "Merge all mixins configs given in args"
 
@@ -203,13 +193,12 @@ class NodeCtrl(CaframCtrl):
             for key, value in conf.items():
                 if not key in ret:
                     ret[key] = {}
-                self._log.debug(f"Merge NodeCtrl mixins '{key}' with: {value} (BEFORE={ret[key]})")
+                self._log.debug(
+                    f"Merge NodeCtrl mixins '{key}' with: {value} (BEFORE={ret[key]})"
+                )
                 ret[key].update(value)
 
         return ret
-
-
-
 
     # Controller Initialization
     # -------------------
@@ -218,47 +207,50 @@ class NodeCtrl(CaframCtrl):
 
         # Save object internally
         self._obj = node_obj
-            
+
         # Extract Node config:
         # ---------------------
 
         # Get Node config from obj class (Static) asnd params (Dyn)
-        obj_conf = self._1_get_node_conf_obj(self._obj, prefix=f"{self._obj_prefix_ctrl}_")
+        obj_conf = self._1_get_node_conf_obj(
+            self._obj, prefix=f"{self._obj_prefix_ctrl}_"
+        )
         param_conf = self._2_get_node_conf_param(kwargs, prefix=self._obj_prefix)
-        
+
         # Register Node config
         tmp_prefix = "_obj_"
-        stores = { "obj_conf": obj_conf, "param_conf": param_conf}
+        stores = {"obj_conf": obj_conf, "param_conf": param_conf}
 
         # print ("NODE CONFIG")
         # pprint (stores)
         log_msg = []
         for store_name, store in stores.items():
-            
+
             for key, value in store.items():
                 name = f"{tmp_prefix}{key}"
-                log_msg.append(f"Register {store_name} conf '{name}': {truncate(value)}")
+                log_msg.append(
+                    f"Register {store_name} conf '{name}': {truncate(value)}"
+                )
                 setattr(self, name, value)
 
         self._init_logger()
         for line in log_msg:
-            #print (line)
+            # print (line)
             self._log.debug(line)
 
-        #pprint (self.__dict__)
-        
+        # pprint (self.__dict__)
 
         # Extract mixins configs:
         # ---------------------
 
         # Extract mixins config from obj class and params
-        cls_mixin = self._3_get_mixin_conf_obj(self._obj, prefix=self._obj_prefix_conf)            
-        #conf_mixin = self._4_transform_obj_conf(obj_conf.get("conf", {}))
+        cls_mixin = self._3_get_mixin_conf_obj(self._obj, prefix=self._obj_prefix_conf)
+        # conf_mixin = self._4_transform_obj_conf(obj_conf.get("conf", {}))
         conf_mixin = self._4_transform_obj_conf(self._obj_conf)
 
         # Register Mixin config
         self._obj_conf = self._5_merge_mixin_configs(cls_mixin, conf_mixin)
-        
+
         # print ("MIXINS CONFIG")
         # tmp = {
         #     "cls_mixin": cls_mixin,
@@ -276,15 +268,12 @@ class NodeCtrl(CaframCtrl):
         self._mixin_aliases = {}
         self._mixin_hooks = {
             "__getattr__": [],
-
             # Require a proper loading order, should be loaded before the mixin children
             "child_create": [],
-
             # # Hooks names
             # "obj_": [],
             # "ctrl_": [],
             # "mixin_": [],
-
             # "obj__": [],
             # "ctrl__": [],
             # "mixin__": [],
@@ -294,7 +283,6 @@ class NodeCtrl(CaframCtrl):
             # # ctrl__getattr__
             # # ctrl_children
             # # ctrl_init
-
         }
 
         # pprint (self.__dict__)
@@ -306,16 +294,16 @@ class NodeCtrl(CaframCtrl):
             setattr(self._obj, self._obj_attr, self)
             self._obj_has_attr = True
         except AttributeError:
-            self._log.warning(f"WEAK Node linked to '{self._obj}' as '{self._obj_attr}'")
-
+            self._log.warning(
+                f"WEAK Node linked to '{self._obj}' as '{self._obj_attr}'"
+            )
 
         self._load_mixins(kwargs)
 
         # Instanciate parent _init()
         # TODO !!!
-        #func = self.get_obj_mixin_attr(None, "init")
-        #pprint (func)
-
+        # func = self.get_obj_mixin_attr(None, "init")
+        # pprint (func)
 
         #####################################################
 
@@ -349,19 +337,19 @@ class NodeCtrl(CaframCtrl):
                 mixin_cls, BaseMixin
             ), f"Mixin class {mixin_cls} is not an instance of 'BaseMixin', got: {mixin_cls}"
 
-
             loading_attr = "mixin_order"
-            loading_order = int(mixin_conf.get(loading_attr, getattr(mixin_cls, loading_attr)))
+            loading_order = int(
+                mixin_conf.get(loading_attr, getattr(mixin_cls, loading_attr))
+            )
 
             final = dict(mixin_conf)
             final["mixin"] = mixin_cls
             final["mixin_order"] = loading_order
             final["mixin_key"] = mixin_name
-            #final["key"] = mixin_name  # TEMPORARY
+            # final["key"] = mixin_name  # TEMPORARY
             mixin_classes[mixin_name] = final
 
         return mixin_classes
-
 
     def _load_mixins(self, kwargs):
 
@@ -369,7 +357,9 @@ class NodeCtrl(CaframCtrl):
         # pprint (self._obj_conf)
         mixin_classes = self.get_mixin_loading_order()
         # pprint (mixin_classes)
-        load_order = sorted(mixin_classes, key=lambda key: mixin_classes[key]["mixin_order"])
+        load_order = sorted(
+            mixin_classes, key=lambda key: mixin_classes[key]["mixin_order"]
+        )
 
         # Instanciate mixins
         self._log.info(f"Load mixins for {self._obj}: {load_order}")
@@ -377,18 +367,13 @@ class NodeCtrl(CaframCtrl):
 
             mixin_conf = mixin_classes[mixin_name]
             mixin_cls = mixin_classes[mixin_name]["mixin"]
-            
+
             # Instanciate mixin and register
             self._log.info(f"Instanciate mixin '{mixin_name}': {mixin_cls.__name__}")
-            mixin_inst = mixin_cls(self, 
-                mixin_conf=mixin_conf, 
-                **kwargs)
+            mixin_inst = mixin_cls(self, mixin_conf=mixin_conf, **kwargs)
             self.mixin_register(mixin_inst)
 
         #####################################################
-
-
-
 
     # Mixins and alias registration
     # -------------------
@@ -477,7 +462,6 @@ class NodeCtrl(CaframCtrl):
     def mixin_get(self, name):
         "Get mixin instance"
 
-
         # return getattr(self, name)
 
         # Execute hooks
@@ -498,10 +482,8 @@ class NodeCtrl(CaframCtrl):
         msg = f"No such mixin '{name}' in {self}"
         raise errors.AttributeError(msg)
 
-
     # Dunders
     # -------------------
-
 
     def __getitem__(self, name):
         "Handle dict notation"
@@ -510,8 +492,6 @@ class NodeCtrl(CaframCtrl):
     def __getattr__(self, name):
         "Forward all NodeCtrl attributes to mixins"
         return self.mixin_get(name)
-
-
 
     # Troubleshooting
     # -------------------

@@ -5,6 +5,7 @@ Cafram Root Classes
 import logging
 import inspect
 
+
 class CaframObj:
     "An empty root class to determine a cafram object or not"
 
@@ -12,7 +13,7 @@ class CaframObj:
     name = None
 
     # Domain part
-    #name_prefix = f"|{__module__}|"
+    # name_prefix = f"|{__module__}|"
     name_prefix = None
 
     def get_name(self):
@@ -22,22 +23,21 @@ class CaframObj:
     def get_prefix(self):
         if isinstance(self.name_prefix, str):
             return self.name_prefix
-        return  self.__class__.__module__
+        return self.__class__.__module__
 
     def get_fqn(self):
         "Return the class Fully Qualified Name of any object"
         prefix = self.get_prefix()
         if prefix:
-            #print ("PREFIX", prefix)
+            # print ("PREFIX", prefix)
             return ".".join([prefix, self.get_name()])
         return self.get_name()
-        
 
     def get_mro(self):
         "Return the class MRO of any object"
         cls = type(self)
         return inspect.getmro(cls)
-        
+
 
 class CaframNode(CaframObj):
     "An empty root class to determine a cafram object or not"
@@ -47,14 +47,12 @@ class CaframNode(CaframObj):
 class CaframInternalsGroup(CaframObj):
     "Cafram Internals"
 
-
     _obj_logger_prefix = False
-
 
     def get_obj(self):
         "Return current object"
         return self._obj
-    
+
     def _init_logger(self, prefix=None):
         "Init internal cafram logger"
 
@@ -68,7 +66,6 @@ class CaframInternalsGroup(CaframObj):
 
         if not isinstance(prefix, str):
             prefix = self._obj_logger_prefix
-            
 
         if isinstance(prefix, str):
             name = f"{prefix}.{self.get_name()}"
@@ -76,9 +73,10 @@ class CaframInternalsGroup(CaframObj):
             name = self.get_fqn()
 
         self._log = logging.getLogger(name)
-        #self._log.propagate = False
-        self._log.debug(f"Get Cafram logger for {self.get_name()}: {name} (prefix={prefix_old}/{prefix})")
-
+        # self._log.propagate = False
+        self._log.debug(
+            f"Get Cafram logger for {self.get_name()}: {name} (prefix={prefix_old}/{prefix})"
+        )
 
 
 class CaframCtrl(CaframInternalsGroup):
@@ -88,7 +86,6 @@ class CaframCtrl(CaframInternalsGroup):
 
 class CaframMixin(CaframInternalsGroup):
     "Cafram Mixin Type"
-
 
     def get_ctrl(self):
         "Return current Node controller"
