@@ -38,6 +38,9 @@ class ConfMixin(ConfMixinGroup):
     #key = "conf"
     mixin_key = "conf"
 
+    index = None
+    _param_index = "index"
+
     _schema = {
         # "$defs": {
         #     "AppProject": PaasifyProject.conf_schema,
@@ -99,6 +102,10 @@ class ConfMixin(ConfMixinGroup):
         "Check if value is mutable or not"
         payload = self._payload
         return issubclass(type(payload), (MutableSequence, MutableSet, MutableMapping))
+    
+    def get_index(self):
+        "Check if value is mutable or not"
+        return self.index
 
 
 # Containers
@@ -142,6 +149,9 @@ class _ConfContainerMixin(HierChildrenMixin, ConfMixin):
         },
     }
 
+    # def get_name(self):
+    #     return self.index or super().get_name()
+
 
 # Dict Containers
 ################################################################
@@ -150,18 +160,38 @@ class _ConfContainerMixin(HierChildrenMixin, ConfMixin):
 class ConfDictMixin(_ConfContainerMixin):
     "Conf mixin that manage a serializable dict of values"
 
+    default = {}
+
+    def set_default(self, payload):
+        "Update defaults"
+
+        # Validate payload type
+        payload = payload or {}
+        if not isinstance(payload, dict):
+            msg = f"Expected a dict, got {type(payload)}: {payload}"
+            raise errors.DictExpected(msg)
+
+        # Fetch default value
+        default = dict(self.default) or {}
+        if not isinstance(default, dict):
+            msg = f"Expected a dict, got {type(default)}: {default}"
+            raise errors.DictExpected(msg)
+
+        # Update from default dict
+        ret = default
+        ret.update(payload)
+
+        return ret
+
+
+
     def _parse_children(self):
 
         # Get data
         value = self.get_value() or {}
-        self._children = {}
-
-        # Sanity checks
-        if not isinstance(value, dict):
-            msg = f"Got {type(value)} instead: {value}"
-            raise errors.DictExpected(msg)
 
         # Parse children
+        self._children = {}
         children_conf = self.children
         children_map = {}
         if children_conf is False:
@@ -182,40 +212,35 @@ class ConfDictMixin(_ConfContainerMixin):
             for child_key, child_cls in children_conf.items():
                 children_map[child_key] = child_cls
                 self._log.info(f"Child '{child_key}' config is mapped to {child_cls}")
+        elif issubclass(children_conf, Node):
+            self._log.info(f"Children configs is {children_conf}")
+            for child_key, child_cls in value.items():
+                children_map[child_key] = children_conf
+                self._log.info(f"Child '{child_key}' config is default mapped to {child_cls}")
         else:
             msg = f"Invalid configuration for Dict children: {children_conf}"
             raise errors.CaframException(msg)
 
         # Instanciate children
-        payload_param = self._param__payload
-        parent_param = self._param__parent
-        ident_param = self._param_ident
         for child_key, child_cls in children_map.items():
-
 
             child_value = value.get(child_key)
             if child_cls is None:
+                self._log.info(f"Create native child '{child_key}': {type(child_value).__name__}({child_value})")
                 child = child_value
-                msg = f"Create native child '{child_key}': {type(child_value).__name__}({child_value})"
-                self._log.info(msg)
-                # print (msg)
             else:
                 child_args = {
-                    ident_param: child_key,
-                    payload_param: child_value,
-                    parent_param: self,
+                    self._param_ident_prefix: self.get_ident(),
+                    self._param_ident: f"{child_key}",
+
+                    self._param_index: child_key,
+                    self._param__payload: child_value,
+                    self._param__parent: self,
                 }
 
-                #logger_name = f"{self.node_ctrl._obj_logger_prefix}.{child_key}"
-                                
-                msg = f"Create Node child '{child_key}': {child_cls.__name__}"
-                self._log.info(msg)
-                #pprint (child_args)
-                # print (msg)
-
+                self._log.info(f"Create Node child '{child_key}': {child_cls.__name__}")
                 assert issubclass(child_cls, CaframNode)
                 child = child_cls(self, **child_args)
-                # child = self.create_child(child_cls, child_value, child_key=child_key, **child_args)
 
             self.add_child(child, index=child_key, alias=True)
 
@@ -233,18 +258,35 @@ class ConfListMixin(_ConfContainerMixin):
 
     """
 
+    default = []
+
+    def set_default(self, payload):
+        "Update defaults"
+
+        payload = payload or []
+        if not isinstance(payload, list):
+            msg = f"Got {type(payload)} instead: {payload}"
+            raise errors.ListExpected(msg)
+
+        default = list(self.default)
+        if not isinstance(default, list):
+            pprint (self.__dict__)
+            msg = f"Got {type(default)} instead: {default}"
+            raise errors.ListExpected(msg)
+
+        # ret = default
+        # ret.update(payload)
+
+        return payload or default
+
+
     def _parse_children(self):
 
         # Get data
-        value = self.get_value() or []
+        value = self.get_value()
         self._children = []
-
-        # Sanity checks
-        if not isinstance(value, list):
-            msg = f"Got {type(value)} instead: {value}"
-            raise errors.ListExpected(msg)
-
         children_conf = self.children
+        
         if children_conf is False:
             pass
         elif children_conf is None:
@@ -255,8 +297,12 @@ class ConfListMixin(_ConfContainerMixin):
 
         elif children_conf:
 
-            name_param = self._param__payload
-            parent_param = self._param__parent
+            # param_payload = 
+            # param_parent = 
+            # param_ident = self._param_ident
+            # param_ident_prefix = self._param_ident_prefix
+            # #param_ident_suffix = self._param_ident_suffix
+            # param_index = self._param_index
 
             default_cls = children_conf if inspect.isclass(children_conf) else None
 
@@ -272,12 +318,17 @@ class ConfListMixin(_ConfContainerMixin):
                     child = child_value
                 else:
                     child_args = {
-                        "name": child_key,
-                        name_param: child_value,
-                        parent_param: self,
+                        self._param_ident_prefix: self.get_ident(),
+                        self._param_ident: f"{child_key}",
+
+                        self._param_index: child_key,
+
+                        self._param__payload: child_value,
+                        self._param__parent: self,
                     }
                     msg = f"Create child '{child_key}': {child_cls.__name__}({child_args})"
                     self._log.info(msg)
+                    #print ("CREATE LIST CHILD", child_args)
 
                     assert issubclass(child_cls, CaframNode)
                     child = child_cls(self, **child_args)

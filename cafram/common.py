@@ -20,11 +20,17 @@ class CaframObj:
         return self.name or self.__class__.__name__
 
     def get_prefix(self):
-        return self.name_prefix or self.__class__.__module__
+        if isinstance(self.name_prefix, str):
+            return self.name_prefix
+        return  self.__class__.__module__
 
     def get_fqn(self):
         "Return the class Fully Qualified Name of any object"
-        return ".".join([self.get_prefix(), self.get_name()])
+        prefix = self.get_prefix()
+        if prefix:
+            #print ("PREFIX", prefix)
+            return ".".join([prefix, self.get_name()])
+        return self.get_name()
         
 
     def get_mro(self):
@@ -53,15 +59,18 @@ class CaframInternalsGroup(CaframObj):
         "Init internal cafram logger"
 
         prefix_old = prefix
-        prefix = prefix or self._obj_logger_prefix
+
         if prefix == True:
             obj = self.get_obj()
             prefix = f"{obj.__module__}.{obj.__class__.__name__}"
         elif prefix == False:
             prefix = self.__module__
 
+        if not isinstance(prefix, str):
+            prefix = self._obj_logger_prefix
+            
 
-        if prefix:
+        if isinstance(prefix, str):
             name = f"{prefix}.{self.get_name()}"
         else:
             name = self.get_fqn()

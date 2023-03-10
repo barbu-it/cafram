@@ -34,6 +34,7 @@ class Node(CaframNode):
     # _node
     # children_create ?
 
+    
     _node_conf = {
         # "KEY": {
         #     "mixin": "MyMixin",
@@ -81,24 +82,29 @@ class Node(CaframNode):
         """
         pass
 
+
+    def __getitem__(self, name):
+        "Handle dict notation"
+        return self._node.mixin_get(name)
+
+
+
     def __getattr__(self, name):
         """Dunder to foward all unknown attributes to the NodeCtrl instance"""
+        
+        return self._node.mixin_get(name)
 
-        #print ("GET ATTR NODE:", self,  name)
+        # if "_node" in self.__dict__:
+        #     return self._node[name]
 
-        if "_node" in self.__dict__:
-            return getattr(self._node, name )
-            #return self._node.__dict__[name]
-
-        msg = f"No such node attribute '{name}' in {self}"
-        raise errors.AttributeError(msg)
-
+        # msg = f"No such node attribute '{name}' in {self}"
+        # raise errors.AttributeError(msg)
 
 
-        # if name in self._node.__dict__:
-        #     return self._node.__dict__[name]
-        return None
-        return self.__dict__["_node"][name]
+        # # if name in self._node.__dict__:
+        # #     return self._node.__dict__[name]
+        # return None
+        # return self.__dict__["_node"][name]
 
     # def _node_init(self, payload):
     #     print ("Node Conf Transform !!!")

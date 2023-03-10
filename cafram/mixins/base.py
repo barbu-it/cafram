@@ -4,6 +4,7 @@ Base mixins
 
 import types
 import logging
+import copy
 from pprint import pprint
 
 # from ..nodes import Node
@@ -98,6 +99,7 @@ class PayloadMixin(IdentMixin):
 
     value_alias = "value"
 
+    default = None
     payload_schema = False
     _schema = {
         # "$defs": {
@@ -195,6 +197,7 @@ class PayloadMixin(IdentMixin):
         "Set a value"
 
         conf = self.transform(value)
+        conf = self.set_default(conf)
         conf = self.validate(conf)
         self._value = conf
         return self._value
@@ -202,6 +205,11 @@ class PayloadMixin(IdentMixin):
 
     # Transformers/Validators
     # ---------------------
+
+    def set_default(self, payload):
+        "Update defaults"
+        return payload or copy.copy(self.default)
+
 
     def transform(self, payload):
         "Transform payload before"
