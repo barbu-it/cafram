@@ -2,11 +2,10 @@
 Node Controlled Classes
 """
 
-from . import errors
+from pprint import pprint
+
 from .common import CaframNode
 from .ctrl2 import NodeCtrl
-
-from pprint import pprint
 
 
 class Node(CaframNode):
@@ -51,7 +50,7 @@ class Node(CaframNode):
     # _node_logger_integrate = False
     # _node_logger_integrate = True
 
-    def __init__(self, node_conf=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """
         Create a new Node object.
         """
@@ -75,7 +74,6 @@ class Node(CaframNode):
         """
         Placeholder for custom class __init__ without requiring usage of `super`.
         """
-        pass
 
     def __getitem__(self, name):
         "Handle dict notation"

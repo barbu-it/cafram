@@ -10,9 +10,9 @@ from enum import IntEnum
 from pprint import pprint, pformat
 
 from .. import errors
+from ..lib.sprint import SPrint
 from ..lib.utils import truncate
 from ..common import CaframObj, CaframMixin, CaframCtrl
-from ..utils import SPrint
 
 
 # Base mixins
@@ -46,6 +46,7 @@ class BaseMixin(CaframMixin):
 
     # name_from_obj = False
 
+    # pylint: disable=line-too-long
     _schema = {
         # "$defs": {
         #     "AppProject": PaasifyProject.conf_schema,
@@ -94,6 +95,7 @@ class BaseMixin(CaframMixin):
                 cls = value.__self__.__class__
 
                 # If not a CaframMixin class, add mixin as second param
+                # pylint: disable=cell-var-from-loop
                 if not issubclass(cls, CaframMixin):
                     func = value
 
@@ -166,7 +168,8 @@ class BaseMixin(CaframMixin):
 
             if attr_name.startswith("__"):
                 continue
-            elif attr_name.startswith("_"):
+
+            if attr_name.startswith("_"):
 
                 value = getattr(self, attr_name)
                 target = out["private_fn"]
@@ -195,6 +198,7 @@ class BaseMixin(CaframMixin):
     # Documentation
     # -------------------
 
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def doc(self, details=False):
         "Show mixin internal documentation"
 

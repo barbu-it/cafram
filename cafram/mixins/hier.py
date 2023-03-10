@@ -9,8 +9,11 @@ import copy
 # from ..nodes import Node
 from ..nodes2 import Node
 
+# from .. import errors
+
 from . import BaseMixin
-from .base import PayloadMixin, NodePayload
+
+# from .base import PayloadMixin, NodePayload
 
 
 # Hier mixins
@@ -33,9 +36,7 @@ class HierParentMixin(HierMixinGroup):
         if self._parent:
             if ctrl:
                 return self._parent.node_ctrl
-            else:
-                return self._parent
-
+            return self._parent
         return None
 
     # def get_parents2(self, select=None, level=-1, value=None):
@@ -73,8 +74,8 @@ class HierParentMixin(HierMixinGroup):
 
                 ret.append(ctrl)
             return ret
-        else:
-            return parents
+
+        return parents
 
     def get_child_level(self):
         "Return the node deepness from root node"
@@ -118,7 +119,6 @@ class HierChildrenMixin(HierMixinGroup):
         children = self._children
 
         if isinstance(children, dict):
-            ret = {}
             index = index or getattr(child, "mixin_key", None)
             assert index, "Index is required when children are dict"
             self._children[index] = child
@@ -131,12 +131,15 @@ class HierChildrenMixin(HierMixinGroup):
             self.node_ctrl.alias_register(index, child)
 
     def get_children(self, level=0):
+        "Get children"
+
         children = self._children
 
         if level == 0:
             return children
 
         level -= 1
+        ret = None
         if isinstance(children, dict):
             ret = {}
 
@@ -146,8 +149,6 @@ class HierChildrenMixin(HierMixinGroup):
                     children_ = child.conf.get_children(level=level)
 
                 ret[child_index] = children_
-
-            return ret
 
         elif isinstance(children, list):
             ret = []
@@ -159,7 +160,7 @@ class HierChildrenMixin(HierMixinGroup):
 
                 ret.append(children_)
 
-            return ret
+        return ret
 
 
 class HierMixin(HierParentMixin, HierChildrenMixin):

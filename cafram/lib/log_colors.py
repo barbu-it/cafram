@@ -11,6 +11,8 @@ import re
 
 
 class ColorCodes:
+    "Holds color codes"
+
     grey = "\x1b[38;21m"
     green = "\x1b[1;32m"
     yellow = "\x1b[33;21m"
@@ -23,6 +25,8 @@ class ColorCodes:
 
 
 class ColorizedArgsFormatter(logging.Formatter):
+    "ColorizedArgsFormatter"
+
     arg_colors = [ColorCodes.purple, ColorCodes.light_blue]
     level_fields = ["levelname", "levelno"]
     level_to_color = {
@@ -41,7 +45,7 @@ class ColorizedArgsFormatter(logging.Formatter):
             color = ColorizedArgsFormatter.level_to_color[level]
             _format = fmt
             for fld in ColorizedArgsFormatter.level_fields:
-                search = "(%\(" + fld + "\).*?s)"
+                search = "(%\\(" + fld + "\\).*?s)"
                 _format = re.sub(search, f"{color}\\1{ColorCodes.reset}", _format)
             formatter = logging.Formatter(_format)
             self.level_to_formatter[level] = formatter
@@ -54,6 +58,7 @@ class ColorizedArgsFormatter(logging.Formatter):
 
     @staticmethod
     def rewrite_record(record: logging.LogRecord):
+        "Rewrite record"
         if not BraceFormatStyleFormatter.is_brace_format_style(record):
             return
 
@@ -76,6 +81,7 @@ class ColorizedArgsFormatter(logging.Formatter):
         record.args = []
 
     def format(self, record):
+        "Format record"
         orig_msg = record.msg
         orig_args = record.args
         formatter = self.level_to_formatter.get(record.levelno)
@@ -89,12 +95,16 @@ class ColorizedArgsFormatter(logging.Formatter):
 
 
 class BraceFormatStyleFormatter(logging.Formatter):
+    "BraceFormatStyleFormatter"
+
     def __init__(self, fmt: str):
         super().__init__()
         self.formatter = logging.Formatter(fmt)
 
     @staticmethod
     def is_brace_format_style(record: logging.LogRecord):
+        "Check if style is brace format"
+
         if len(record.args) == 0:
             return False
 
@@ -115,6 +125,8 @@ class BraceFormatStyleFormatter(logging.Formatter):
 
     @staticmethod
     def rewrite_record(record: logging.LogRecord):
+        "Rewrite record"
+
         if not BraceFormatStyleFormatter.is_brace_format_style(record):
             return
 
@@ -122,6 +134,8 @@ class BraceFormatStyleFormatter(logging.Formatter):
         record.args = []
 
     def format(self, record):
+        "Format record"
+
         orig_msg = record.msg
         orig_args = record.args
         self.rewrite_record(record)

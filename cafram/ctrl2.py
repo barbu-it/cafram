@@ -6,19 +6,18 @@ Node Controller Class
 # Imports
 ################################################################
 
-import types
+# import types
 import importlib
 import textwrap
-import inspect
+
+# import inspect
 
 from pprint import pprint, pformat
 
 from . import errors
 from .mixins import BaseMixin
-from .common import CaframCtrl, CaframNode
-from .utils import SPrint
-from .utils import SPrint
-
+from .common import CaframCtrl
+from .lib.sprint import SPrint
 from .lib.utils import truncate
 
 # Only relevant for entrypoints
@@ -203,7 +202,7 @@ class NodeCtrl(CaframCtrl):
     # Controller Initialization
     # -------------------
 
-    def __init__(self, *args, node_obj=None, **kwargs):
+    def __init__(self, *_, node_obj=None, **kwargs):
 
         # Save object internally
         self._obj = node_obj
@@ -321,7 +320,7 @@ class NodeCtrl(CaframCtrl):
             if isinstance(mixin_ref, str):
                 try:
                     mixin_cls = importlib.import_module(mixin_ref)
-                except ModuleNotFoundError as err:
+                except ModuleNotFoundError:
                     msg = f"Impossible to add mixin: {mixin_ref} from: {mixin_conf}"
                     raise errors.CaframException(msg)
             else:
@@ -332,7 +331,7 @@ class NodeCtrl(CaframCtrl):
                 # Because as classes may define some default parameters for classes
                 self._log.info(f"Skip unloaded module: {mixin_name}")
                 continue
-                assert mixin_cls, f"Expected a Mixin class, not: {mixin_cls}"
+                # assert mixin_cls, f"Expected a Mixin class, not: {mixin_cls}"
             assert issubclass(
                 mixin_cls, BaseMixin
             ), f"Mixin class {mixin_cls} is not an instance of 'BaseMixin', got: {mixin_cls}"
@@ -439,25 +438,25 @@ class NodeCtrl(CaframCtrl):
         "Get hook"
         return self._mixin_hooks[name]
 
-    def set_hooks(self, name, func=None):
-        "Set hook"
+    # def set_hooks(self, name, func=None):
+    #     "Set hook"
 
-        # Strict mode
-        if name not in self._mixin_hooks:
-            msg = f"Unknown hook type: {name}"
-            raise CaframException(msg)
+    #     # Strict mode
+    #     if name not in self._mixin_hooks:
+    #         msg = f"Unknown hook type: {name}"
+    #         raise errors.CaframException(msg)
 
-        if name not in self._mixin_hooks:
-            if func is None:
-                return []
+    #     if name not in self._mixin_hooks:
+    #         if func is None:
+    #             return []
 
-            self._mixin_hooks[name] = []
+    #         self._mixin_hooks[name] = []
 
-        if func is None:
-            return self._mixin_hooks[name]
+    #     if func is None:
+    #         return self._mixin_hooks[name]
 
-        self._log.info(f"Register hook {name} on {self._obj}: {func}")
-        self._mixin_hooks[name].append(func)
+    #     self._log.info(f"Register hook {name} on {self._obj}: {func}")
+    #     self._mixin_hooks[name].append(func)
 
     def mixin_get(self, name):
         "Get mixin instance"
@@ -502,8 +501,8 @@ class NodeCtrl(CaframCtrl):
         sprint = SPrint()
 
         sprint("\n" + "-" * 40)
-        sprint(f"Dump of NodeCtrl:")
-        sprint(f"\n*  Object type:")
+        sprint("Dump of NodeCtrl:")
+        sprint("\n*  Object type:")
         sprint(f"     attr: {self._obj_attr}")
         sprint(f"   linked: {self._obj_has_attr}")
         sprint(f"     type: {type(self._obj)}")

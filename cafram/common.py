@@ -21,6 +21,7 @@ class CaframObj:
         return self.name or self.__class__.__name__
 
     def get_prefix(self):
+        "Return name prefix"
         if isinstance(self.name_prefix, str):
             return self.name_prefix
         return self.__class__.__module__
@@ -41,13 +42,14 @@ class CaframObj:
 
 class CaframNode(CaframObj):
     "An empty root class to determine a cafram object or not"
-    pass
 
 
 class CaframInternalsGroup(CaframObj):
     "Cafram Internals"
 
     _obj_logger_prefix = False
+    _obj = None
+    _log = None
 
     def get_obj(self):
         "Return current object"
@@ -58,10 +60,10 @@ class CaframInternalsGroup(CaframObj):
 
         prefix_old = prefix
 
-        if prefix == True:
+        if prefix is True:
             obj = self.get_obj()
             prefix = f"{obj.__module__}.{obj.__class__.__name__}"
-        elif prefix == False:
+        elif prefix is False:
             prefix = self.__module__
 
         if not isinstance(prefix, str):
@@ -81,11 +83,12 @@ class CaframInternalsGroup(CaframObj):
 
 class CaframCtrl(CaframInternalsGroup):
     "Cafram Controller Type"
-    pass
 
 
 class CaframMixin(CaframInternalsGroup):
     "Cafram Mixin Type"
+
+    node_ctrl = None
 
     def get_ctrl(self):
         "Return current Node controller"
@@ -93,4 +96,4 @@ class CaframMixin(CaframInternalsGroup):
 
     def get_obj(self):
         "Return current object"
-        return self.get_ctrl()._obj
+        return self.get_ctrl().get_obj()

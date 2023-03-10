@@ -2,24 +2,23 @@
 Tree mixins
 """
 
+
 # Imports
 ################################################################
 
 import inspect
-import json
 from typing import MutableSequence, MutableSet, MutableMapping
 
 from pprint import pprint, pformat
 
 
 from .. import errors
-from ..utils import to_json, from_json, to_yaml, from_yaml
+from ..lib.utils import to_json, from_json, to_yaml, from_yaml
 
-# from ..nodes import Node
 from ..nodes2 import Node
-from ..common import CaframMixin, CaframNode
+from ..common import CaframNode
 
-from .base import PayloadMixin, NodePayload, MapAttrMixin
+from .base import PayloadMixin, NodePayload
 from .hier import HierParentMixin, HierChildrenMixin
 
 
@@ -41,20 +40,21 @@ class ConfMixin(ConfMixinGroup):
     index = None
     _param_index = "index"
 
+    # pylint: disable=line-too-long
     _schema = {
         # "$defs": {
         #     "AppProject": PaasifyProject.conf_schema,
         # },
         "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
-        "title": "Mixin: PayloadMixin",
-        "description": "PayloadMixin Configuration",
+        "title": "Mixin: ConfMixin",
+        "description": "ConfMixin Configuration",
         "default": {},
         "properties": {
-            "mixin_key": {
-                "title": "Mixin key",
-                "description": "Name of the mixin. Does not keep alias if key is set to `None` or starting with a `.` (dot)",
-                "default": mixin_key,
+            "index": {
+                "title": "Index",
+                "description": "Name of the index key",
+                "default": index,
                 "oneOf": [
                     {
                         "type": "string",
@@ -116,14 +116,15 @@ class _ConfContainerMixin(HierChildrenMixin, ConfMixin):
 
     children = True
 
+    # pylint: disable=line-too-long
     _schema = {
         # "$defs": {
         #     "AppProject": PaasifyProject.conf_schema,
         # },
         "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
-        "title": "Mixin: PayloadMixin",
-        "description": "PayloadMixin Configuration",
+        "title": "Mixin: PayloadContainerMixin",
+        "description": "PayloadContainer Configuration",
         "default": {},
         "properties": {
             "children": {
@@ -194,20 +195,20 @@ class ConfDictMixin(_ConfContainerMixin):
         if children_conf is False:
             pass
         elif children_conf is True:
-            self._log.info(f"Children configs is automatic")
+            self._log.info("Children configs is automatic")
             for child_key, child_value in value.items():
                 child_cls = map_node_class(child_value)
                 children_map[child_key] = child_cls
                 self._log.info(f"Child '{child_key}' config is {child_cls}")
         elif children_conf is None:
-            self._log.info(f"Children configs is None")
+            self._log.info("Children configs is None")
             for child_key, child_value in value.items():
                 children_map[child_key] = None
                 self._log.info(
                     f"Child '{child_key}' config is native {type(child_value)}"
                 )
         elif isinstance(children_conf, dict):
-            self._log.info(f"Children configs is Dict")
+            self._log.info("Children configs is Dict")
             for child_key, child_cls in children_conf.items():
                 children_map[child_key] = child_cls
                 self._log.info(f"Child '{child_key}' config is mapped to {child_cls}")
@@ -227,8 +228,9 @@ class ConfDictMixin(_ConfContainerMixin):
 
             child_value = value.get(child_key)
             if child_cls is None:
+                _type = type(child_value).__name__
                 self._log.info(
-                    f"Create native child '{child_key}': {type(child_value).__name__}({child_value})"
+                    f"Create native child '{child_key}': {_type}({child_value})"
                 )
                 child = child_value
             else:
@@ -292,7 +294,7 @@ class ConfListMixin(_ConfContainerMixin):
         if children_conf is False:
             pass
         elif children_conf is None:
-            self._log.info(f"Children configs is None")
+            self._log.info("Children configs is None")
             for child_key, child_value in enumerate(value):
                 self.add_child(child_value)
                 self._log.info(
@@ -301,16 +303,9 @@ class ConfListMixin(_ConfContainerMixin):
 
         elif children_conf:
 
-            # param_payload =
-            # param_parent =
-            # param_ident = self._param_ident
-            # param_ident_prefix = self._param_ident_prefix
-            # #param_ident_suffix = self._param_ident_suffix
-            # param_index = self._param_index
-
             default_cls = children_conf if inspect.isclass(children_conf) else None
 
-            self._log.info(f"Children configs is automatic")
+            self._log.info("Children configs is automatic")
             for child_key, child_value in enumerate(value):
 
                 if default_cls is None:
@@ -335,7 +330,8 @@ class ConfListMixin(_ConfContainerMixin):
                     assert issubclass(child_cls, CaframNode)
                     child = child_cls(self, **child_args)
 
-                self.add_child(child_value)
+                self.add_child(child)
+                # self.add_child(child_value)
                 self._log.info(f"Child '{child_key}' config is {child_cls}")
         else:
             msg = f"Invalid configuration for children: {children_conf}"
@@ -347,16 +343,19 @@ class ConfListMixin(_ConfContainerMixin):
 
 
 class NodeConf(NodePayload):
+    "NodeConf"
 
     _node_conf = [{"mixin": ConfMixin}]
 
 
 class NodeConfDict(NodeConf):
+    "NodeConfDict"
 
     _node_conf = [{"mixin": ConfDictMixin}]
 
 
 class NodeConfList(NodeConf):
+    "NodeConfList"
 
     _node_conf = [{"mixin": ConfListMixin}]
 

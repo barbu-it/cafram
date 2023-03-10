@@ -2,7 +2,7 @@
 Base mixins
 """
 
-import types
+# import types
 import logging
 import copy
 import traceback
@@ -33,6 +33,7 @@ from . import BaseMixin, LoadingOrder
 
 
 class IdentMixin(BaseMixin):
+    "Ident Mixin"
 
     # key = "ident"
     mixin_key = "ident"
@@ -52,7 +53,8 @@ class IdentMixin(BaseMixin):
 
         target = self
 
-        obj = self.node_ctrl._obj
+        # obj = self.node_ctrl._obj
+        obj = self.get_obj()
         if issubclass(type(obj), CaframObj):
             target = obj
 
@@ -86,6 +88,7 @@ class IdentMixin(BaseMixin):
 
 
 class PayloadMixin(IdentMixin):
+    "Payload Mixin"
 
     mixin_key = "payload"
 
@@ -96,6 +99,8 @@ class PayloadMixin(IdentMixin):
 
     default = None
     payload_schema = False
+
+    # pylint: disable=line-too-long
     _schema = {
         # "$defs": {
         #     "AppProject": PaasifyProject.conf_schema,
@@ -106,19 +111,6 @@ class PayloadMixin(IdentMixin):
         "description": "PayloadMixin Configuration",
         "default": {},
         "properties": {
-            "key": {
-                "title": "Mixin key",
-                "description": "Name of the mixin. Does not keep alias if name is set to `None` or starting with a `.` (dot)",
-                "default": mixin_key,
-                "oneOf": [
-                    {
-                        "type": "string",
-                    },
-                    {
-                        "type": "null",
-                    },
-                ],
-            },
             # "name_param": {
             #     "title": "Mixin name parameter",
             #     "description": "Name of the parameter to load name from",
@@ -170,6 +162,7 @@ class PayloadMixin(IdentMixin):
     # ---------------------
     @property
     def value(self):
+        "Manage payload value"
         return self.get_value()
 
     @value.setter
@@ -221,6 +214,7 @@ class PayloadMixin(IdentMixin):
 
 
 class NodePayload(Node):
+    "Payload Node"
 
     _node_conf = [{"mixin": PayloadMixin}]
 
@@ -230,6 +224,7 @@ class NodePayload(Node):
 
 
 class LoggerMixin(IdentMixin):
+    "Logger Mixin"
 
     # name = "logger"
     # key = "logger"
@@ -310,9 +305,8 @@ class LoggerMixin(IdentMixin):
         # Disable log propagation
         self.log.propagate = False
 
-    def get_logger_fqdn(self, name=None, prefix=None):
+    def get_logger_fqdn(self):
         "Return the logger FQDN"
-
         return self.get_ident()
 
     def set_level(self, level=None):
@@ -341,17 +335,17 @@ class LoggerMixin(IdentMixin):
         # Get current handle
         if len(self.log.handlers) > 0:
             # pprint (self.log.__dict__)
-            ch = self.log.handlers[0]
-            self.log.removeHandler(ch)
+            hand = self.log.handlers[0]
+            self.log.removeHandler(hand)
         else:
-            ch = logging.StreamHandler()
+            hand = logging.StreamHandler()
 
-        ch.setFormatter(formatter)
-        # ch.setLevel(logging.DEBUG)
+        hand.setFormatter(formatter)
+        # hand.setLevel(logging.DEBUG)
 
-        # self.log.handlers[0] = ch
-        # self.log.handlers.insert(0, ch)
-        self.log.addHandler(ch)
+        # self.log.handlers[0] = hand
+        # self.log.handlers.insert(0, hand)
+        self.log.addHandler(hand)
 
     def traceback(self):
         "Print traceback to stdout"
@@ -359,57 +353,58 @@ class LoggerMixin(IdentMixin):
 
 
 class MapAttrMixin(BaseMixin):
+    "MapAttrMixin"
 
-    # Mapping rules
-    mixin_map = {}
+    # # Mapping rules
+    # mixin_map = {}
 
-    # Allow mixin map overrides
-    attr_override = False
+    # # Allow mixin map overrides
+    # attr_override = False
 
-    # Set your static mapping here
-    attr_map = {
-        # "conf": None,
-        # "log": "log2",
-    }
+    # # Set your static mapping here
+    # attr_map = {
+    #     # "conf": None,
+    #     # "log": "log2",
+    # }
 
-    # Set a function to forward unknown attr, can be Tue/False or a function
-    attr_forward = True
+    # # Set a function to forward unknown attr, can be Tue/False or a function
+    # attr_forward = True
 
-    # def _init(self, *args, **kwargs):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    # # def _init(self, *args, **kwargs):
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
 
-        attr_map = self.attr_map
+    #     attr_map = self.attr_map
 
-        # Init manual mapping
-        for name, key in attr_map.items():
-            key = key or name
-            value = self.node_ctrl.mixin_get(key)
+    #     # Init manual mapping
+    #     for name, key in attr_map.items():
+    #         key = key or name
+    #         value = self.node_ctrl.mixin_get(key)
 
-            if not value:
-                raise errors.MissingMixin(f"Missing mixin: {key}")
+    #         if not value:
+    #             raise errors.MissingMixin(f"Missing mixin: {key}")
 
-            self.node_ctrl.mixin_set(value, name=name)
+    #         self.node_ctrl.mixin_set(value, name=name)
 
-        # Add hooks
-        this = self
+    #     # Add hooks
+    #     this = self
 
-        def func(name):
-            "Hook gettattr"
-            if name in this.mixin_map:
-                return True, this.mixin_map[name]
-            return False, None
+    #     def func(name):
+    #         "Hook gettattr"
+    #         if name in this.mixin_map:
+    #             return True, this.mixin_map[name]
+    #         return False, None
 
-        # The methods has changed !
-        self.node_ctrl.mixin_hooks("__getattr__", func)
+    #     # The methods has changed !
+    #     self.node_ctrl.mixin_hooks("__getattr__", func)
 
-        # Patch object __getattr__
-        if self.attr_forward is True:
+    #     # Patch object __getattr__
+    #     if self.attr_forward is True:
 
-            def func2(self, name):
-                "Hook gettattr for top object"
-                return getattr(this.node_ctrl, name)
+    #         def func2(self, name):
+    #             "Hook gettattr for top object"
+    #             return getattr(this.node_ctrl, name)
 
-            self.node_ctrl._obj.__class__.__getattr__ = types.MethodType(
-                func2, self.node_ctrl._obj.__class__
-            )
+    #         self.node_ctrl._obj.__class__.__getattr__ = types.MethodType(
+    #             func2, self.node_ctrl._obj.__class__
+    #         )
