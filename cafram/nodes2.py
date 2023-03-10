@@ -55,7 +55,7 @@ class Node(CaframNode):
     
     
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, node_conf=None, *args, **kwargs):
         """
         Create a new Node object.
         """
@@ -67,7 +67,8 @@ class Node(CaframNode):
 
 
         NodeCtrl(
-            node_obj=self, 
+            node_obj=self,
+            #node_conf=node_conf or self._node_conf,
             node_attr="_node", 
             #node_logger_prefix=logger_prefix,
             **kwargs)

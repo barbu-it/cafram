@@ -161,6 +161,7 @@ class ConfDictMixin(_ConfContainerMixin):
     "Conf mixin that manage a serializable dict of values"
 
     default = {}
+    _children = {}
 
     def set_default(self, payload):
         "Update defaults"
@@ -191,7 +192,6 @@ class ConfDictMixin(_ConfContainerMixin):
         value = self.get_value() or {}
 
         # Parse children
-        self._children = {}
         children_conf = self.children
         children_map = {}
         if children_conf is False:
@@ -259,6 +259,7 @@ class ConfListMixin(_ConfContainerMixin):
     """
 
     default = []
+    _children = []
 
     def set_default(self, payload):
         "Update defaults"
@@ -284,7 +285,7 @@ class ConfListMixin(_ConfContainerMixin):
 
         # Get data
         value = self.get_value()
-        self._children = []
+        #self._children = []
         children_conf = self.children
         
         if children_conf is False:

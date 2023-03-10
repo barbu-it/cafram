@@ -4,7 +4,7 @@ Tree mixins
 
 # Imports
 ################################################################
-
+import copy
 #from ..nodes import Node
 from ..nodes2 import Node
 
@@ -78,7 +78,7 @@ class HierParentMixin(HierMixinGroup):
 
     def get_child_level(self):
         "Return the node deepness from root node"
-        assert False, "TODO: Make tests"
+        #assert False, "TODO: Make tests"
         parents = self.get_parents(ctrl=False, level=-1)
         return len(parents)
 
@@ -96,10 +96,15 @@ class HierChildrenMixin(HierMixinGroup):
     children = {}
 
     # In which param to look the children conf
-    _param_children = "children"
+    _param__children = "children"
+
+    # This hold the internal children state
+    _children = []
+
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._children = copy.copy(self._children)
         self._parse_children()
 
     # Additional methods

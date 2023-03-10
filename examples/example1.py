@@ -3,7 +3,7 @@ import sys
 import yaml
 import json
 from pprint import pprint
-from cafram.nodes import *
+from cafram.nodes2 import *
 from cafram.utils import serialize
 
 

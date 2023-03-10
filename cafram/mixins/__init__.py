@@ -4,6 +4,7 @@ Base Mixin Class definition
 
 import textwrap
 import inspect
+import json
 from enum import IntEnum
 
 from pprint import pprint, pformat
@@ -44,7 +45,7 @@ class BaseMixin(CaframMixin):
     mixin_order = LoadingOrder.NORMAL
     mixin_key = None
 
-    name_from_obj = False
+    #name_from_obj = False
 
     _schema = {
         # "$defs": {
@@ -86,16 +87,6 @@ class BaseMixin(CaframMixin):
         self._init_logger(prefix=self.node_ctrl._obj_logger_prefix)
 
 
-        # # Update name
-        # self.name_prefix = None
-        # if self.name_from_obj:
-        #     obj = self.node_ctrl._obj
-        #     if issubclass(type(obj), CaframObj):
-        #         self.name_prefix = obj.get_fqn()
-
-
-
-
         # Update mixin requested config 
         mixin_conf = mixin_conf or {}
         for key, value in mixin_conf.items():
@@ -133,111 +124,6 @@ class BaseMixin(CaframMixin):
                 self._log.debug(f"Update mixin from param '{attr_name}' with: {truncate(attr_value)}")
                 setattr(self, attr_name, attr_value)
 
-
-        # # TEMP, deprecation process
-        # if hasattr(self, "_init"):
-        #     mro = self.get_mro()
-        #     cls = None
-        #     for cls in mro:
-        #         if hasattr(cls, '_init'):
-        #             break
-        #     assert False, f"_init is deprecated on: {self.get_fqn()}, problematic classes: cls"
-
-
-    # Override CaframObj methods
-    # -------------------
-
-    # def _get_name_target(self):
-    #     "Try to catch CaframObj reference for naming, fall back on current class"
-
-    #     target = self
-
-    #     obj = self.node_ctrl._obj
-    #     if issubclass(type(obj), CaframObj):    
-    #         target = obj
-
-    #     return target
-
-    # def get_name(self):
-    #     "Get name from CaframObj first or get back to class name"
-    #     target = self._get_name_target()        
-
-    #     name = target.name or target.__class__.__name__
-    #     inst = target.name_inst
-    #     if inst:
-    #         name += str(inst)
-    #     return name
-
-
-
-    # def get_fqn(self):
-    #     "Get FQN from CaframObj first or get back to class name"
-
-    #     # TODO: Transform into 
-    #     name_prefix = self.name_prefix
-
-    #     if name_prefix:
-    #         obj = self.node_ctrl._obj
-    #         if issubclass(type(obj), CaframObj):
-    #             print ("FQN FROM OBJ")  
-    #             return obj.get_fqn()
-
-    #     print ("FQN FROM MIXIN")
-    #     return super().get_fqn()
-
-
-    # def get_fqn__2(self):
-    #     "Get FQN from CaframObj first or get back to class name"
-
-    #     target = self._get_name_target()
-
-    #     log_name = self.get_name()
-    #     log_prefix = self.name_prefix
-
-    #     if not log_name or not log_prefix:
-
-    #         if self.node_ctrl._obj:
-    #             target = self.node_ctrl._obj
-    #         else:
-    #             target = self
-    #         target = type(target)
-
-    #         if not log_prefix:
-    #             log_prefix = target.__module__ + "."
-
-    #         if not log_name:
-    #             log_name = target.__name__
-
-    #     return f"{log_prefix}{log_name}"
-
-
-
-
-    # Generic
-    # -------------------
-
-
-
-
-    # v1
-    # def __getattribute__(self, name):
-        
-    #     attr = super().__getattribute__(name)
-
-    #     if callable(attr):
-    #         try:
-    #             cls = attr.__self__.__class__
-    #         except AttributeError:
-    #             cls = None
-
-    #         if cls and not issubclass(cls, CaframMixin):
-    #             #print ("====> CATCH ALL", name, cls)
-    #             #pprint (attr)
-    #             def wrapper(*args, **kwargs):
-    #                 return attr(self, *args, **kwargs)
-    #             return wrapper
-    #     #else:
-    #     return attr
 
     # Troubleshooting
     # -------------------
@@ -325,6 +211,7 @@ class BaseMixin(CaframMixin):
         for cls in reversed(bases):
             print(f"    - {cls.__module__}.{cls.__name__}")
 
+        pprint (data)
         if "params" in data:
             sec = data["params"]
             print("\n  Parameters:")
@@ -349,6 +236,15 @@ class BaseMixin(CaframMixin):
                 print(f"    {key}{sign}:")
                 head_doc = textwrap.indent(val.__doc__ or "<Missing>", "      ")
                 print(head_doc)
+
+
+        if "private_var" in data:
+            # TODO: Show up _param vars
+            sec = data["private_var"]
+            print("\n  Private vars:")
+            for key, val in sec.items():
+                print(f"    {key}: {val}")
+
 
         if len(other) > 0:
             sec = other

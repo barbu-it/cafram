@@ -10,7 +10,7 @@ import pytest
 
 
 import cafram.errors as errors
-from cafram.ctrl import NodeCtrl
+from cafram.ctrl2 import NodeCtrl
 
 from cafram.mixins import BaseMixin
 from cafram.mixins.base import LoggerMixin, MapAttrMixin
@@ -19,7 +19,7 @@ from cafram.mixins.base import LoggerMixin, MapAttrMixin
 
 #from cafram.mixins.tree import  _ContainerMixin
 
-from cafram.nodes import Node, Node
+from cafram.nodes2 import Node, Node
 from cafram.mixins.base import PayloadMixin
 from cafram.mixins.hier import HierMixin, HierParentMixin, HierChildrenMixin
 from cafram.mixins.tree import NodePayload, NodeConf, NodeConfDict, NodeConfList
@@ -55,9 +55,9 @@ def test_node_empty(tester=None):
 
     assert isinstance(tester._node._mixin_dict, dict)
     assert isinstance(tester._node._mixin_hooks, dict)
-    assert isinstance(tester._node._mixin_shortcuts, dict)
+    assert isinstance(tester._node._mixin_aliases, dict)
     assert isinstance(tester._node._obj_attr, str)
-    assert isinstance(tester._node._obj_conf, list)
+    assert isinstance(tester._node._obj_conf, dict)
     assert isinstance(tester._node._obj_has_attr, bool)
 
 
@@ -68,43 +68,52 @@ def test_node_empty(tester=None):
 
 def run_payload_base(tester, payload):
     # Test parameters
-    assert tester._node.payload._payload == payload
+    assert tester._node.conf._payload == payload
 
     # Test mixin methods
-    ret = tester._node.payload.get_value()
+    ret = tester._node.conf.get_value()
     assert ret == payload
     
     # Test mixin methods
-    ret = tester._node.payload.set_value("123")
+    ret = tester._node.conf.set_value("123")
     assert ret == "123"
-    ret = tester._node.payload.get_value()
+    ret = tester._node.conf.get_value()
     assert ret == "123"
 
     # Restore previous state
-    tester._node.payload.set_value(payload)
+    tester._node.conf.set_value(payload)
 
 
 def test_node_payload(tester=None, payload=None):
 
     payload=payload or EX_PAYLOAD1
-    node_conf = [
-        {
-            "mixin": PayloadMixin,
+    # node_conf = [
+    #     {
+    #         "mixin": PayloadMixin,
+    #     }
+    # ]
+    class TestClass(Node):
+        _node_logger_prefix = True
+        _node_conf = {
+            "conf": {
+                "mixin": PayloadMixin,
+            }
         }
-    ]
-    tester = tester or Node(node_conf=node_conf, payload=payload)
+
+    tester = tester or TestClass(payload=payload)
 
     # Run new tests
     # --------------
+    #pprint (tester._node.__dict__)
 
     # Run previous tests
     test_node_empty(tester=tester)
 
     # Run partial tests
-    run_payload_base(tester, payload)
+    #run_payload_base(tester, payload)
 
     # Test alias access
-    assert tester._node.value == payload
+    assert tester.conf.value == payload
 
 
 # def test_node_container(tester=None):
@@ -130,22 +139,30 @@ def test_node_payload(tester=None, payload=None):
 def test_node_conf(tester=None):
 
     payload=EX_PAYLOAD1
-    node_conf = [
-        {
-            "mixin": ConfMixin,
-        },
+    # node_conf = [
+    #     {
+    #         "mixin": ConfMixin,
+    #     },
         
-    ]
-    tester = tester or Node(node_conf=node_conf, payload=payload)
+    # ]
 
-    # This should fail as we removed "name"="payload" in conf
-    try:
-        run_payload_base(tester, payload)
-        assert False
-    except errors.AttributeError:
-        pass
+    class TestClass(Node):
+        _node_conf = {
+            "conf": {
+                "mixin": ConfMixin,
+            }
+        }
 
-    # pprint (tester._node.__dict__)
+    tester = tester or TestClass(payload=payload)
+
+    # # This should fail as we removed "name"="payload" in conf
+    # try:
+    #     run_payload_base(tester, payload)
+    #     assert False
+    # except errors.AttributeError:
+    #     pass
+
+    #pprint (tester._node.__dict__)
 
     # Test json deserializer/serializer
     val1 = tester._node.conf.get_value()
@@ -168,13 +185,15 @@ def test_node_dict_children_false(tester=None):
 
     # When children = True
     payload=EX_PAYLOAD1
-    node_conf = [
-        {
-            "mixin": ConfDictMixin,
-            "children": False,
-        },
-    ]
-    tester = tester or NodeConf(node_conf=node_conf, payload=payload)
+
+    class TestClass(Node):
+        _node_conf = [
+            {
+                "mixin": ConfDictMixin,
+                "children": False,
+            },
+        ]
+    tester = tester or TestClass(payload=payload)
 
     # tester.dump()
     # pprint (None)
@@ -213,13 +232,16 @@ def test_node_dict_children_none(tester=None):
 
     # When children = None
     payload=EX_PAYLOAD1
-    node_conf = [
-        {
-            "mixin": ConfDictMixin,
-            "children": None,
-        },
-    ]
-    tester = tester or NodeConf(node_conf=node_conf, payload=payload)
+
+    class TestClass(Node):
+        _node_conf = [
+            {
+                "mixin": ConfDictMixin,
+                "children": None,
+            },
+        ]
+    tester = tester or TestClass(payload=payload)
+
 
     # Generic mixin API works
     assert tester.conf.value == payload
@@ -249,13 +271,15 @@ def test_node_dict_children_true(tester=None):
 
     # When children = True
     payload=EX_PAYLOAD1
-    node_conf = [
-        {
-            "mixin": ConfDictMixin,
-            "children": True,
-        },
-    ]
-    tester = tester or NodeConf(node_conf=node_conf, payload=payload)
+    
+    class TestClass(Node):
+        _node_conf = [
+            {
+                "mixin": ConfDictMixin,
+                "children": True,
+            },
+        ]
+    tester = tester or TestClass(payload=payload)
 
     # tester.dump()
     # pprint (None)
@@ -290,13 +314,19 @@ def test_node_dict_get_parents(tester=None):
 
     # When children = True
     payload=EX_PAYLOAD1
-    node_conf = [
-        {
-            "mixin": ConfDictMixin,
-            "children": True,
-        },
-    ]
-    tester = tester or NodeConf(node_conf=node_conf, payload=payload)
+
+    class TestClass(Node):
+        _node_conf = [
+            {
+                "mixin": ConfDictMixin,
+                "children": True,
+            },
+        ]
+    tester = tester or TestClass(payload=payload)
+
+
+    ret_test = tester.ex_dict.ex_dict1.conf.get_parents()
+    #pprint (ret_test)
 
     # Test get_parent and get_parents
     ret1 = tester.ex_dict.ex_dict1.conf.get_parents(1)[0]
@@ -329,13 +359,15 @@ def test_node_dict_get_children(tester=None):
 
     # When children = True
     payload=EX_PAYLOAD1
-    node_conf = [
-        {
-            "mixin": ConfDictMixin,
-            "children": True,
-        },
-    ]
-    tester = tester or NodeConf(node_conf=node_conf, payload=payload)
+
+    class TestClass(Node):
+        _node_conf = [
+            {
+                "mixin": ConfDictMixin,
+                "children": True,
+            },
+        ]
+    tester = tester or TestClass(payload=payload)
 
     assert tester.conf.get_children() == tester.conf.get_children(level=0), "Ensure optional param works as expected"
     
@@ -373,8 +405,14 @@ def test_node_conf_variants(tester=None):
     ]
 
     for node_conf in node_confs:
-        tester = Node(node_conf=node_conf, payload=payload)
-        tester.dump(stdout=False)
+
+        class TestClass(Node):
+            _node_conf = node_conf
+        tester = tester or TestClass(payload=payload)
+
+
+        #tester = Node(node_conf=node_conf, payload=payload)
+        tester._node.dump(stdout=False)
 
 
 

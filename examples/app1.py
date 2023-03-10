@@ -1,5 +1,5 @@
 from cafram.mixins.tree import ConfDictMixin, NodeConfDict
-from cafram.nodes import Node
+from cafram.nodes2 import Node
 
 app_config = {
         "namespace": "username",        

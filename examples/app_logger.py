@@ -1,44 +1,88 @@
 import logging
 from pprint import pprint
+import traceback
 
-from cafram.nodes import Node
 from cafram.mixins.base import LoggerMixin
+from cafram.nodes2 import Node
 
 
-# Only relevant for entrypoints
-# logging.basicConfig(level=logging.INFO)
 
-# log = logging.getLogger(__name__)
 
-# log = logging.getLogger(__name__)
-# log = logging.getLogger("cafram2")
 
+# Only relevant for entrypoints, configure root logger, get log of
+# all sublibraries because it configure root logger
+logging.basicConfig(level=logging.INFO)
+
+
+log = logging.getLogger()
+#log = logging.getLogger(__name__)
+log.setLevel("INFO")
 
 class MyApp(Node):
 
     _node_conf = [
         {
             "mixin": LoggerMixin,
-            # "log_level": "DEBUG",
-            "log_sformat": "struct",
+            # "log_level": "ERROR",
+            # "log_sformat": "struct",
         }
     ]
 
     def _init(self):
 
-        self.log.debug("App initialization complete!")
+        self.log.info("App initialization complete!")
 
-    def test_logging(self):
+    def log_demo(self):
 
         self.log.debug("DEBUG Messages")
         self.log.info("INFO Messages")
         self.log.warning("WARNING Messages")
         self.log.error("ERROR Messages")
 
+    def test_logging(self):
 
+        print ("=> Get info")
+        print (self.log.name)
+
+        print("=> Change log level on road")
+        print ("DEBUG")
+        self.logger.set_level("DEBUG")
+        self.log_demo()        
+
+        print ("INFO")
+        self.logger.set_level("INFO")
+        self.log_demo()      
+
+        print ("ERROR")
+        self.logger.set_level("ERROR")
+        self.log_demo()      
+
+
+        # Change log format on road
+        print("\n=> Change log format on road")
+        print ("STRUCT")
+        self.logger.set_format("struct")
+        self.log_demo()        
+
+        print ("TIME")
+        self.logger.set_format("time")
+        self.log_demo()
+
+        print ("PRECISE")
+        self.logger.set_format("precise")
+        self.log_demo()
+
+        # Regular still works
+        log.warning("Regular logger Warning message")
+
+        print ("End of demo\n")
+
+
+# Instanciate app
 app = MyApp()
-
-# app._node.dump()
-# pprint (app._node.__dict__)
-
 app.test_logging()
+
+
+# print ("TESTS")
+log.warning("Regular logger")
+log.info("Logging demo is done")

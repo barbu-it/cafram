@@ -5,6 +5,7 @@ Base mixins
 import types
 import logging
 import copy
+import traceback
 from pprint import pprint
 
 # from ..nodes import Node
@@ -12,6 +13,7 @@ from ..lib import log_colors
 
 from ..nodes2 import Node
 from ..common import CaframObj
+from .. import errors
 from . import BaseMixin, LoadingOrder
 
 
@@ -90,11 +92,9 @@ class IdentMixin(BaseMixin):
 
 class PayloadMixin(IdentMixin):
 
-    #name = "payload"
     mixin_key = "payload"
-    #name_param = "payload"
 
-
+    _payload = None
     _param__payload = "payload"
 
     value_alias = "value"
@@ -167,7 +167,6 @@ class PayloadMixin(IdentMixin):
         super().__init__(*args, **kwargs)
 
         self._value = None
-        #self._payload = kwargs.get(self.name_param, None)
         self.set_value(self._payload)
         self._register_alias()
 
