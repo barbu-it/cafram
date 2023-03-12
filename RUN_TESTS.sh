@@ -9,10 +9,13 @@ run_examples ()
 
   # example1.py: Old version, must be updated
   local files="app_apiv2.py app_ident.py app_inherit.py app_logger.py app1.py"
+  files=$(ls -1  examples/*.py )
+
 
   for i in $files; do
-    echo "=> Run test: python examples/$i"
-    python examples/$i
+    echo "=> Run test: python $i"
+    python $i
+    #python examples/$i
   done
 }
 
@@ -28,6 +31,7 @@ main ()
   run_tests
   run_examples
 
+  echo "---"
   echo "Tests are over with Success!"
 }
 
