@@ -4,6 +4,8 @@ Node Controlled Classes
 
 from pprint import pprint
 
+from . import errors
+
 from .common import CaframNode
 from .ctrl2 import NodeCtrl
 
@@ -80,11 +82,11 @@ class Node(CaframNode):
         count = len(args)
         if count == 0:
             return self._node
-        elif count == 1:
+        if count == 1:
             return self._node.mixin_get(args[0])
-        else:
-            msg = f"Only 1 argument is allowed"
-            raise errors.CaframException(msg)
+
+        msg = "Only 1 argument is allowed"
+        raise errors.CaframException(msg)
 
     def __getitem__(self, name):
         "Handle dict notation"

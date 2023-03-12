@@ -55,20 +55,6 @@ class MyApp(Node):
         self.logger.set_level("ERROR")
         self.log_demo()
 
-        # Change log format on road
-        print("\n=> Change log format on road")
-        print("STRUCT")
-        self.logger.set_format("struct")
-        self.log_demo()
-
-        print("TIME")
-        self.logger.set_format("time")
-        self.log_demo()
-
-        print("PRECISE")
-        self.logger.set_format("precise")
-        self.log_demo()
-
         # Regular still works
         log.warning("Regular logger Warning message")
 

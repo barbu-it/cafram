@@ -39,7 +39,6 @@ class NodeCtrl(CaframCtrl):
     "NodeCtrl Class, primary object to interact on Nodes"
 
     # Deprecated !!!
-    _obj_attr = "_node"
 
     # New config
     _obj_name = None
@@ -322,9 +321,9 @@ class NodeCtrl(CaframCtrl):
             if isinstance(mixin_ref, str):
                 try:
                     mixin_cls = importlib.import_module(mixin_ref)
-                except ModuleNotFoundError:
+                except ModuleNotFoundError as err:
                     msg = f"Impossible to add mixin: {mixin_ref} from: {mixin_conf}"
-                    raise errors.CaframException(msg)
+                    raise errors.CaframException(msg) from err
             else:
                 mixin_cls = mixin_ref
 

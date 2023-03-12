@@ -23,7 +23,7 @@ from .hier import HierParentMixin, HierChildrenMixin
 from .path import PathMixin
 
 
-from . import BaseMixin, LoadingOrder, mixin_init
+from . import LoadingOrder
 
 
 # Parent exceptions
@@ -420,10 +420,11 @@ class ConfDictMixin(_ConfContainerMixin):
                     children_list.append(conf)
 
                     self._log.debug(
-                        f"Child '{child_key}' config is default mapped to {child_cls}"
+                        f"Child '{child_key}' config is default mapped to {children_conf}"
                     )
 
             else:
+                print("YOOOOO", str(self.get_ctrl()))
                 msg = (
                     f"Invalid children config for {self}, "
                     "expected one of bool,None,str,MixinClass, got "

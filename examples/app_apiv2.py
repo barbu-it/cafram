@@ -9,6 +9,7 @@ from cafram.mixins.tree import (
     NodeConfDict,
     NodeConfList,
     ConfMixin,
+    ConfOrderedMixin,
 )
 from cafram.nodes2 import Node
 
@@ -55,6 +56,8 @@ class Repo(BaseAppNodeDict):
         "conf": {
             "mixin": ConfDictMixin,
             # "children": GenericKV,
+            # TOFIX: Bug when not set !
+            "children": True,
         },
     }
 
@@ -69,7 +72,7 @@ class Repo(BaseAppNodeDict):
         # pprint (self.value)
         # pprint (self._node.conf.__dict__)
 
-    def _node__conf__transform(self, mixin, payload):
+    def _node__conf__preparse(self, mixin, payload):
 
         if isinstance(payload, str):
             npayload = {
@@ -163,7 +166,7 @@ class MyApp(BaseApp):
             "log_sformat": "struct",
         },
         "_conf": {
-            "mixin": ConfDictMixin,
+            "mixin": ConfOrderedMixin,
             "children": {
                 "repos": Repos,
                 "shared_dict": Config,

@@ -29,23 +29,6 @@ class LoadingOrder(IntEnum):
     LAST = 90
 
 
-def mixin_init(init):
-    "DEPRECATED"
-
-
-#     def _init__(self, *args, **kwargs):
-
-#         print ("PRE INIT")
-#         self.mixin_aliases = False
-#         super(type(self)).__init__(*args, **kwargs)
-#         self.mixin_aliases = True
-
-#         init(self, *args, **kwargs)
-#         print ("POST INIT")
-
-#     return _init__
-
-
 class BaseMixin(CaframMixin):
     """Parent class of Cafram Mixins
 

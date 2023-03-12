@@ -49,7 +49,8 @@ class HierParentMixin(HierMixinGroup):
         "Return the closest parent having a given class"
 
         for parent in self.get_parents():
-            if type(parent.get_obj()) == cls:
+            # if type(parent.get_obj()) == cls:
+            if isinstance(parent.get_obj(), cls):
                 return parent
 
         return None

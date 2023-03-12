@@ -3,7 +3,13 @@ import logging
 from pprint import pprint
 
 from cafram.mixins.base import LoggerMixin, IdentMixin
-from cafram.mixins.tree import ConfDictMixin, ConfListMixin, NodeConfDict, NodeConfList
+from cafram.mixins.tree import (
+    ConfDictMixin,
+    ConfListMixin,
+    NodeConfDict,
+    NodeConfList,
+    ConfOrderedMixin,
+)
 from cafram.nodes2 import Node
 
 
@@ -79,7 +85,7 @@ class MyApp(Node):
             "mixin": LoggerMixin,
         },
         {
-            "mixin": ConfDictMixin,
+            "mixin": ConfOrderedMixin,
             "children": {
                 "repos": Repos,
             },

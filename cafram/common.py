@@ -66,13 +66,14 @@ class CaframInternalsGroup(CaframObj):
         return self._obj
 
     def get_obj_name(self):
+        "Get object name"
         obj = self.get_obj()
         if isinstance(obj, CaframObj):
             return obj.get_name()
-        else:
-            return type(self).__name__
+        return type(self).__name__
 
     def get_obj_prefix(self):
+        "Get object prefix"
         obj = self.get_obj()
         if isinstance(obj, CaframObj):
             return obj.get_prefix()
@@ -107,6 +108,7 @@ class CaframInternalsGroup(CaframObj):
     # --------------------
 
     def get_logger_name(self, impersonate=None):
+        "Get logger internal name"
 
         if impersonate is True:
 
@@ -147,8 +149,19 @@ class CaframInternalsGroup(CaframObj):
 class CaframCtrl(CaframInternalsGroup):
     "Cafram Controller Type"
 
-    # _obj_logger_prefix = "CTRL"
+    _obj_attr = "_node"
     _obj_logger_impersonate_prefix = "cafram"
+
+    # OVERRIDES
+    def get_ident(self):
+        "Return the class Fully Qualified Name of any object"
+
+        if self._obj_impersonate:
+            # BROKEN: prefix = f"{self.get_obj_fqn()}[{self._obj_attr}]({self.get_prefix()})" # Missing name in last part
+            # BROKEN: prefix = f"{self.get_obj_fqn()}[{self._obj_attr}]({self.get_name()})"  # Missing prefix in last part
+            prefix = f"{self.get_obj_fqn()}[{self._obj_attr}]({self._obj_logger_impersonate_prefix}.{self.get_name()})"  # Missing prefix in last part
+            return prefix
+        return super().get_fqn()
 
 
 class CaframMixin(CaframInternalsGroup):
@@ -166,3 +179,14 @@ class CaframMixin(CaframInternalsGroup):
     def get_obj(self):
         "Return current object"
         return self.get_ctrl().get_obj()
+
+    # OVERRIDES
+    def get_ident(self):
+        "Return the class Fully Qualified Name of any object"
+
+        if self._obj_impersonate:
+            # BROKEN: prefix = f"{self.get_obj_fqn()}[{self.mixin_key}]({self.get_prefix()})" # Missing name
+            # prefix = f"{self.get_obj_fqn()}[{self.mixin_key}]({self.get_prefix()}.{self.get_name()})"  # Long form
+            prefix = f"{self.get_obj_fqn()}[{self.mixin_key}]({self.get_name()})"  # Short form
+            return prefix
+        return super().get_fqn()
