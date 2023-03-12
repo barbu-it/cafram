@@ -29,6 +29,23 @@ class LoadingOrder(IntEnum):
     LAST = 90
 
 
+def mixin_init(init):
+    "DEPRECATED"
+
+
+#     def _init__(self, *args, **kwargs):
+
+#         print ("PRE INIT")
+#         self.mixin_aliases = False
+#         super(type(self)).__init__(*args, **kwargs)
+#         self.mixin_aliases = True
+
+#         init(self, *args, **kwargs)
+#         print ("POST INIT")
+
+#     return _init__
+
+
 class BaseMixin(CaframMixin):
     """Parent class of Cafram Mixins
 
@@ -43,6 +60,11 @@ class BaseMixin(CaframMixin):
     # key = None
     mixin_order = LoadingOrder.NORMAL
     mixin_key = None
+    mixin_aliases = True
+    mixin_alias_map = None
+
+    mixin_logger_impersonate = None
+    mixin_logger_level = None
 
     # name_from_obj = False
 
@@ -78,13 +100,27 @@ class BaseMixin(CaframMixin):
         },
     }
 
+    # def __repr__(self):
+    #     "Mixin representation"
+    #     prefix = self.get_fqn()
+    #     suffix = f"[{self.mixin_key}]{type(self).__name__}"
+    #     return f"<{prefix}{suffix}>"
+
     def __init__(self, node_ctrl, mixin_conf=None, **kwargs):
 
         # super().__init__(**kwargs)
 
         self.node_ctrl = node_ctrl
         self.mixin = self.mixin or type(self)  # TODO: Is it relevant ????
-        self._init_logger(prefix=self.node_ctrl._obj_logger_prefix)
+
+        # Start logger
+        impersonate = mixin_conf.get(
+            "mixin_logger_impersonate", self.node_ctrl._obj_logger_impersonate
+        )
+        log_level = mixin_conf.get(
+            "mixin_logger_level", self.node_ctrl._obj_logger_level
+        )
+        self._init_logger(impersonate=impersonate, level=log_level)
 
         # Update mixin requested config
         mixin_conf = mixin_conf or {}
@@ -116,6 +152,10 @@ class BaseMixin(CaframMixin):
         # Save arguments in instance
         self.mixin_conf = mixin_conf
 
+        # self._init_logger(
+        #     impersonate=self.mixin_logger_impersonate,
+        #     level=self.mixin_logger_level)
+
         # Fetch kwargs parameters for live parameters (_param_)
         for attr in dir(self):
 
@@ -131,6 +171,48 @@ class BaseMixin(CaframMixin):
                     f"Update mixin from param '{attr_name}' with: {truncate(attr_value)}"
                 )
                 setattr(self, attr_name, attr_value)
+
+        # Fetch alias config (_alias_)
+        aliases = {}
+        for attr in dir(self):
+
+            if not attr.startswith("_alias_"):
+                continue
+
+            attr_name = attr.replace("_alias_", "")
+            attr_param = getattr(self, attr)
+            aliases[attr_name] = attr_param
+        self.mixin_alias_map = aliases
+
+    # def _register_alias2(self):
+    #     "Placeholder function to execute to register aliases"
+
+    # def _register_alias3(self):
+    #     if self.value_alias:
+    #         self.node_ctrl.alias_register(self.value_alias, self.get_value())
+
+    # def _super__init__(self, sup, *args, mixin_aliases=False, **kwargs):
+    #     "Super init, call parents __init__ classes"
+    #     print ("DEPRECATED BLIIIII")
+
+    #     # Disable aliases on parent classes
+    #     old_val = self.mixin_aliases
+    #     self.mixin_aliases = mixin_aliases
+    #     sup.__init__(*args, **kwargs)
+
+    #     # Restore old value
+    #     self.mixin_aliases = old_val
+
+    def _register_alias(self, name, value):
+        # alias_map = self.alias_map
+
+        if self.mixin_aliases:
+            assert (
+                name in self.mixin_alias_map
+            ), f"Missing undeclared alias for {self}: {name}"
+            name = self.mixin_alias_map.get(name, name)
+            if name:
+                self.node_ctrl.alias_register(name, value)
 
     # Troubleshooting
     # -------------------

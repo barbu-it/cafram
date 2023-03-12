@@ -2,9 +2,24 @@
 Cafram Exceptions
 """
 
+# Parent classes
+# ====================
+
 
 class CaframException(Exception):
     """Generic cafram exception"""
+
+
+class CaframMixinException(CaframException):
+    """Generic Mixin cafram exception"""
+
+
+class CaframCtrlException(CaframException):
+    """Generic Controller cafram exception"""
+
+
+# Parent classes
+# ====================
 
 
 class MissingMixin(CaframException):

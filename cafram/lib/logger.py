@@ -5,9 +5,90 @@ Written by david.ohana@ibm.com
 License: Apache-2.0
 """
 
+import sys
 import logging
 import logging.handlers
 import re
+
+
+logger_sfmt = {
+    "default": None,
+    # "colors": "%(levelname)8s: %(message)s",
+    "basic": "%(levelname)8s: %(message)s",
+    "struct": "%(name)-40s%(levelname)8s: %(message)s",
+    "time": "%(asctime)s.%(msecs)03d|%(name)-16s%(levelname)8s: %(message)s",
+    "precise": (
+        "%(asctime)s.%(msecs)03d"
+        + " (%(process)d/%(thread)d) "
+        + "%(pathname)s:%(lineno)d:%(funcName)s"
+        + ": "
+        + "%(levelname)s: %(message)s"
+    ),
+}
+logger_tfmt = {
+    "default": None,
+    "basic": "%H:%M:%S",
+    "precise": "%Y-%m-%d %H:%M:%S",
+}
+
+
+def app_logger(name=None, logger=None, level=None, sfmt=None, tfmt=None, colors=None):
+    "Logging basicConfig alternative with logger choice"
+
+    name = name or None
+    # level = level or logging.WARNING
+    # sfmt = sfmt or '%(name)s - %(levelname)s - %(message)s'
+
+    # Get formats
+    # print ("FORMAT ", sfmt, name)
+    sfmt = sfmt  # or 'default'
+    # print ("FORMAT ", sfmt)
+    sfmt = logger_sfmt.get(sfmt, sfmt)
+    # print ("FORMAT ", sfmt, colors)
+    tfmt = tfmt  # or 'default'
+    tfmt = logger_tfmt.get(tfmt, tfmt)
+
+    # Get logger or root if None
+    logger = logger or logging.getLogger(name)
+    if level:
+        logger.setLevel(level)
+
+    # Determine next action
+    _colors = colors if isinstance(colors, bool) else sys.stdout.isatty()
+    if not (sfmt or tfmt or _colors):
+        logger.propagate = True
+        return logger
+
+    if _colors:
+
+        # Colorization only happens on level name, so we add ensure levelname is present
+        # especially if user set colors=True
+        if colors is True:
+            if not sfmt:
+                sfmt = "%(levelname)7s: %(message)s"
+            if sfmt and not "levelname" in sfmt:
+                sfmt = "%(levelname)7s: " + sfmt
+
+        formatter = ColorizedArgsFormatter(fmt=sfmt, datefmt=tfmt)
+    else:
+        formatter = logging.Formatter(fmt=sfmt, datefmt=tfmt)
+
+    # Cleanup existing handlers
+    if logger.handlers:
+        for handler in logger.handlers:
+            logger.removeHandler(handler)
+    hand = logging.StreamHandler()
+
+    # create a stream handler and set the formatter
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+
+    # add the handler to the logger
+    logger.addHandler(handler)
+
+    # logger.propagate = False
+
+    return logger
 
 
 class ColorCodes:
@@ -37,9 +118,13 @@ class ColorizedArgsFormatter(logging.Formatter):
         logging.CRITICAL: ColorCodes.bold_red,
     }
 
-    def __init__(self, fmt: str):
+    # Actual signature:
+    # def __init__(self, fmt=None, datefmt=None, style='%', validate=True, *,defaults=None):
+    def __init__(self, fmt: str = None, **kwargs):
         super().__init__()
         self.level_to_formatter = {}
+
+        fmt = fmt or self._fmt
 
         def add_color_format(level: int):
             color = ColorizedArgsFormatter.level_to_color[level]
@@ -47,7 +132,7 @@ class ColorizedArgsFormatter(logging.Formatter):
             for fld in ColorizedArgsFormatter.level_fields:
                 search = "(%\\(" + fld + "\\).*?s)"
                 _format = re.sub(search, f"{color}\\1{ColorCodes.reset}", _format)
-            formatter = logging.Formatter(_format)
+            formatter = logging.Formatter(fmt=_format, **kwargs)
             self.level_to_formatter[level] = formatter
 
         add_color_format(logging.DEBUG)

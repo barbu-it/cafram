@@ -5,6 +5,8 @@ Cafram Root Classes
 import logging
 import inspect
 
+from pprint import pprint
+
 
 class CaframObj:
     "An empty root class to determine a cafram object or not"
@@ -12,27 +14,21 @@ class CaframObj:
     # Name part
     name = None
 
-    # Domain part
-    # name_prefix = f"|{__module__}|"
-    name_prefix = None
-
     def get_name(self):
         "Retrieve node Name"
         return self.name or self.__class__.__name__
 
     def get_prefix(self):
         "Return name prefix"
-        if isinstance(self.name_prefix, str):
-            return self.name_prefix
         return self.__class__.__module__
 
     def get_fqn(self):
         "Return the class Fully Qualified Name of any object"
         prefix = self.get_prefix()
-        if prefix:
-            # print ("PREFIX", prefix)
-            return ".".join([prefix, self.get_name()])
-        return self.get_name()
+        name = self.get_name()
+        if prefix and name:
+            return ".".join([prefix, name])
+        return name
 
     def get_mro(self):
         "Return the class MRO of any object"
@@ -47,48 +43,121 @@ class CaframNode(CaframObj):
 class CaframInternalsGroup(CaframObj):
     "Cafram Internals"
 
-    _obj_logger_prefix = False
+    # Does the Cafram object are impersonated to obj
+    _obj_impersonate = True
+
+    _obj_logger_level = None
+
+    # Do yo want native logger to be impersonated as well, None to use defaults
+    _obj_logger_impersonate = False
+
+    # Prefix of the impersonated object, string or None to be ignored
+    _obj_logger_impersonate_prefix = None
+
+    # Class attr
     _obj = None
     _log = None
+
+    # Object management
+    # --------------------
 
     def get_obj(self):
         "Return current object"
         return self._obj
 
-    def _init_logger(self, prefix=None):
+    def get_obj_name(self):
+        obj = self.get_obj()
+        if isinstance(obj, CaframObj):
+            return obj.get_name()
+        else:
+            return type(self).__name__
+
+    def get_obj_prefix(self):
+        obj = self.get_obj()
+        if isinstance(obj, CaframObj):
+            return obj.get_prefix()
+        else:
+            return type(self).__module__
+
+    def get_obj_fqn(self):
+        "Return the class Fully Qualified Name of any object"
+        prefix = self.get_obj_prefix()
+        name = self.get_obj_name()
+        if name and prefix:
+            return f"{prefix}.{name}"
+        return name or prefix
+
+    # Ident Object management
+    # --------------------
+
+    def get_ident(self):
+        "Return the class Fully Qualified Name of any object"
+
+        if self._obj_impersonate:
+            # prefix = f'YOOOOOOOOOOOOOOOOOO{self.get_obj_fqn()}[{self.get_prefix()}.{self.get_name()}]'
+            prefix = f"{self.get_obj_fqn()}[{self.get_prefix()}]"
+            return prefix
+        return super().get_fqn()
+
+    def __repr__(self):
+        "Mixin representation"
+        return self.get_ident()
+
+    # Logger management
+    # --------------------
+
+    def get_logger_name(self, impersonate=None):
+
+        if impersonate is True:
+
+            if self._obj_logger_impersonate_prefix:
+                logger_name = f"{self.get_obj_fqn()}.{self._obj_logger_impersonate_prefix}.{self.get_name()}"
+            else:
+                logger_name = (
+                    f"{self.get_obj_fqn()}.{self.get_prefix()}.{self.get_name()}"
+                )
+        else:
+            logger_name = self.get_fqn()
+
+        return logger_name
+
+    def _init_logger(self, level=None, impersonate=None):
         "Init internal cafram logger"
 
-        prefix_old = prefix
-
-        if prefix is True:
-            obj = self.get_obj()
-            prefix = f"{obj.__module__}.{obj.__class__.__name__}"
-        elif prefix is False:
-            prefix = self.__module__
-
-        if not isinstance(prefix, str):
-            prefix = self._obj_logger_prefix
-
-        if isinstance(prefix, str):
-            name = f"{prefix}.{self.get_name()}"
-        else:
-            name = self.get_fqn()
-
-        self._log = logging.getLogger(name)
-        # self._log.propagate = False
-        self._log.debug(
-            f"Get Cafram logger for {self.get_name()}: {name} (prefix={prefix_old}/{prefix})"
+        impersonate = (
+            impersonate
+            if isinstance(impersonate, bool)
+            else self._obj_logger_impersonate
         )
+
+        logger_name = self.get_logger_name(impersonate=impersonate)
+        # impersonated = self._obj_logger_impersonate or self._obj_impersonate
+        impersonated = "impersonated" if impersonate else "generic"
+
+        # print ("NEW LOGGER", logger_name, impersonate)
+
+        self._log = logging.getLogger(logger_name)
+
+        level = level or self._obj_logger_level
+        if level is not None:
+            self._log.setLevel(level)
+        self._log.debug(f"Get {impersonated} Cafram logger for {self}: {logger_name}")
 
 
 class CaframCtrl(CaframInternalsGroup):
     "Cafram Controller Type"
 
+    # _obj_logger_prefix = "CTRL"
+    _obj_logger_impersonate_prefix = "cafram"
+
 
 class CaframMixin(CaframInternalsGroup):
     "Cafram Mixin Type"
 
+    # _obj_logger_prefix =  "MIXIN"
     node_ctrl = None
+
+    _obj_logger_impersonate_prefix = "cafram.Mixin"
 
     def get_ctrl(self):
         "Return current Node controller"

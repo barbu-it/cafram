@@ -6,6 +6,7 @@ import io
 import os
 import json
 import re
+import importlib
 
 from io import StringIO
 import ruamel.yaml
@@ -23,6 +24,13 @@ yaml.explicit_start = True
 # =====================================================================
 # Misc functions
 # =====================================================================
+
+
+def import_from_str(name):
+    "Import a module from a string. Returns ModuleNotFoundError if does not exists"
+
+    return importlib.import_module(name)
+
 
 # pylint: disable=redefined-builtin
 def truncate(data, max=72, txt=" ..."):

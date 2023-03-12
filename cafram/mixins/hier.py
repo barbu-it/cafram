@@ -45,6 +45,15 @@ class HierParentMixin(HierMixinGroup):
     #     value = value or HierParentMixin
     #     pass
 
+    def get_parent_by_cls(self, cls):
+        "Return the closest parent having a given class"
+
+        for parent in self.get_parents():
+            if type(parent.get_obj()) == cls:
+                return parent
+
+        return None
+
     def get_parents(self, ctrl=True, level=-1):
         "Return all parents"
 
@@ -100,7 +109,10 @@ class HierChildrenMixin(HierMixinGroup):
     _children = []
 
     def __init__(self, *args, **kwargs):
+
         super().__init__(*args, **kwargs)
+        # self._super__init__(super(), *args, **kwargs)
+
         self._children = copy.copy(self._children)
         self._parse_children()
 

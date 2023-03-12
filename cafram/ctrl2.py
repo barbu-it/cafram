@@ -234,7 +234,6 @@ class NodeCtrl(CaframCtrl):
 
         self._init_logger()
         for line in log_msg:
-            # print (line)
             self._log.debug(line)
 
         # pprint (self.__dict__)
@@ -250,13 +249,14 @@ class NodeCtrl(CaframCtrl):
         # Register Mixin config
         self._obj_conf = self._5_merge_mixin_configs(cls_mixin, conf_mixin)
 
-        # print ("MIXINS CONFIG")
-        # tmp = {
-        #     "cls_mixin": cls_mixin,
-        #     "conf_mixin": conf_mixin,
-        #     "merged": self._obj_conf,
-        # }
-        # pprint(tmp)
+        # if str(self) == 'paaSiFy.AppStacks[cafram.ctrl2]':
+        #     print ("MIXINS CONFIG", self)
+        #     tmp = {
+        #         "cls_mixin": cls_mixin,
+        #         "conf_mixin": conf_mixin,
+        #         "merged": self._obj_conf,
+        #     }
+        #     pprint(tmp)
 
         # Sanity checks
         assert isinstance(self._obj_attr, str), f"Got: {self._obj_attr}"
@@ -289,15 +289,17 @@ class NodeCtrl(CaframCtrl):
         # Auto-Attach itself to parent, only works if a derived class of cafram actually :/
         self._obj_has_attr = False
         try:
-            self._log.debug(f"Attach NodeCtrl to {self._obj} as '{self._obj_attr}'")
+            self._log.debug(f"Attach {self} to {self._obj} as '{self._obj_attr}'")
             setattr(self._obj, self._obj_attr, self)
             self._obj_has_attr = True
         except AttributeError:
             self._log.warning(
-                f"WEAK Node linked to '{self._obj}' as '{self._obj_attr}'"
+                f"WEAK Node {self} linked to '{self._obj}' as '{self._obj_attr}'"
             )
 
         self._load_mixins(kwargs)
+
+        self._log.debug(f"NodeCtrl {self} initialization is over")
 
         # Instanciate parent _init()
         # TODO !!!
@@ -369,6 +371,7 @@ class NodeCtrl(CaframCtrl):
 
             # Instanciate mixin and register
             self._log.info(f"Instanciate mixin '{mixin_name}': {mixin_cls.__name__}")
+            # print(f"Instanciate mixin {self} '{mixin_name}': {mixin_cls.__name__}, {kwargs}")
             mixin_inst = mixin_cls(self, mixin_conf=mixin_conf, **kwargs)
             self.mixin_register(mixin_inst)
 

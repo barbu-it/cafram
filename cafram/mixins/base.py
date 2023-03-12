@@ -3,13 +3,14 @@ Base mixins
 """
 
 # import types
+import sys
 import logging
 import copy
 import traceback
 from pprint import pprint
 
 # from ..nodes import Node
-from ..lib import log_colors
+from ..lib import logger
 
 from ..nodes2 import Node
 from ..common import CaframObj
@@ -30,6 +31,29 @@ from . import BaseMixin, LoadingOrder
 
 # Core Mixins
 ################################################################
+
+
+# Can't work, because we can't live patch instance dunder
+# class ObjForwardMixin(BaseMixin):
+#     "Object forwarder Mixin"
+
+#     # key = "ident"
+#     mixin_key = None
+
+#     # Config
+#     forward_attr = True
+#     forward_item = True
+
+#     forward_len = True
+#     forward_iter = True
+
+#     forward_call = True
+
+
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+
+#         obj = self.get_obj()
 
 
 class IdentMixin(BaseMixin):
@@ -87,7 +111,8 @@ class IdentMixin(BaseMixin):
         return ".".join([self.get_ident_prefix(), self.get_ident_name()])
 
 
-class PayloadMixin(IdentMixin):
+# class PayloadMixin(IdentMixin):
+class PayloadMixin(BaseMixin):
     "Payload Mixin"
 
     mixin_key = "payload"
@@ -96,6 +121,7 @@ class PayloadMixin(IdentMixin):
     _param__payload = "payload"
 
     value_alias = "value"
+    _alias_value = "value"
 
     default = None
     payload_schema = False
@@ -149,14 +175,21 @@ class PayloadMixin(IdentMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # self._super__init__(super(), *args, **kwargs)
 
         self._value = None
         self.set_value(self._payload)
-        self._register_alias()
+        # self._register_alias()
 
-    def _register_alias(self):
-        if self.value_alias:
-            self.node_ctrl.alias_register(self.value_alias, self.get_value())
+        # self._aliases = {
+        #     ""
+        # }
+
+        self._register_alias("value", self.get_value())
+
+    # def _register_alias(self):
+    #     if self.value_alias:
+    #         self.node_ctrl.alias_register()
 
     # Generic value handler
     # ---------------------
@@ -180,18 +213,31 @@ class PayloadMixin(IdentMixin):
     def set_value(self, value):
         "Set a value"
 
-        conf = self.transform(value)
+        conf = self.preparse(value)
         conf = self.set_default(conf)
         conf = self.validate(conf)
+        conf = self.transform(conf)
         self._value = conf
         return self._value
+
+    # def __repr__(self):
+
+    #     prefix = self.get_ident()
+    #     suffix = f"[{self.mixin_key}]{type(self).__name__}"
+    #     return f"<{prefix}{suffix}>"
 
     # Transformers/Validators
     # ---------------------
 
     def set_default(self, payload):
-        "Update defaults"
+        "Set default if value is null"
+
+        # TODO: This does not allow to determine in advance the state of default
         return payload or copy.copy(self.default)
+
+    def preparse(self, payload):
+        "Pre parse payload before schema validation"
+        return payload
 
     def transform(self, payload):
         "Transform payload before"
@@ -239,75 +285,29 @@ class LoggerMixin(IdentMixin):
     log = None
 
     # Logger config
-    log_alias = "log"
+    # log_alias = "log"
+    _alias_log = "log"
 
     # Logger level: Logging level, can be object, string or number
     log_level = None
-
-    # Logger name, if none, set to the Node Class name
-    log_name = None
-
-    # Prefix to use, if None, set to the module name
-    log_prefix = None
-
-    # FQDN of logger, generated from log_name and log_prefix
-    log_fqdn = None
-
-    # # If true, logging
-    # log_node = True
-    log_colors = True
-
-    # Define logging format
-    log_sformat = "default"
-    # Define time format
-    log_tformat = "default"
-
-    # Log and time formats db
-    log_sformats = {
-        "default": "%(levelname)8s: %(message)s",
-        "struct": "%(name)-20s%(levelname)8s: %(message)s",
-        "time": "%(asctime)s.%(msecs)03d|%(name)-16s%(levelname)8s: %(message)s",
-        "precise": (
-            "%(asctime)s.%(msecs)03d"
-            + " (%(process)d/%(thread)d) "
-            + "%(pathname)s:%(lineno)d:%(funcName)s"
-            + ": "
-            + "%(levelname)s: %(message)s"
-        ),
-    }
-    log_tformats = {
-        "default": "%H:%M:%S",
-        "precise": "%Y-%m-%d %H:%M:%S",
-    }
+    _param_log_level = "logger_level"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         # Init logger if not provided in params
-        if not self._logger:
-            self.set_logger()
-        else:
-            self.log = self._logger
-
-        # Customize Logger
-        self.set_format()
+        self.set_logger(logger=self._logger)
         self.set_level()
+        self._register_alias("log", self.log)
 
-        # Register logger into node_ctrl
-        self.node_ctrl.alias_register(self.log_alias, self.log)
-
-    def set_logger(self):
+    def set_logger(self, logger=None):
         """Set instance logger name or instance"""
 
-        name = self.get_logger_fqdn()
-        self.log = logging.getLogger(name)
+        if not logger:
+            name = self.get_ident()
+            logger = logging.getLogger(name)
 
-        # Disable log propagation
-        self.log.propagate = False
-
-    def get_logger_fqdn(self):
-        "Return the logger FQDN"
-        return self.get_ident()
+        self.log = logger
 
     def set_level(self, level=None):
         "Set logger level"
@@ -318,34 +318,6 @@ class LoggerMixin(IdentMixin):
 
         if log_level:
             self.log.setLevel(log_level)
-
-    def set_format(self, sformat=None, tformat=None):
-        "Change logger format"
-
-        sformat = sformat or self.log_sformat
-        tformat = tformat or self.log_tformat
-
-        _sformat = self.log_sformats[sformat]
-        _tformat = self.log_sformats[tformat]
-
-        formatter = logging.Formatter(_sformat)
-        if self.log_colors:
-            formatter = log_colors.ColorizedArgsFormatter(_sformat)
-
-        # Get current handle
-        if len(self.log.handlers) > 0:
-            # pprint (self.log.__dict__)
-            hand = self.log.handlers[0]
-            self.log.removeHandler(hand)
-        else:
-            hand = logging.StreamHandler()
-
-        hand.setFormatter(formatter)
-        # hand.setLevel(logging.DEBUG)
-
-        # self.log.handlers[0] = hand
-        # self.log.handlers.insert(0, hand)
-        self.log.addHandler(hand)
 
     def traceback(self):
         "Print traceback to stdout"

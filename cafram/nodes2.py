@@ -59,12 +59,11 @@ class Node(CaframNode):
         # if not logger_prefix:
         #     logger_prefix = self.__class__.__name__ if self._node_logger_integrate else None
 
-        NodeCtrl(
+        _node = NodeCtrl(
             node_obj=self,
             # node_conf=node_conf or self._node_conf,
-            node_attr="_node",
-            # node_logger_prefix=logger_prefix,
-            **kwargs
+            # node_attr="_node",
+            **kwargs,
         )
 
         # Instanciate class
@@ -74,6 +73,18 @@ class Node(CaframNode):
         """
         Placeholder for custom class __init__ without requiring usage of `super`.
         """
+
+    def __call__(self, *args):
+        "Return node or mixin/alias"
+
+        count = len(args)
+        if count == 0:
+            return self._node
+        elif count == 1:
+            return self._node.mixin_get(args[0])
+        else:
+            msg = f"Only 1 argument is allowed"
+            raise errors.CaframException(msg)
 
     def __getitem__(self, name):
         "Handle dict notation"
