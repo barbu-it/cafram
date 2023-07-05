@@ -3,6 +3,10 @@ import traceback
 import logging
 from pprint import pprint
 
+
+
+
+
 from cafram.mixins.base import LoggerMixin
 from cafram.mixins.tree import (
     ConfDictMixin,
@@ -64,7 +68,7 @@ class BaseApp(Node):
     # log = _log
 
 
-class BaseAppNode(BaseApp, Node):
+class BaseAppNode(BaseApp):
     "BaseAppNode"
 
 

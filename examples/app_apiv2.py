@@ -25,8 +25,8 @@ class BaseApp(Node):
     _node_logger_prefix = False
 
     _node__logger__mixin = LoggerMixin
-    _node__logger__logger_level = "DEBUG"
-    _node__logger__log_sformat = "struct"
+    _node__logger__log_level = "DEBUG"
+
 
 
 class BaseAppNode(BaseApp, Node):

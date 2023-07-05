@@ -28,7 +28,7 @@ class HierParentMixin(HierMixinGroup):
     "Hier mixin that manage parent relationships"
 
     _parent = None
-    _param__parent = "parent"
+    mixin_param___parent = "parent"
 
     def get_parent(self, ctrl=True):
         "Return direct parent"
@@ -104,7 +104,7 @@ class HierChildrenMixin(HierMixinGroup):
     children = {}
 
     # In which param to look the children conf
-    _param__children = "children"
+    mixin_param___children = "children"
 
     # This hold the internal children state
     _children = []
@@ -130,7 +130,6 @@ class HierChildrenMixin(HierMixinGroup):
         "Add a new child to mixin"
 
         children = self._children
-
         if isinstance(children, dict):
             index = index or getattr(child, "mixin_key", None)
             assert index, "Index is required when children are dict"

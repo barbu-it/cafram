@@ -68,9 +68,9 @@ class IdentMixin(BaseMixin):
     ident_prefix = None
 
     # Parameters
-    _param_ident = "ident"
-    _param_ident_suffix = "ident_suffix"
-    _param_ident_prefix = "ident_prefix"
+    mixin_param__ident = "ident"
+    mixin_param__ident_suffix = "ident_suffix"
+    mixin_param__ident_prefix = "ident_prefix"
 
     def _get_name_target(self):
         "Try to catch CaframObj reference for naming, fall back on current class"
@@ -118,10 +118,9 @@ class PayloadMixin(BaseMixin):
     mixin_key = "payload"
 
     _payload = None
-    _param__payload = "payload"
+    mixin_param___payload = "payload"
 
-    value_alias = "value"
-    _alias_value = "value"
+    mixin_alias__value = "value"
 
     default = None
     payload_schema = False
@@ -145,7 +144,7 @@ class PayloadMixin(BaseMixin):
             "value_alias": {
                 "title": "Value alias name",
                 "description": "Name of the alias to retrieve value. Absent if set to None",
-                "default": value_alias,
+                "default": mixin_alias__value,
                 "oneOf": [
                     {
                         "type": "string",
@@ -173,10 +172,18 @@ class PayloadMixin(BaseMixin):
         },
     }
 
+    # def __repr__(self):
+    #     if hasattr(self, "_value"):
+    #         return self.get_value()
+    #     return str(self)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # self._super__init__(super(), *args, **kwargs)
 
+
+        # print ("PayloadMixin INIT payload", self._payload)
+        # print ("PayloadMixin INIT params", args, kwargs)
         self._value = None
         self.set_value(self._payload)
         # self._register_alias()
@@ -262,14 +269,15 @@ class PayloadMixin(BaseMixin):
 class NodePayload(Node):
     "Payload Node"
 
-    _node_conf = [{"mixin": PayloadMixin}]
+    #_node_conf = [{"mixin": PayloadMixin}]
+    __node__mixins__ = [{"mixin": PayloadMixin}]
 
 
 # Utils Mixins
 ################################################################
 
 
-class LoggerMixin(IdentMixin):
+class LoggerMixin(BaseMixin):
     "Logger Mixin"
 
     # name = "logger"
@@ -278,19 +286,23 @@ class LoggerMixin(IdentMixin):
     mixin_order = LoadingOrder.PRE
     mixin_key = "logger"
 
+    index = None
+    mixin_param__index = "index"
+
     _logger = None
-    _param__logger = "logger"
+    mixin_param___logger = "logger"
 
     # Logger instance
     log = None
 
     # Logger config
     # log_alias = "log"
-    _alias_log = "log"
+    #_alias_log = "log"
+    mixin_alias__log = "log"
 
     # Logger level: Logging level, can be object, string or number
     log_level = None
-    _param_log_level = "logger_level"
+    mixin_param__log_level = "logger_level"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -300,11 +312,27 @@ class LoggerMixin(IdentMixin):
         self.set_level()
         self._register_alias("log", self.log)
 
+    # This break logger things ....
+    def get_logger_inst_name(self):
+        "Override default method name, we use obj fqn here"
+
+        index = getattr(self, "index", None)
+        if index is not None:
+            index = f".{index}"
+        else:
+            index = ''
+            
+        return f"{self.get_obj_fqn()}{index}"
+        # return f"{self.get_obj_prefix()}{index}"
+        # return f"{self.get_obj_fqn()}{index}"
+
+
     def set_logger(self, logger=None):
         """Set instance logger name or instance"""
 
         if not logger:
-            name = self.get_ident()
+            #name = self.get_ident()
+            name = self.get_logger_inst_name()
             logger = logging.getLogger(name)
 
         self.log = logger

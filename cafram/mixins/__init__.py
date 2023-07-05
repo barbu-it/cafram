@@ -15,6 +15,67 @@ from ..lib.utils import truncate
 from ..common import CaframObj, CaframMixin, CaframCtrl
 
 
+
+
+
+# Helpers
+################################################################
+
+# def _list_parameters_from_argsV2(self, obj, kwargs, prefix="mixin_param__"):
+
+# def update_classattr_from_dict(obj, kwargs, prefix="mixin_param__"):
+#     """List args/kwargs parameters
+    
+#     Loop over each key/value of kwargs, 
+
+#     Scan a given object `obj`, find all its attributes starting with `prefix`,
+#     and update all matched attributes from kwargs
+#     """
+
+#     # Params, left part is constant !
+#     # mixin_param__<SOURCE> = <EXPECTED_NAME>
+
+#     ret = {}
+#     for key, val in kwargs.items():
+
+#         attr_name = f"{prefix}{key}"
+#         print ("YOOOO", hasattr(obj, attr_name), key, attr_name)
+#         if not hasattr(obj, attr_name):
+#             continue
+
+#         # Fetch new name from config
+#         new_name = getattr(obj, attr_name)
+#         ret[new_name] = val
+
+#     return ret
+
+
+def update_classattr_from_dict(obj, kwargs, prefix="mixin_param__"):
+
+    """List args/kwargs parameters
+    
+    Scan a given object `obj`, find all its attributes starting with `prefix`,
+    and update all matched attributes from kwargs
+    """
+
+    # Params, left part is constant !
+    # mixin_param__<SOURCE> = <EXPECTED_NAME>
+
+    ret = {}
+    for attr in [item for item in dir(obj) if item.startswith(prefix)]:
+
+        attr_name = attr.replace(prefix, "")
+        attr_match = getattr(obj, attr, None) or attr_name
+        
+        if attr_match and attr_match in kwargs:
+            attr_value2 = kwargs[attr_match]
+            ret[attr_name] = attr_value2
+
+    return ret
+
+
+
+
 # Base mixins
 ################################################################
 
@@ -91,102 +152,93 @@ class BaseMixin(CaframMixin):
 
     def __init__(self, node_ctrl, mixin_conf=None, **kwargs):
 
-        # super().__init__(**kwargs)
+        # Call generic init for cafram objects
+        super().__init__(node_ctrl)
 
-        self.node_ctrl = node_ctrl
-        self.mixin = self.mixin or type(self)  # TODO: Is it relevant ????
-
-        # Start logger
-        impersonate = mixin_conf.get(
-            "mixin_logger_impersonate", self.node_ctrl._obj_logger_impersonate
-        )
-        log_level = mixin_conf.get(
-            "mixin_logger_level", self.node_ctrl._obj_logger_level
-        )
-        self._init_logger(impersonate=impersonate, level=log_level)
-
-        # Update mixin requested config
+        # Fetch mixin params and __init__ kwargs
         mixin_conf = mixin_conf or {}
+        param_conf = update_classattr_from_dict(self, kwargs)
+
+        print ("MIXIN INIT: ", self)
+        pprint (
+            {
+                "mixin_conf": mixin_conf,
+                "param_conf": param_conf,
+            }
+        )
+
+        # Update mixin with gathered configs
+        self._update_attrs_conf(mixin_conf, creates=False)
+        self._update_attrs_conf(param_conf, creates=True)
+
+        # Assign aliases
+        self.mixin_conf = mixin_conf
+        self.mixin_alias_map = self._list_aliases()
+
+
+    def _update_attrs_conf(self, mixin_conf, creates=False):
+        "Update object attributes from a dict. Fail if key does not already exists when create=False"
+
         for key, value in mixin_conf.items():
 
-            # Check for bound methods
-            if callable(value) and hasattr(value, "__self__"):
-                cls = value.__self__.__class__
+            value = self._prepare_conf(value)
 
-                # If not a CaframMixin class, add mixin as second param
-                # pylint: disable=cell-var-from-loop
-                if not issubclass(cls, CaframMixin):
-                    func = value
+            if not creates:
+                if not hasattr(self, key):
+                    assert False, f"Unknown config option '{key}={value}' for {self}"
 
-                    def wrapper(*args, **kwargs):
-                        return func(self, *args, **kwargs)
+            setattr(self, key, value)
+                 
 
-                    self._log.info(
-                        f"Overriden method is now available '{key}': {value}"
-                    )
-                    value = wrapper
+    def _prepare_conf(self, value):
+        "List args/kwargs parameters"
 
-            if hasattr(self, key):
+        # Check for bound methods
+        if callable(value) and hasattr(value, "__self__"):
+            cls = value.__self__.__class__
+
+            # If not a CaframMixin class, add mixin as second param
+            # pylint: disable=cell-var-from-loop
+            if not issubclass(cls, CaframMixin):
+                _func = value
+
+                def wrapper(*args, **kwargs):
+                    return _func(self, *args, **kwargs)
+
                 self._log.debug(
-                    f"Update mixin from config '{key}' with: {truncate(value)}"
+                    f"Overriden method is now available '{key}': {value}"
                 )
-                setattr(self, key, value)
+                value = wrapper
 
-        # Save arguments in instance
-        self.mixin_conf = mixin_conf
+        return value
 
-        # self._init_logger(
-        #     impersonate=self.mixin_logger_impersonate,
-        #     level=self.mixin_logger_level)
 
-        # Fetch kwargs parameters for live parameters (_param_)
-        for attr in dir(self):
 
-            if not attr.startswith("_param_"):
-                continue
 
-            attr_name = attr.replace("_param_", "")
-            attr_param = getattr(self, attr)
-            # print ("SCAN ", attr_param)
-            if attr_param and attr_param in kwargs:
-                attr_value = kwargs.get(attr_param)
-                self._log.debug(
-                    f"Update mixin from param '{attr_name}' with: {truncate(attr_value)}"
-                )
-                setattr(self, attr_name, attr_value)
+    def _list_aliases(self):
+        "List internal aliases"
 
-        # Fetch alias config (_alias_)
+        # Config, left part is constant !
+        # mixin_alias__<SOURCE> = <ACCESS_KEY>
+
         aliases = {}
         for attr in dir(self):
 
-            if not attr.startswith("_alias_"):
+            if not attr.startswith("mixin_alias__"):
                 continue
 
-            attr_name = attr.replace("_alias_", "")
+            attr_name = attr.replace("mixin_alias__", "")
             attr_param = getattr(self, attr)
-            aliases[attr_name] = attr_param
-        self.mixin_alias_map = aliases
+            self._log.debug(
+                    f"Configure alias for '{self.node_ctrl._obj.__class__.__name__}': 'o.{attr_param}' => 'o.__node__.{self.mixin_key}.{attr_name}'"
+                )
+            aliases[attr_param] = attr_name
 
-    # def _register_alias2(self):
-    #     "Placeholder function to execute to register aliases"
+        return aliases
 
-    # def _register_alias3(self):
-    #     if self.value_alias:
-    #         self.node_ctrl.alias_register(self.value_alias, self.get_value())
-
-    # def _super__init__(self, sup, *args, mixin_aliases=False, **kwargs):
-    #     "Super init, call parents __init__ classes"
-    #     print ("DEPRECATED BLIIIII")
-
-    #     # Disable aliases on parent classes
-    #     old_val = self.mixin_aliases
-    #     self.mixin_aliases = mixin_aliases
-    #     sup.__init__(*args, **kwargs)
-
-    #     # Restore old value
-    #     self.mixin_aliases = old_val
 
     def _register_alias(self, name, value):
+        "Method for mixins to register alias into NodeCtrl"
         # alias_map = self.alias_map
 
         if self.mixin_aliases:
