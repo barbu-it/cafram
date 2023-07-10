@@ -130,11 +130,10 @@ def mixin_conf_from_obj_dict(payload):
         for index, conf in payload.items():
             # Convert short forms
             if not isinstance(conf, dict):
-                _payload = {
+                conf = {
                     "mixin": conf,
                     attr_ident: index,
                 }
-                conf = _payload
 
             # Auto set name
             name = (
@@ -151,10 +150,9 @@ def mixin_conf_from_obj_dict(payload):
         for index, conf in enumerate(payload):
             # Convert short forms
             if not isinstance(conf, dict):
-                _payload = {
+                conf = {
                     "mixin": conf,
                 }
-                conf = _payload
 
             # Auto set name
             name = conf.get(attr_ident, getattr(conf["mixin"], attr_ident))
@@ -452,6 +450,8 @@ class NodeCtrl(CaframCtrl):
         obj_attr = "__node__",   # How the NodeCtrl is accessed from object, default is "_node": obj._node...
         obj_clean = False, # Remove from object configuration settings
 
+        obj_prefix_mixin = "n_",
+        obj_prefix_alias = "a_",
 
         **mixin_kwargs        # Options forwarded to ALL mixins
         

@@ -199,6 +199,7 @@ def gen_netctrl_conf(obj, prefix=None):
 def newNode(
 
     override=True,
+    prefix = "__node__",
 
     # Only relavant if override is True, otherwise can be
     enable_getattr=None, # None=> enable if nothing present, True => Always, False => Never
@@ -222,7 +223,10 @@ def newNode(
             "obj_attr": "__node__",
         }
         node_params.update(kwargs)
-        
+
+
+        # __node__mixins__
+        # __node__params__
 
         # Create mixin configs
         node_mixins = dict(getattr(cls, "__node__mixins__", {}))

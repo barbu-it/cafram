@@ -10,11 +10,26 @@ from . import errors
 
 from .common import CaframNode
 from .ctrl2 import NodeCtrl
-
+from .lib.utils import update_classattr_from_dict
 
 
 # NodeCtrl Public classe
 ################################################################
+
+
+def scan_class_attr_config(obj, prefix="__node__obj_"):
+
+    right_part = "__"
+    ret = {}
+    reduced = [item for item in dir(obj) if item.startswith(prefix)]
+    pprint (reduced)
+    for attr in reduced:
+
+        attr_name = attr.replace(prefix, "")
+        print ("SCAN", attr_name)
+        attr_name = attr_name.rtrim(right_part)
+        if attr_name:
+            print ("SCAN", attr_name)
 
 
 class NodeBase(CaframNode):
@@ -36,17 +51,52 @@ class NodeBase(CaframNode):
 
 
         self.__node__ = None
-        self.__node__params__ = dict(self.__node__params__)
-        self.__node__params__.update(kwargs)
 
-        if not self.__node__params__:
-            pprint (dir(self))
-            print ("2. Pre-Init new NodeCtrl", self)
-            assert self.__node__params__, f"__node__param is empty !!! => {self.__node__params__}"
+        # Config Read process:
+        # =================
+        # 1. Read mixin_conf from cls inherited (self._node_mixin__NAME__ATTR) # Inheritable, mixin_conf
+        # 2. Read mixin_conf from decorators  self.__node__mixins_ # Not inheritable
+        # 3. Read mixin_conf from kwargs  # Override
+
+        # 1. Read nodectrl_conf from cls inherited (self._node__ATTR)             # Override, nodectrl conf
+        # 2. Read nodectrl_conf from decorators __node__params_ # Not inheritable
+        # 3. Read nodectrl_conf from kwargs  # Override
+        #     if mixin_conf in those, then it override completely inherited conf
+
+
+        # 0. init
+        __node__params__ =  {}
+
+        # 1.Update from inherited
+        #inherited = update_classattr_from_dict(self, kwargs, prefix="__node__")
+
+        inherited = scan_class_attr_config(self, prefix="__node__obj_")
+        if inherited:
+            print ("================== INHERITED PARAMS")
+            pprint (inherited)
+            assert False, "WIP"
+
+        # assert False, "WIPPP HERE"
+        #__node__params__.update(inherited)
+
+        # 2.Update from decorators
+        __node__params__.update(self.__node__params__)
+
+        # 3.Update from kwargs
+        __node__params__.update(kwargs)
+
+        # if not __node__params__:
+        #     # This happen when use without decorators
+        #     pprint (dir(self))
+        #     print ("2. Pre-Init new NodeCtrl", self)
+        #     assert __node__params__, f"__node__param is empty !!! => {self.__node__params__}"
+
+        print (f"NEW NODECTRL: {self}")
+        pprint (__node__params__)
 
         NodeCtrl(
             self,
-            **self.__node__params__,
+            **__node__params__,
                 # Contains:
                 #  obj_conf: {}
                 #  obj_attr: "__node__"

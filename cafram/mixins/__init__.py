@@ -11,7 +11,7 @@ from pprint import pprint, pformat
 
 from .. import errors
 from ..lib.sprint import SPrint
-from ..lib.utils import truncate
+from ..lib.utils import truncate, update_classattr_from_dict
 from ..common import CaframObj, CaframMixin, CaframCtrl
 
 
@@ -50,29 +50,6 @@ from ..common import CaframObj, CaframMixin, CaframCtrl
 #     return ret
 
 
-def update_classattr_from_dict(obj, kwargs, prefix="mixin_param__"):
-
-    """List args/kwargs parameters
-    
-    Scan a given object `obj`, find all its attributes starting with `prefix`,
-    and update all matched attributes from kwargs
-    """
-
-    # Params, left part is constant !
-    # mixin_param__<SOURCE> = <EXPECTED_NAME>
-
-    ret = {}
-    for attr in [item for item in dir(obj) if item.startswith(prefix)]:
-
-        attr_name = attr.replace(prefix, "")
-        attr_match = getattr(obj, attr, None) or attr_name
-        
-        if attr_match and attr_match in kwargs:
-            attr_value2 = kwargs[attr_match]
-            ret[attr_name] = attr_value2
-
-    return ret
-
 
 
 
@@ -105,7 +82,7 @@ class BaseMixin(CaframMixin):
     mixin_order = LoadingOrder.NORMAL
     mixin_key = None
     mixin_aliases = True
-    mixin_alias_map = None
+    _mixin_alias_map = None
 
     mixin_logger_impersonate = None
     mixin_logger_level = None
@@ -157,7 +134,7 @@ class BaseMixin(CaframMixin):
 
         # Fetch mixin params and __init__ kwargs
         mixin_conf = mixin_conf or {}
-        param_conf = update_classattr_from_dict(self, kwargs)
+        param_conf = update_classattr_from_dict(self, kwargs, prefix="mixin_param__")
 
         print ("MIXIN INIT: ", self)
         pprint (
@@ -173,7 +150,7 @@ class BaseMixin(CaframMixin):
 
         # Assign aliases
         self.mixin_conf = mixin_conf
-        self.mixin_alias_map = self._list_aliases()
+        self._mixin_alias_map = self._list_aliases()
 
 
     def _update_attrs_conf(self, mixin_conf, creates=False):
@@ -243,9 +220,9 @@ class BaseMixin(CaframMixin):
 
         if self.mixin_aliases:
             assert (
-                name in self.mixin_alias_map
+                name in self._mixin_alias_map
             ), f"Missing undeclared alias for {self}: {name}"
-            name = self.mixin_alias_map.get(name, name)
+            name = self._mixin_alias_map.get(name, name)
             if name:
                 self.node_ctrl.alias_register(name, value)
 

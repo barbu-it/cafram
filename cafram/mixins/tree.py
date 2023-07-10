@@ -322,7 +322,48 @@ class ConfListMixin(_ConfContainerMixin):
 
 
 class ConfDictMixin(_ConfContainerMixin):
-    "Conf mixin that manage a unknown serializable dict of values"
+    """Conf mixin that manage a unknown serializable dict of values
+    
+    Usecase:
+    - For Dicts only
+    - Unknown children of same types: Number of children is unknown, but with similar type.
+    - Homogneous children:
+        For keyed dicts (Ie: dict[$NAME] = {conf1, conf2})
+    - Heterogenous children: AUTO/NATIVE
+        For mixed dicts (Ie: dict("config1": True, "path": "/", value=123) )
+    - Poor children configuration
+        Children processing order can't be modified
+
+    children_config:
+        - False/"NONE": No children at all
+        - None/"AUTO": Create Node children for list and dicts (default). Skip all others!
+        - True/"NATIVE": Create Native children for all items. Accept any type!
+        - Node based class (cls/str): Apply a Node based class on the item, via payload arg.
+
+        New (Future settings example):
+        - none                  : No children
+        - containers_only       : Create children for list and dicts (default)
+        - leaf_only             : Create children for anything but list and dicts
+        - all                   : Create children for all
+        - cls_name (str)        : Create children from class cls()
+        - cls(Node)             : Create children from class cls()
+        - func(str)             : Custom function that execute object method
+        - func(dictconf)        : Custom function that accept item info and return a value
+
+
+        # To statically configure the func method:
+        @newNode()
+        @addMixin("DictConfMixin", "conf",
+            # children = lambda (dict): return Node()
+            # children = "self._node_mixin__conf_children"
+            )
+        class MyClass():
+
+            @staticmethod
+            def _node_mixin__conf_children(dictconf):
+                return Node()
+    """
+
 
     default = {}
     _children = {}
@@ -372,16 +413,20 @@ class ConfDictMixin(_ConfContainerMixin):
             "order": None,
         }
 
-        if children_conf is False:
+        if children_conf is False or children_conf == "NONE":
             pass
 
-        elif children_conf is True:
+        elif children_conf is True or children_conf == "AUTO":
             self._log.debug("Children configs is automatic")
 
             child_order = 0
             for child_key, child_value in value.items():
                 child_order += 1
+
                 child_cls = map_node_class(child_value)
+                if "FULL" == True:
+                    child_cls = map_node_class_full(child_value)
+
 
                 conf = dict(default_conf)
                 conf["order"] = child_order * 10
@@ -396,7 +441,7 @@ class ConfDictMixin(_ConfContainerMixin):
 
                 self._log.debug(f"Child '{child_key}' config is {child_cls}")
 
-        elif children_conf is None:
+        elif children_conf is None or children_conf == "NATIVE":
             self._log.debug("Children configs is None")
 
             for idx, child_key in enumerate(value.keys(), start=1):
@@ -409,7 +454,7 @@ class ConfDictMixin(_ConfContainerMixin):
 
                 self._log.debug(f"Child '{child_key}' config is native/forwarded")
 
-        else:
+        else:       # Or: children_conf == cls
 
             if isinstance(children_conf, str):
                 children_conf = import_module(children_conf)
@@ -495,7 +540,8 @@ class ConfDictMixin(_ConfContainerMixin):
 
                 #print ("LEVEL CAHNGE", self._obj_logger_indent, "=>", self._obj_logger_indent +1, child_cls)
                 #indent_get(self):
-                print (f"DictNode Children creation for: {self}")
+                print (f"DictNode Children creation ({child_cls}) for: {self}")
+                pprint (child_cls.__dict__)
                 pprint (child_args)
                 self._log.info(f"Create Node child '{child_key}': {child_cls.__name__} => {child_args}")
                 if not issubclass(child_cls, CaframNode):
@@ -511,7 +557,44 @@ class ConfDictMixin(_ConfContainerMixin):
 
 
 class ConfOrderedMixin(ConfDictMixin):
-    "Conf mixin that manage a serializable and ordered dict of values"
+    """Conf mixin that manage a serializable and ordered dict of values
+    
+
+    Usecase:
+    - For Dicts only
+    - Known children of different types: All children are explicitely defined
+    - To represent complex objects that have to process things in a certain order
+        Ie: Your top app will want to read top level concept and deep done to smaller components,
+        later componants may depends on top level items.
+    - Advanced children configuration
+        Children processing order can be defined in 2 ways/format
+
+    
+    # Format 1
+    children = [
+        {
+            "key": "KEY2",
+            "cls": Node,
+        },
+        {
+            "key": "KEY1",
+            "cls": Node,
+        },
+    ] 
+
+    # Format 2
+    children = {
+        "KEY2": {
+            "cls": Node,
+            "order": 20,
+        },
+        "KEY1": {
+            "cls": Node,
+            "order": 50,
+        },
+    }
+    
+    """
 
     default = {}
     #_index_enable = False
@@ -652,8 +735,11 @@ class NodeConf(NodePayload):
     "NodeConf"
 
     #_node_conf = [{"mixin": ConfMixin}]
-    __node__mixins__ = [{"mixin": ConfMixin}]
+    #__node__mixins__ = [{"mixin": ConfMixin}]
+    #_obj_mixins = [{"mixin": ConfMixin}]
+    __node__obj_mixins = [{"mixin": ConfMixin}]
 
+    
 
 class NodeConfDict(NodeConf):
     "NodeConfDict"

@@ -34,6 +34,55 @@ if "ruamel.yaml" in sys.modules:
 # Misc functions
 # =====================================================================
 
+# Sort hthings here ...
+
+
+
+
+# =====================================================================
+# Class attribute helpers functions
+# =====================================================================
+from pprint import pprint
+
+def update_classattr_from_dict(obj, kwargs, prefix="mixin_param__"):
+
+    """List args/kwargs parameters
+    
+    Scan a given object `obj`, find all its attributes starting with `prefix`,
+    and update all matched attributes from kwargs
+    """
+
+    # Params, left part is constant !
+    # mixin_param__<SOURCE> = <EXPECTED_NAME>
+    assert isinstance(kwargs, dict)
+
+    ret = {}
+    reduced = [item for item in dir(obj) if item.startswith(prefix)]
+    pprint (reduced)
+    for attr in reduced:
+
+        attr_name = attr.replace(prefix, "")
+        if attr_name:
+            attr_match = getattr(obj, attr, None) or attr_name
+
+            if isinstance(attr_match, str):
+                print ("YOOOO", attr_name, attr_match)
+
+                if True:
+                    # V1 is the good one
+                    if attr_match and attr_match in kwargs:
+                        attr_value2 = kwargs[attr_match]
+                        ret[attr_name] = attr_value2
+                else:
+                    # V2 - broken
+                    if attr_name and attr_name in kwargs:
+                        attr_value2 = kwargs[attr_name]
+                        ret[attr_match] = attr_value2
+
+    return ret
+
+
+
 
 # =====================================================================
 # String utils
@@ -73,7 +122,7 @@ def to_domain(string, sep=".", alt="-"):
 # =====================================================================
 
 
-def merge_dicts(dict1, dict2):
+def merge_dicts_v1(dict1, dict2):
     """Given two dictionaries, merge them into a new dict as a shallow copy.
 
     Compatibility for Python 3.5 and above"""
@@ -82,8 +131,114 @@ def merge_dicts(dict1, dict2):
     result.update(dict2)
     return result
 
+def merge_dicts(*dicts):
+    """Given X dictionaries, merge them into a new dict as a shallow copy.
+
+    Compatibility for Python 3.5 and above"""
+
+    assert len(dicts) > 1
+
+    ret = dicts[0].copy()
+    for data in dicts[1:]:
+        ret.update(data)
+
+    return ret
 
 
+def merge_keyed_dicts(dict1, dict2):
+    """Given two keyed dictionaries, merge them into a new dict as a shallow copy.
+
+    dict1 = {
+        "key1": {
+            "subkey1": "val1",
+            "subkey2": "val2",
+        },
+        "key2": {
+            "subkey1": "val1",
+            "subkey2": "val2",
+        },
+    }
+    dict2 = {
+        "key2": {
+            "subkey2": "UPDATED",
+        },
+        "key3": {
+            "subkey1": "CREATED",
+        },
+    }
+    out = {
+        "key1": {
+            "subkey1": "val1",
+            "subkey2": "val2",
+        },
+        "key2": {
+            "subkey1": "val1",
+            "subkey2": "UPDATED",
+        },
+        "key3": {
+            "subkey1": "CREATED",
+        },
+    }
+
+
+    Compatibility for Python 3.5 and above"""
+    # Source: https://stackoverflow.com/a/26853961/2352890
+    
+    result = dict1.copy()
+    for key, val in dict2.items():
+        
+        if not key in result:
+            result[key] = {}
+
+        assert isinstance(val, dict)
+        assert isinstance(result[key], dict)
+
+        result[key].update(val)
+    return result
+
+
+def dict_to_fdict(payload, sep="__"):
+    """Transform dict to fdict
+
+    """
+    assert False, "Not implemented yet"
+
+def fdict_to_dict(payload, sep="__"):
+    """Transform fdict to dict
+
+    payload = {
+        "lvl1__key1": "val1",
+        "lvl1__key2": "val2",
+        "lvl1__lvl2__key1": "val1",
+        "lvl1__lvl2__key2": "val1",
+    }
+    out = {
+        "lvl1: {
+            "key1: "val1",
+            "key2: "val2",
+            "lvl2": {
+                "key1: "val1",
+                "key2: "val2",
+            }
+        },
+    }
+    """
+
+    ret = {}
+    for key, val in payload.items():
+
+        parts = key.split(sep)
+
+        parent = ret
+        if len(parts) > 1:    
+            for part in parts[:-1]:
+                if not part in parent:
+                    parent[part] = {}
+                parent = ret[part]
+        key = parts[-1]
+        parent[key] =  val
+
+    return ret
 
 
 # =====================================================================
@@ -117,6 +272,7 @@ def duplicates(_list):
     return []
 
 
+# TODO: Rename this to flatten_lists
 def flatten(array):
     "Flatten any arrays nested arrays"
     if array == []:

@@ -37,6 +37,9 @@ from cafram.decorators import newNode, addMixin
 from cafram.decorators import newNode, addMixin
 
 
+# WIPPP MIGRATION TO v2
+#from cafram.nodes2 import Node
+from cafram.nodes3 import Node
 
 
 
@@ -156,6 +159,159 @@ def test_app2_post_init_args():
     assert app1.TEST_KWARGS == dict()
     assert app1.TEST_ARGS == ()
     app1.demo()
+
+
+
+# ==============================================
+# Possible Instanciation Tests
+# ==============================================
+
+
+class MyAppExample():
+    
+    TEST_ATTR = "DEFAULT"
+    TEST_INIT_NEW = False
+    TEST_POST_INIT_NEW = False
+
+    def __init__(self, *args, my_opts=None, **kwargs):
+        print ("EXEC POST INIT")
+        self.TEST_INIT_NEW = True
+
+        super().__init__(*args, **kwargs)
+
+
+    def __post_init__(self, *args, my_opts=None, **kwargs):
+        print ("EXEC POST INIT")
+        self.TEST_POST_INIT_NEW = True
+        self.TEST_ATTR = my_opts
+
+    def demo(self):
+        return "SUCCESS"
+
+
+def test_integration1_deco_override():
+    """Test that show how to use new node, 
+    
+    some methods are protected such as __init__, __getattr__ and so ...
+    
+    """
+
+    # Sample Data
+    @newNode(override=True, 
+        # node_attr = "__node__",
+        ) 
+    class MyApp1(MyAppExample):
+        "Simple placeholder"
+
+    app1 = MyApp1()
+    assert app1.demo() == "SUCCESS"
+
+    pprint (app1.__dict__)
+    pprint(dir(MyApp1))
+    assert app1.TEST_INIT_NEW is False
+    assert app1.TEST_POST_INIT_NEW is True
+
+
+def test_integration1_deco_loose():
+    "Test that show how to use loose inheritance, with override=false"
+
+    # Sample Data
+    @newNode(override=False) 
+    class MyApp1(MyAppExample):
+        "Simple placeholder"
+
+    app1 = MyApp1()
+    assert app1.demo() == "SUCCESS"
+
+    pprint (app1.__dict__)
+    pprint(dir(MyApp1))
+    assert app1.TEST_INIT_NEW is True
+    assert app1.TEST_POST_INIT_NEW is True
+
+
+
+def test_integration2_inheritance():
+    """Test that show how to use without decorators
+    
+    But ther is no way to customize nodectrl instanciation
+    """
+
+    # Sample Data
+    class MyApp1(Node, MyAppExample):
+        "Simple placeholder"
+
+
+    # Test all different accesses
+    app1 = MyApp1()
+
+    pprint (app1.__dict__)
+    pprint(dir(MyApp1))
+    assert app1.TEST_INIT_NEW is False
+    assert app1.TEST_POST_INIT_NEW is True
+
+
+
+def test_integration2_inheritance_configured():
+    """Test that show how to use without decorators
+    
+    But ther is no way to customize nodectrl instanciation
+    """
+
+    # Sample Data
+    class MyApp1(Node, MyAppExample):
+        "Simple placeholder"
+
+        # __node__ : Where the node lies, minimum !
+        # _node__prefix = "__node__" : Where the node lies, minimum !
+
+        # Inheritable node configuration
+        _node__alias = True
+        _node__debug = False
+        _node__obj_config = {  # Local config, not inherited
+            "conf": {
+                "debug": True,
+                "opt": 7894,
+            }
+        }
+
+        # Or _node__obj_config can be expanded with. Inheritance works !
+        _node_mixin__conf__config = {}
+        _node_mixin__conf__children = "DictConf"
+        _node_mixin__conf__debug = False
+        _node_mixin__conf__opt = 1234
+
+        # Then all of this is tranformed in: NodeCtrl params !
+
+
+
+    # Example with mixin:
+    # class MixinExample(BaseMixin):
+    #     "Flat config for mixins ..."
+
+    #     # BaseClass:
+    #     mixin = cls # Mixin class to use , None to disable ...
+    #     mixin_key = "my_mod"  # Mixin key to use, none if None
+    #     mixin_aliases = bool # Enable alias creation
+    #     mixin_logger_impersonate = None   # Show in target program logs (unhide)
+    #     mixin_logger_level = None         # Mixin log level
+    #     mixin_enabled = True          # Temporary enable/disable mixin
+
+    #     # Other helpers
+    #     mixin_param__<ATTR> = <name_in_params>
+    #     mixin_alias__<ATTR> = <alias_name>
+
+    #     <ATTR> = # Parametrizable attribute via config (via mixin_conf)
+    #     _<ATTR> = # Internal attributes
+
+
+    # Test all different accesses
+    app1 = MyApp1()
+
+    pprint (app1.__dict__)
+    pprint(dir(MyApp1))
+    assert app1.TEST_INIT_NEW is False
+    assert app1.TEST_POST_INIT_NEW is True
+
 
 
 # ==============================================
@@ -560,7 +716,13 @@ def test_mixin_confdict5_children_nodeconf_str():
     # pprint (app.config.__dict__)
     # pprint (app.config.__node__.__dict__)
     # print ("HEHEEHEH")
+    # pprint (app.config)
+    # pprint (app.config.__node__.__dict__)
+
     # pprint (app.config.value)
+
+
+
 
     # # pprint (app.repos.__dict__)
     # # pprint (app.repos.__node__.__dict__)
