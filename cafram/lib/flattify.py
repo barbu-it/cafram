@@ -12,6 +12,7 @@ def simplest_type(s):
 
 import os
 
+
 def load_environ(prefix=None, names=None, replace=None):
     "Load and filter environement vars"
 
@@ -31,14 +32,13 @@ def load_environ(prefix=None, names=None, replace=None):
         else:
             ret[nkey] = value
 
-        
-
     return ret
+
 
 def dict_flatten(data):
     "Transform complex dict (/json) to flatenned dict"
 
-    def traverse_data(data, path=''):
+    def traverse_data(data, path=""):
         if isinstance(data, dict):
             for key, value in data.items():
                 new_path = f"{path}__{key}" if path else key
@@ -55,46 +55,44 @@ def dict_flatten(data):
     return env_dict
 
 
-
-
 def dict_unflatten(key_values):
-    ''' Converts denormalised dict of (string -> string) pairs, where the first string
-        is treated as a path into a nested list/dictionary structure
-        {
-            "FOO__1__BAR": "setting-1",
-            "FOO__1__BAZ": "setting-2",
-            "FOO__2__FOO": "setting-3",
-            "FOO__2__BAR": "setting-4",
-            "FIZZ": "setting-5",
-        }
-        to the nested structure that this represents
-        {
-            "FOO": [{
-                "BAR": "setting-1",
-                "BAZ": "setting-2",
-            }, {
-                "FOO": "setting-3",
-                "BAR": "setting-4",
-            }],
-            "FIZZ": "setting-5",
-        }
-        If all the keys for that level parse as integers, then it's treated as a list
-        with the actual keys only used for sorting
-        This function is recursive, but it would be extremely difficult to hit a stack
-        limit, and this function would typically by called once at the start of a
-        program, so efficiency isn't too much of a concern.
+    """Converts denormalised dict of (string -> string) pairs, where the first string
+    is treated as a path into a nested list/dictionary structure
+    {
+        "FOO__1__BAR": "setting-1",
+        "FOO__1__BAZ": "setting-2",
+        "FOO__2__FOO": "setting-3",
+        "FOO__2__BAR": "setting-4",
+        "FIZZ": "setting-5",
+    }
+    to the nested structure that this represents
+    {
+        "FOO": [{
+            "BAR": "setting-1",
+            "BAZ": "setting-2",
+        }, {
+            "FOO": "setting-3",
+            "BAR": "setting-4",
+        }],
+        "FIZZ": "setting-5",
+    }
+    If all the keys for that level parse as integers, then it's treated as a list
+    with the actual keys only used for sorting
+    This function is recursive, but it would be extremely difficult to hit a stack
+    limit, and this function would typically by called once at the start of a
+    program, so efficiency isn't too much of a concern.
 
-        Copyright (c) 2018 Department for International Trade. All rights reserved.
-        This work is licensed under the terms of the MIT license.
-        For a copy, see https://opensource.org/licenses/MIT.
+    Copyright (c) 2018 Department for International Trade. All rights reserved.
+    This work is licensed under the terms of the MIT license.
+    For a copy, see https://opensource.org/licenses/MIT.
 
-        Source: https://charemza.name/blog/posts/software-engineering/devops/structured-data-in-environment-variables/
-    '''
+    Source: https://charemza.name/blog/posts/software-engineering/devops/structured-data-in-environment-variables/
+    """
 
     # Separator is chosen to
     # - show the structure of variables fairly easily;
     # - avoid problems, since underscores are usual in environment variables
-    separator = '__'
+    separator = "__"
 
     def get_first_component(key):
         return key.split(separator)[0]
@@ -109,14 +107,12 @@ def dict_unflatten(key_values):
     }
 
     with_more_components = {
-        key: value
-        for key, value in key_values.items()
-        if get_later_components(key)
+        key: value for key, value in key_values.items() if get_later_components(key)
     }
 
-    #print ("YOO")
-    #print (without_more_components)
-    #print(with_more_components)
+    # print ("YOO")
+    # print (without_more_components)
+    # print(with_more_components)
 
     def grouped_by_first_component(items):
         def by_first_component(item):
@@ -136,11 +132,16 @@ def dict_unflatten(key_values):
         }
 
     nested_structured_dict = {
-        **without_more_components, **{
+        **without_more_components,
+        **{
             first_component: dict_unflatten(
-                items_with_first_component(items, first_component))
-            for first_component, items in grouped_by_first_component(with_more_components.items())
-        }}
+                items_with_first_component(items, first_component)
+            )
+            for first_component, items in grouped_by_first_component(
+                with_more_components.items()
+            )
+        },
+    }
 
     def all_keys_are_ints():
         def is_int(string):
@@ -156,18 +157,11 @@ def dict_unflatten(key_values):
         return [
             value
             for key, value in sorted(
-                nested_structured_dict.items(),
-                key=lambda key_value: int(key_value[0])
+                nested_structured_dict.items(), key=lambda key_value: int(key_value[0])
             )
         ]
 
-    return \
-        list_sorted_by_int_key() if all_keys_are_ints() else \
-        nested_structured_dict
-
-
-
-
+    return list_sorted_by_int_key() if all_keys_are_ints() else nested_structured_dict
 
 
 run_tests = False
@@ -177,71 +171,56 @@ if run_tests:
     test_data = {
         "key1": True,
         "key2_tutu": "Yeahhh",
-
         "dict1": {
-                "item1": {
-                        "name": "toto",
-                        "config": "ecnale",
-                    },
-                "item2": {
-                        "name": "tot2",
-                        "config": "ecnal2",
-                    },
+            "item1": {
+                "name": "toto",
+                "config": "ecnale",
             },
-
+            "item2": {
+                "name": "tot2",
+                "config": "ecnal2",
+            },
+        },
         "list1": [
-                "val1", "val2",
-                {
-                        "name": "toto",
-                        "config": "ecnale",
-                    },
-                ]
-        }
-
+            "val1",
+            "val2",
+            {
+                "name": "toto",
+                "config": "ecnale",
+            },
+        ],
+    }
 
     from pprint import pprint
 
-    print ("\nTEST 1: First set")
-    print ("===" * 8)
+    print("\nTEST 1: First set")
+    print("===" * 8)
 
-    print ("=== regular")
-    pprint (test_data)
+    print("=== regular")
+    pprint(test_data)
 
     flattened = dict_flatten(test_data)
-    print ("=== flatened")
-    pprint (flattened)
+    print("=== flatened")
+    pprint(flattened)
 
     t2 = dict_unflatten(flattened)
-    print ("=== restore")
-    pprint (t2)
+    print("=== restore")
+    pprint(t2)
 
-
-    print ("VALIDATED? => ", test_data == t2)
-
+    print("VALIDATED? => ", test_data == t2)
 
     testdict1 = {
-        'dict1': {
-            'item1': {
-                'config': 'ecnale',
-                'name': 'toto'
-            },
-            'item2': {
-                'config': 'ecnal2',
-                'name': 'tot2'
-            }
+        "dict1": {
+            "item1": {"config": "ecnale", "name": "toto"},
+            "item2": {"config": "ecnal2", "name": "tot2"},
         },
-        'key1': True,
-        'key2_tutu': 'Yeahhh',
-        'list1': ['val1', 'val2', {
-            'config': 'ecnale',
-            'name': 'toto'
-        }]
+        "key1": True,
+        "key2_tutu": "Yeahhh",
+        "list1": ["val1", "val2", {"config": "ecnale", "name": "toto"}],
     }
 
-
-    print ("\nTEST 2: Second set")
-    print ("===" * 8)
-
+    print("\nTEST 2: Second set")
+    print("===" * 8)
 
     env_dict = dict_flatten(testdict1)
     print(env_dict)
@@ -249,9 +228,8 @@ if run_tests:
     data_dict = dict_unflatten(env_dict)
     print(data_dict == testdict1)
 
-
-    print ("\nTEST 3: Test from env")
-    print ("===" * 8)
+    print("\nTEST 3: Test from env")
+    print("===" * 8)
 
     env_vars = """
     _prefix_DICT1__ITEM1__CONFIG='ecnale'
@@ -266,34 +244,36 @@ if run_tests:
     _prefix_LIST1__2__NAME='toto'
     """
 
-
-    env_vars2 = {} #{ line.split('=', 2)[0]: line.split('=', 2)[1].strip("'") for line in env_vars.splitlines() }
+    env_vars2 = (
+        {}
+    )  # { line.split('=', 2)[0]: line.split('=', 2)[1].strip("'") for line in env_vars.splitlines() }
 
     for line in env_vars.splitlines():
 
         try:
-            key, value = line.split('=', 2)
+            key, value = line.split("=", 2)
         except ValueError:
             continue
 
         key = key.lower()
         env_vars2[key] = value.strip("'")
 
+    print(env_vars)
+    print("===")
+    pprint(env_vars2)
+    print("===")
+    pprint(dict_unflatten(env_vars2))
 
-    print (env_vars)
-    print ("===")
-    pprint (env_vars2)
-    print ("===")
-    pprint (dict_unflatten(env_vars2))
-
-
-
-    #pprint (load_environ())
-    pprint (load_environ("LC_"))
-    pprint (load_environ("LC_", replace=("_", "__")))
-    pprint (dict_unflatten(load_environ("LC_", replace=("_", "__"))))
+    # pprint (load_environ())
+    pprint(load_environ("LC_"))
+    pprint(load_environ("LC_", replace=("_", "__")))
+    pprint(dict_unflatten(load_environ("LC_", replace=("_", "__"))))
 
     # Nested Vars
-    pprint ({k:v for k,v in dict_unflatten(load_environ( replace=("_", "__"))).items() if isinstance(v, dict) and len(list(v.keys())) > 2 }  )
-
-
+    pprint(
+        {
+            k: v
+            for k, v in dict_unflatten(load_environ(replace=("_", "__"))).items()
+            if isinstance(v, dict) and len(list(v.keys())) > 2
+        }
+    )

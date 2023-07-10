@@ -31,7 +31,6 @@ from .lib.utils import truncate
 ################################################################
 
 
-
 # NodeCtrl configuration getters
 
 # DEPRECATED SHOULD BE MOVED AT DECORATOR LEVEL
@@ -53,6 +52,7 @@ def nodectrl_conf_from_attr(obj, prefix=None):
                 ret[short_name] = getattr(obj, attr)
 
     return ret
+
 
 # DEPRECATED SHOULD BE MOVED AT DECORATOR LEVEL
 def mixin_conf_from_obj_attr(obj, prefix=None):
@@ -93,9 +93,6 @@ def mixin_conf_from_obj_attr(obj, prefix=None):
     return ret
 
 
-
-
-
 def nodectrl_conf_from_dict(payload, prefix=None):
     """Extract from dict all keys starting with prefix"""
     prefix = prefix or ""
@@ -118,7 +115,6 @@ def nodectrl_conf_from_dict(payload, prefix=None):
 # Mixin configuration getters
 
 
-
 def mixin_conf_from_obj_dict(payload):
     "Transform NodeCtl config"
 
@@ -136,9 +132,7 @@ def mixin_conf_from_obj_dict(payload):
                 }
 
             # Auto set name
-            name = (
-                index  # or conf.get(attr_ident, getattr(conf["mixin"], attr_ident))
-            )
+            name = index  # or conf.get(attr_ident, getattr(conf["mixin"], attr_ident))
             conf[attr_ident] = name
 
             # Append to mixin config
@@ -189,10 +183,8 @@ def mixin_conf_merge(*args, logger=None):
     return ret
 
 
-
-
-
 # Create a parsable mixin configurations
+
 
 def get_mixin_loading_order(payload, logger=None):
     "Instanciate all mixins"
@@ -243,10 +235,6 @@ def get_mixin_loading_order(payload, logger=None):
     return mixin_classes
 
 
-
-
-
-
 # NodeCtrl Public classe
 ################################################################
 
@@ -266,8 +254,6 @@ class NodeCtrl(CaframCtrl):
     # Configuration of object
     _obj_conf = {}
 
-
-
     # Deprecated !!!
     # ----
     # obj_attr
@@ -282,29 +268,19 @@ class NodeCtrl(CaframCtrl):
     # _obj_prefix_conf = "" # Ie: <mixin>__<conf_key>
     # _obj_prefix_method = "" # Ie: <mixin>__transform
 
-    
-
-
     # Controller Initialization
     # -------------------
 
-
-
-
-
-
-
-    # def __init__v1(self, *_, 
+    # def __init__v1(self, *_,
     #     node_obj=None,      # Provide reference to object
 
     #     obj_conf = None,   # Provide mixin configurations, should be a dict
     #     obj_attr = None,   # How the NodeCtrl is accessed from object, default is "_node": obj._node...
 
-
     #     # DEprecated !
     #     obj_prefix="node",  # Prefix of the configs lookups
     #     obj_prefix_ctrl = None,      # NodeCtrl config from obj cls ...
-    #     obj_prefix_conf = None,      # Mixin config from obj cls ... 
+    #     obj_prefix_conf = None,      # Mixin config from obj cls ...
     #     obj_prefix_method = None,  # Unused
 
     #     **kwargs):
@@ -315,14 +291,10 @@ class NodeCtrl(CaframCtrl):
     #     _obj_prefix_conf = obj_prefix_conf or f"_{obj_prefix}__"  # Ie: _node__<mixin>__<conf_key>
     #     _obj_prefix_method = obj_prefix_method or f"_{obj_prefix}"  # Ie: _node__<mixin>__transform
 
-
     #     obj_attr = obj_attr or self._obj_attr
     #     obj_conf_param = obj_conf or {}
 
-
     #     # Save settings
-        
-
 
     #     # Init controller
     #     self._obj_attr = obj_attr
@@ -347,7 +319,6 @@ class NodeCtrl(CaframCtrl):
     #         # # ctrl_init
     #     }
 
-
     #     # Save object internally
     #     self._obj = node_obj
     #     #print (f"T1: Start new NodeCtrl for {node_obj}: {kwargs}")
@@ -356,9 +327,9 @@ class NodeCtrl(CaframCtrl):
     #     # ---------------------
 
     #     # Get Node config from obj class (Static) and params (Dyn)
-    #     # Grab params from 
+    #     # Grab params from
     #     _obj_conf = nodectrl_conf_from_attr(
-    #         self._obj, 
+    #         self._obj,
     #         prefix=f"{_obj_prefix_ctrl}_"
     #     )
     #     _param_conf = nodectrl_conf_from_dict(
@@ -410,7 +381,6 @@ class NodeCtrl(CaframCtrl):
     #     # mixin_conf_from_obj_dict
     #     # mixin_conf_merge
 
-
     #     # Sanity checks
     #     assert isinstance(obj_attr, str), f"Got: {obj_attr}"
     #     assert isinstance(self._obj_conf, dict), f"Got: {self._obj_conf}"
@@ -433,31 +403,23 @@ class NodeCtrl(CaframCtrl):
     #             f"WEAK Node {self} linked to '{self._obj}' as '{obj_attr}'"
     #         )
 
-
     #     # Init Ctrl
     #     # ---------------------
     #     self._load_mixins(kwargs)
     #     self._log.debug(f"NodeCtrl {self} initialization is over")
 
-
-
-
-
-    def __init__(self,
-        obj,      # Provide reference to object
-
-        obj_mixins = None, # Provide mixin configurations, should be a dict
-        obj_attr = "__node__",   # How the NodeCtrl is accessed from object, default is "_node": obj._node...
-        obj_clean = False, # Remove from object configuration settings
-
-        obj_prefix_mixin = "n_",
-        obj_prefix_alias = "a_",
-
-        **mixin_kwargs        # Options forwarded to ALL mixins
-        
-        ):
+    def __init__(
+        self,
+        obj,  # Provide reference to object
+        obj_mixins=None,  # Provide mixin configurations, should be a dict
+        obj_attr="__node__",  # How the NodeCtrl is accessed from object, default is "_node": obj._node...
+        obj_clean=False,  # Remove from object configuration settings
+        obj_prefix_mixin="n_",
+        obj_prefix_alias="a_",
+        **mixin_kwargs,  # Options forwarded to ALL mixins
+    ):
         """Instanciate new NodeCtl instance
-        
+
         :param obj: The object where it is attached
         :type obj: Any
 
@@ -466,27 +428,24 @@ class NodeCtrl(CaframCtrl):
 
         :returns: a list of strings representing the header columns
         :rtype: list
-        
+
         """
 
         # Respect OOP
         super().__init__(debug=None, impersonate=None, log_level=None)
 
-
         # Init Node Controller
         self._obj = obj
         self._obj_name = None
-        self._obj_attr = obj_attr # "__node__" #TODO: Make this variable ?
+        self._obj_attr = obj_attr  # "__node__" #TODO: Make this variable ?
         self._obj_mixins = obj_mixins or {}
-        
+
         self._mixin_dict = {}
         self._mixin_aliases = {}
         self._mixin_hooks = {
             "__getattr__": [],
-            #"child_create": [],
+            # "child_create": [],
         }
-
-
 
         # Parent Obj Manipulation
         # ---------------------
@@ -501,16 +460,11 @@ class NodeCtrl(CaframCtrl):
             self._log.debug(f"Attach {self} to {self._obj} as '{obj_attr}'")
             setattr(self._obj, obj_attr, self)
 
-
         # Init Ctrl
         # ---------------------
-        #print ("MIXIN", self._obj_mixins, mixin_kwargs)
+        # print ("MIXIN", self._obj_mixins, mixin_kwargs)
         self._load_mixins(self._obj_mixins, mixin_kwargs)
         self._log.debug(f"NodeCtrl {self} initialization is over: {obj_mixins}")
-
-
-
-
 
     def _load_mixins(self, mixin_confs, mixin_kwargs):
         "Load mixins from requested configuration"
@@ -529,7 +483,7 @@ class NodeCtrl(CaframCtrl):
 
             # Instanciate mixin and register
             self._log.info(f"Instanciate mixin '{mixin_name}': {mixin_cls.__name__}")
-            #print(f"MIXIN mixin {self} '{mixin_name}': {mixin_cls.__name__} with {mixin_kwargs} ({mixin_conf})")
+            # print(f"MIXIN mixin {self} '{mixin_name}': {mixin_cls.__name__} with {mixin_kwargs} ({mixin_conf})")
             mixin_inst = mixin_cls(self, mixin_conf=mixin_conf, **mixin_kwargs)
             self.mixin_register(mixin_inst)
 
@@ -550,12 +504,14 @@ class NodeCtrl(CaframCtrl):
 
         # Register mixin
         self._log.info(f"Register alias '{name}': {truncate(value)}")
-        
+
         # TODO: Make this a failure !!!
         if name in self._mixin_aliases:
-            msg = f"Aliase: '{name}' is already defined for: {self._mixin_aliases[name]}"
-            print ("ERROR: " + msg)
-            # assert name not in self._mixin_aliases, msg 
+            msg = (
+                f"Aliase: '{name}' is already defined for: {self._mixin_aliases[name]}"
+            )
+            print("ERROR: " + msg)
+            # assert name not in self._mixin_aliases, msg
         self._mixin_aliases[name] = value
 
     def mixin_register(self, mixin_inst, override=False):
@@ -607,7 +563,6 @@ class NodeCtrl(CaframCtrl):
             return self._mixin_hooks[name]
         return self._mixin_hooks
 
-
     def mixin_get(self, name):
         "Get mixin instance"
 
@@ -630,7 +585,6 @@ class NodeCtrl(CaframCtrl):
         # Return error
         msg = f"No such mixin '{name}' in {self}"
         raise errors.AttributeError(msg)
-
 
     # Dunders
     # -------------------
@@ -656,7 +610,7 @@ class NodeCtrl(CaframCtrl):
         sprint("Dump of NodeCtrl:")
         sprint("\n*  Object type:")
         sprint(f"     attr: {self._obj_attr}")
-        #sprint(f"   linked: {self._obj_has_attr}")
+        # sprint(f"   linked: {self._obj_has_attr}")
         sprint(f"     type: {type(self._obj)}")
         sprint(f"    value: {self._obj}")
         sprint(f"   mixins: {self.mixin_list(mixin=True, shortcuts=False)}")

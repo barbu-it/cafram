@@ -1,6 +1,3 @@
-
-
-
 # Example 2
 
 # In library: node3/py
@@ -11,34 +8,30 @@ from pprint import pprint
 
 import cafram.errors as errors
 from cafram.ctrl2 import NodeCtrl
-#from cafram.nodes2 import Node
+
+# from cafram.nodes2 import Node
 
 from cafram.common import CaframNode
 
-import inspect 
+import inspect
 
 # Globals
 ################################################################
 
 
-
-
 NODE_METHODS = [
-        "__init__",
-        "__getattr__",
-        "__getitem__",
-        "__call__",
-    ]
+    "__init__",
+    "__getattr__",
+    "__getitem__",
+    "__call__",
+]
 
 
 import functools
 
 
-class Fake():
+class Fake:
     "Hello"
-
-
-
 
 
 # Node Wrapper Class Builder
@@ -46,8 +39,10 @@ class Fake():
 
 
 # This is a class method
-#@functools.cache
-def node_class_builder(prefix, name=None, bases=None, clsmethods=None, module=None, doc=None, attrs=None):
+# @functools.cache
+def node_class_builder(
+    prefix, name=None, bases=None, clsmethods=None, module=None, doc=None, attrs=None
+):
     """Build a generic node wrapper
 
     Args:
@@ -77,14 +72,14 @@ def node_class_builder(prefix, name=None, bases=None, clsmethods=None, module=No
             ATTR1 = True
 
         # TOFIX: This version has not metadata for children classes
-        Node1 = NodeMetaclass("Node", (), {"ATTR1":True, "__doc__":"My DocString"}, 
-                node_override=True,                        
+        Node1 = NodeMetaclass("Node", (), {"ATTR1":True, "__doc__":"My DocString"},
+                node_override=True,
                 node_prefix='__node__',
                 node_bases=[CaframNode])
 
         # TOFIX: This version has not metadata for children classes
         Node2 = node_class_builder("__node__", name="Node", doc="My DocString", bases=[CaframNode])
-            # => node_override=False  
+            # => node_override=False
 
         # Expected result:
         assert Node == Node1
@@ -93,11 +88,11 @@ def node_class_builder(prefix, name=None, bases=None, clsmethods=None, module=No
 
         # And for the subsequent Nodes:
 
-        # Ex1: 
+        # Ex1:
         class AppObj():
             "Parent class"
 
-        # Ex1.a: 
+        # Ex1.a:
         class MyApp(AppObj, Node):
             "App class"
 
@@ -106,14 +101,15 @@ def node_class_builder(prefix, name=None, bases=None, clsmethods=None, module=No
     # Test arguments
     attrs = attrs or {}
     clsmethods = list(clsmethods or NODE_METHODS)
-    bases = bases or tuple([])   # Example: (CaframNode, Fake)
+    bases = bases or tuple([])  # Example: (CaframNode, Fake)
     if not isinstance(bases, tuple):
         bases = tuple(bases)
 
-
     assert isinstance(bases, tuple), f"Got: {bases} (type={type(bases)})"
-    print (f"Build new _NodeSkeleton: name={name}, prefix='{prefix}', bases={bases}, methods:", clsmethods)
-
+    print(
+        f"Build new _NodeSkeleton: name={name}, prefix='{prefix}', bases={bases}, methods:",
+        clsmethods,
+    )
 
     class _NodeSkeleton(*bases):
         "Dynamic Node Class"
@@ -121,43 +117,39 @@ def node_class_builder(prefix, name=None, bases=None, clsmethods=None, module=No
         # def DYN_NODE_ALWAYS(self):
         #     print("ALWAYS HERE !")
 
-
-        #__node__params__ = {}
-        #__node__params__ = {}
+        # __node__params__ = {}
+        # __node__params__ = {}
         __node__mixins__ = {}
 
         # __node__attrs__ =  clsmethods
         # __node__prefix__ =  prefix
-
 
         # This should not be hardcoded !!!
         @classmethod
         def tmp__patch__(self, cls, override=True):
             "Patch an object to become a node"
 
-
             if not self in cls.__mro__:
-                print (f"Wrapping Node {cls} with {self}")
+                print(f"Wrapping Node {cls} with {self}")
 
                 node_attrs = getattr(_NodeSkeleton, f"{prefix}_attrs__")
 
                 for method_name in node_attrs:
-                    print ("IMPORT METHOD", method_name)
+                    print("IMPORT METHOD", method_name)
 
                     if override is False:
                         if hasattr(cls, method_name):
                             tot = getattr(cls, method_name)
-                            print ("Skip method patch", method_name, tot)
+                            print("Skip method patch", method_name, tot)
                             continue
 
                     method = getattr(self, method_name)
                     setattr(cls, method_name, method)
 
-
                 setattr(cls, f"{prefix}_attrs__", node_attrs)
                 setattr(cls, f"{prefix}_prefix__", prefix)
             else:
-                print (f"Skipping Wrapping Node {cls} with {self}")
+                print(f"Skipping Wrapping Node {cls} with {self}")
 
             return cls
 
@@ -165,9 +157,8 @@ def node_class_builder(prefix, name=None, bases=None, clsmethods=None, module=No
         def tmp__inherit(cls, obj, name=None, bases=None, override=True, attrs=None):
 
             # Assert obj is a class
-            
 
-            print ("CALLL tmp__inherit", cls, obj, name, attrs)
+            print("CALLL tmp__inherit", cls, obj, name, attrs)
 
             ret = cls
             dct = attrs or {}
@@ -177,7 +168,7 @@ def node_class_builder(prefix, name=None, bases=None, clsmethods=None, module=No
             # Do not reinject class if already present
             # base_names = [cls.__name__ for cls in bases]
             # if not w_name in base_names:
-            if  cls not in bases:
+            if cls not in bases:
 
                 if name:
                     dct["__qualname__"] = name
@@ -185,67 +176,53 @@ def node_class_builder(prefix, name=None, bases=None, clsmethods=None, module=No
                 if override:
                     # Create a new class WrapperClass that inherit from defined class
 
-                    print ("NODE OVERRIDE", name, cls.__qualname__, tuple(bases), dct)
+                    print("NODE OVERRIDE", name, cls.__qualname__, tuple(bases), dct)
                     bases.insert(0, cls)
 
                     # Pros:
                     #   * Easy and ready to use
                     #   * Important methods are protected
-                    # Cons: 
+                    # Cons:
                     #   * BREAK standard inheritance model
                     #   * All your attributes disapears on __dir__, unless dct=cls.__dict__
                     #   * HIgh level of magic
                 else:
                     # Append in the end WrapperClass inheritance
 
-                    print ("NODE INHERIT", name, cls.__module__, tuple(bases), dct)
+                    print("NODE INHERIT", name, cls.__module__, tuple(bases), dct)
                     bases.append(cls)
-                    
+
                     # Pros:
                     #   * Respect standard inheritance model
                     #   * All your attributes/methods apears on __dir__
                     #   * Not that magic
-                    # Cons: 
+                    # Cons:
                     #   * Important methods  NOT protected
-
 
                 return (name, tuple(bases), dct)
 
-                #ret = type(name, tuple(bases), dct)
-                #ret = super().__new__(cls, name, tuple(bases), dct)
+                # ret = type(name, tuple(bases), dct)
+                # ret = super().__new__(cls, name, tuple(bases), dct)
 
                 # if override:
                 #     ret = type(name, tuple(bases), dct)
 
-                    
                 # else:
-                    
 
                 #     # AKA in classmethof: x = super().__new__(cls, name, tuple(cls_bases), dct)
 
-
-                #setattr(ret, "__qualname__", name)
+                # setattr(ret, "__qualname__", name)
 
             return None
 
-
-
-
-
-
-
-
-
-
-
-
         if "__init__" in clsmethods:
+
             def __init__(self, *args, **kwargs):
 
-                print ("RUN INIT", args, kwargs)
+                print("RUN INIT", args, kwargs)
 
-                __node__params__ =  {}
-                #__node__params__.update(self.__node__params__)
+                __node__params__ = {}
+                # __node__params__.update(self.__node__params__)
                 __node__params__.update(getattr(self, f"{prefix}_params__", {}))
                 __node__params__.update(kwargs)
 
@@ -253,23 +230,23 @@ def node_class_builder(prefix, name=None, bases=None, clsmethods=None, module=No
                     self,
                     obj_attr=prefix,
                     **__node__params__,
-                        # Contains:
-                        #  obj_conf: {}
-                        #  obj_attr: "__node__"
-                        #  obj_prefix
-                        #  obj_prefix_hooks
-                        #  obj_prefix_class_params
-                        #  obj_prefix
+                    # Contains:
+                    #  obj_conf: {}
+                    #  obj_attr: "__node__"
+                    #  obj_prefix
+                    #  obj_prefix_hooks
+                    #  obj_prefix_class_params
+                    #  obj_prefix
                 )
-                setattr(self, prefix , tmp)
+                setattr(self, prefix, tmp)
 
-                # Ensure __post__init__ 
+                # Ensure __post__init__
                 if hasattr(self, "__post_init__"):
                     # pprint(inspect.getargspec(self.__post_init__))
                     try:
                         self.__post_init__(*args, **kwargs)
                     except TypeError as err:
-                        
+
                         fn_details = inspect.getfullargspec(self.__post_init__)
                         msg = f"{err}. Current {self}.__post_init__ function specs: {fn_details}"
                         if not fn_details.varargs or not fn_details.varkw:
@@ -277,8 +254,8 @@ def node_class_builder(prefix, name=None, bases=None, clsmethods=None, module=No
 
                         raise errors.BadArguments(msg)
 
-
         if "__getattr__" in clsmethods:
+
             def __getattr__(self, name):
                 """Dunder to foward all unknown attributes to the NodeCtrl instance"""
 
@@ -288,32 +265,32 @@ def node_class_builder(prefix, name=None, bases=None, clsmethods=None, module=No
                 msg = f"Getattr '{name}' is not available for '{self}' as there is no nodectrl yet"
                 raise errors.CaframAttributeError(msg)
 
-
         if "__getitem__" in clsmethods:
+
             def __getitem__(self, name):
                 "Handle dict notation"
 
                 if hasattr(self, prefix):
                     return getattr(self, prefix).mixin_get(name)
-                #if self.__node__:
-                    #return self.__node__.mixin_get(name)
+                # if self.__node__:
+                # return self.__node__.mixin_get(name)
 
                 msg = f"Getitem is not available as there is no nodectrl yet, can't look for: {name}"
                 raise errors.CaframException(msg)
 
-
         if "__call__" in clsmethods:
+
             def __call__(self, *args):
                 "Return node or mixin/alias"
 
                 if hasattr(self, prefix):
-                #if self.__node__:
+                    # if self.__node__:
                     count = len(args)
                     if count == 0:
-                        #return self.__node__
+                        # return self.__node__
                         return getattr(self, prefix).mixin_get(name)
                     if count == 1:
-                        #return self.__node__.mixin_get(args[0])
+                        # return self.__node__.mixin_get(args[0])
                         return getattr(self, prefix).mixin_get(args[0])
 
                     msg = "Only 1 argument is allowed"
@@ -322,33 +299,30 @@ def node_class_builder(prefix, name=None, bases=None, clsmethods=None, module=No
                 msg = "Call is not available as there is no nodectrl yet"
                 raise errors.CaframException(msg)
 
-    clsmethods.extend([
-        prefix,
-        f"{prefix}_prefix__",
-        f"{prefix}_params__",
-    ])
-
+    clsmethods.extend(
+        [
+            prefix,
+            f"{prefix}_prefix__",
+            f"{prefix}_params__",
+        ]
+    )
 
     for key, val in attrs.items():
         setattr(_NodeSkeleton, key, val)
-        #_NodeSkeleton.__node__attrs__.append(key)
-        #getattr(_NodeSkeleton, f"{prefix}_attrs__").append(key)
+        # _NodeSkeleton.__node__attrs__.append(key)
+        # getattr(_NodeSkeleton, f"{prefix}_attrs__").append(key)
         clsmethods.append(key)
-
 
     # Prepare __node__ attribute
     setattr(_NodeSkeleton, prefix, None)
     setattr(_NodeSkeleton, f"{prefix}_prefix__", prefix)
     setattr(_NodeSkeleton, f"{prefix}_params__", {})
     setattr(_NodeSkeleton, f"{prefix}_attrs__", clsmethods)
-    #setattr(_NodeSkeleton, f"{prefix}_attrs__", list(_NodeSkeleton.__dict__.keys()))
-
-
-
+    # setattr(_NodeSkeleton, f"{prefix}_attrs__", list(_NodeSkeleton.__dict__.keys()))
 
     # Prepare Class
     if name:
-        setattr(_NodeSkeleton, "__name__", name) # useless
+        setattr(_NodeSkeleton, "__name__", name)  # useless
         setattr(_NodeSkeleton, "__qualname__", name)
     if module:
         setattr(_NodeSkeleton, "__module__", module)
@@ -356,12 +330,9 @@ def node_class_builder(prefix, name=None, bases=None, clsmethods=None, module=No
         setattr(_NodeSkeleton, "__doc__", doc)
 
     # setattr(_NodeSkeleton, "__metaclass__", NodeMetaclass)
-    #print ("TOFIX METADATA INHERITANCE")
+    # print ("TOFIX METADATA INHERITANCE")
 
     return _NodeSkeleton
-
-
-
 
 
 # Node Metaclass
@@ -370,53 +341,52 @@ def node_class_builder(prefix, name=None, bases=None, clsmethods=None, module=No
 
 NODE_PREFIX = "__node__"
 
+
 class NodeMetaclass(type):
-    """NodeMetaClass
-    
-    
-    
-    """
+    """NodeMetaClass"""
 
-
-    def __new__(cls, name, bases, dct,
-
-        node_cls = None,
-        node_prefix=None, #"__DEFAULT__",
+    def __new__(
+        cls,
+        name,
+        bases,
+        dct,
+        node_cls=None,
+        node_prefix=None,  # "__DEFAULT__",
         node_methods=None,
         node_bases=None,
         node_name=None,
         node_attrs=None,
-
         node_override=True,
         node_doc=None,
-        ):
+    ):
 
         name = node_name or name
         w_name = f"{name}Wrapper"
-        #w_name = name
+        # w_name = name
 
         node_prefix = node_prefix or NODE_PREFIX
         node_attrs = node_attrs or {}
 
         if not node_cls:
-            node_cls = node_class_builder(node_prefix, bases=node_bases, clsmethods=node_methods, name=name, attrs=node_attrs)
-        
-
+            node_cls = node_class_builder(
+                node_prefix,
+                bases=node_bases,
+                clsmethods=node_methods,
+                name=name,
+                attrs=node_attrs,
+            )
 
         # Select inheritance strategy
-
-
 
         # pprint (node_cls)
         # pprint ()
         # assert False, "WIP1"
 
-
         # ###### EOFFFF
 
         ret = node_cls.tmp__inherit(cls, bases=bases, attrs=dct, name=name)
         # # # pprint (tmp)
-        print ("ARGUMENTS1: ", ret)
+        print("ARGUMENTS1: ", ret)
 
         if ret:
             name, bases, dct = ret
@@ -426,26 +396,22 @@ class NodeMetaclass(type):
             # pprint (type(ret))
             # pprint (ret.__dict__)
             # assert False
-            #x = super().__new__(cls, ret[0], ret[1], ret[2] )
+            # x = super().__new__(cls, ret[0], ret[1], ret[2] )
 
         #     # x = super().__new__(cls, name, tuple(cls_bases), dct)
 
-
-            #return x
+        # return x
 
         return super().__new__(cls, name, bases, dct)
 
-
         # ###### EOFFFF
 
-
         cls_bases = list(bases)
-
 
         # Do not reinject class if already present
         base_names = [cls.__name__ for cls in cls_bases]
         if not w_name in base_names:
-        #if not cls_node in bases:
+            # if not cls_node in bases:
 
             if node_override:
                 cls_bases.insert(0, node_cls)
@@ -453,7 +419,6 @@ class NodeMetaclass(type):
                 cls_bases.append(node_cls)
         else:
             assert False, "TOFIX: Duplicate NodeWrapper"
-
 
         # Other tweaks
         if node_doc:
@@ -472,15 +437,13 @@ class NodeMetaclass(type):
         # print ("METACLASS NEW 2.2, nodeattr2", dct.get("_node__attr", None))
         # print ("METACLASS NEW 2.2, nodeattr3", tmp)
 
-
-        print ("ARGUMENTS2: ", name, tuple(cls_bases), dct)
+        print("ARGUMENTS2: ", name, tuple(cls_bases), dct)
         assert False
         x = super().__new__(cls, name, tuple(cls_bases), dct)
 
-
-        print ("Actual result:")
-        pprint (x)
-        pprint (x.__dict__)
+        print("Actual result:")
+        pprint(x)
+        pprint(x.__dict__)
 
         if node_name:
             setattr(x, "__qualname__", node_name)
@@ -490,15 +453,12 @@ class NodeMetaclass(type):
     #     # cls = type.__new__(metacls, name, bases, namespace)
     #     # cls = super().__new__(metacls, name, bases, namespace)
 
-
-
     # def __init__(self, name, bases, namespace, **kwargs):
     #     # This will never be called because the return type of `__new__` is wrong
     #     print ("NodeMetaclass __init__ SUCCESSS", self, name, bases, namespace, kwargs)
-        
+
     #     self.META_ATTR = "YOLOO"
     #     pass
-
 
     # def __new__WIP(cls, name, bases, dct,
 
@@ -511,7 +471,6 @@ class NodeMetaclass(type):
     #     node_call=False,
 
     #     ):
-
 
     #     #node_prefix = node_prefix or getattr(cls, "_node__attr", None) or NODE_PREFIX
 
@@ -528,12 +487,10 @@ class NodeMetaclass(type):
     #     node_prefix = node_prefix or tmp or NODE_PREFIX
     #     cls_node = node_class_builder(node_prefix)
 
-
     #     # WIPPP
     #     node_params = {key: val for key, val in dct.items() if key.startswith(f"_node__")}
     #     #pprint (node_params)
     #     #pprint (dir(cls))
-
 
     #     # prefix config: _node__attr
     #     # WIP ????
@@ -545,8 +502,6 @@ class NodeMetaclass(type):
     #     else:
     #         cls_bases.append(cls_node)
 
-
-
     #     # print ("METACLASS NEW 2 ======================== ")
     #     # print ("METACLASS NEW 2.1, params:", cls, name, bases, dct)
     #     # print ("METACLASS NEW 2.2, prefix:", node_prefix, f"(inherited={inherited})")
@@ -556,7 +511,6 @@ class NodeMetaclass(type):
     #     # print ("METACLASS NEW 2.2, nodeattr1", getattr(cls, "_node__attr", None))
     #     # print ("METACLASS NEW 2.2, nodeattr2", dct.get("_node__attr", None))
     #     # print ("METACLASS NEW 2.2, nodeattr3", tmp)
-
 
     #     #x = super().__new__(cls, name, tuple(cls_bases), dct)
     #     #x = super().__new__(cls, name, bases , dct)
@@ -570,73 +524,70 @@ class NodeMetaclass(type):
     #     # return cls
 
 
-
-
-
-
 # Decorators
 ################################################################
 
 
-
-class NodeWrapper():
+class NodeWrapper:
 
     node_prefix = "__NodeWrapper__"
 
-    def __init__(self, prefix=None, name=None, bases=None, 
-        methods=None, override=None, attrs=None,
-        ):
+    def __init__(
+        self,
+        prefix=None,
+        name=None,
+        bases=None,
+        methods=None,
+        override=None,
+        attrs=None,
+    ):
         "Init params"
-
 
         self.node_prefix = prefix or NODE_PREFIX
         name = name or "NodeDeco"
 
-        print ("PREFIX", prefix)
+        print("PREFIX", prefix)
 
         self._override = override if isinstance(override, bool) else True
         attrs = attrs or {}
 
         # State vars
         # self._base_node_cls = NodeMetaclass(
-        #     "NodeCtx", (), {"ATTR1":True, "__doc__":"Custom doc"}, 
+        #     "NodeCtx", (), {"ATTR1":True, "__doc__":"Custom doc"},
         #     **kwargs)
 
         self._base_node_cls = node_class_builder(
-            self.node_prefix, 
-            bases=bases, 
-            clsmethods=methods, 
+            self.node_prefix,
+            bases=bases,
+            clsmethods=methods,
             name=name,
             attrs=attrs,
-            )
+        )
 
-
-    def newNode(self, override=None, **kwargs): #, *args, **kwargs):
+    def newNode(self, override=None, **kwargs):  # , *args, **kwargs):
         """
         Transform a class to a NodeClass WITH LIVE PATCH
-        
+
         Forward all kwargs to NodeCtrl()
         """
 
-        #assert not "obj_mixins" in kwargs, f"Usage of obj_mixins in decorator is forbidden, please use 'addMixin' instea"
+        # assert not "obj_mixins" in kwargs, f"Usage of obj_mixins in decorator is forbidden, please use 'addMixin' instea"
 
         # Decorator arguments
         base_cls = self._base_node_cls
         if not isinstance(override, bool):
-            override = self._override   
+            override = self._override
 
         def _decorate(cls):
 
-            
             patch = False
 
-
-            print ("==== DECORATOR CLS INFO", cls)
-            print ("== Type", type(cls))
-            print ("== Name", cls.__name__)
-            print ("== QUALNAME", cls.__qualname__)
-            print ("== MODULE", cls.__module__)
-            print ("== DICT", cls.__dict__)
+            print("==== DECORATOR CLS INFO", cls)
+            print("== Type", type(cls))
+            print("== Name", cls.__name__)
+            print("== QUALNAME", cls.__qualname__)
+            print("== MODULE", cls.__module__)
+            print("== DICT", cls.__dict__)
 
             ret = cls
 
@@ -644,25 +595,21 @@ class NodeWrapper():
                 ret = base_cls.tmp__patch__(ret)
             else:
 
-
                 # # ###### EOFFFF
                 # self._base_node_cls
 
                 ret = self._base_node_cls.tmp__inherit(cls, name=cls.__qualname__)
                 # # # pprint (tmp)
-                print ("ARGUMENTS1: ", ret)
+                print("ARGUMENTS1: ", ret)
 
                 if ret:
                     name, bases, dct = ret
 
                 return type(name, bases, dct)
 
-
                 # #return super().__new__(cls, name, bases, dct)
 
-
                 # # WIPPPPP EOF
-
 
             #     if not base_cls in cls.__mro__:
 
@@ -682,7 +629,7 @@ class NodeWrapper():
             #             # Pros:
             #             #   * Easy and ready to use
             #             #   * Important methods are protected
-            #             # Cons: 
+            #             # Cons:
             #             #   * BREAK standard inheritance model
             #             #   * All your attributes disapears on __dir__, unless dct=cls.__dict__
             #             #   * HIgh level of magic
@@ -694,9 +641,8 @@ class NodeWrapper():
             #             #   * Respect standard inheritance model
             #             #   * All your attributes/methods apears on __dir__
             #             #   * Not that magic
-            #             # Cons: 
+            #             # Cons:
             #             #   * Important methods  NOT protected
-
 
             #     setattr(ret, "__module__", module)
 
@@ -705,10 +651,7 @@ class NodeWrapper():
 
             # self._base_node_cls
 
-
             # type(cls_name, (cls_base, cls), {})
-
-
 
             # # Create main parameters
             # node_params = {
@@ -717,14 +660,12 @@ class NodeWrapper():
             # }
             # node_params.update(kwargs)
 
-
             # # __node__mixins__
             # # __node__params__
 
             # # Create mixin configs
             # node_mixins = dict(getattr(cls, "__node__mixins__", {}))
             # node_params["obj_mixins"] = node_mixins
-            
 
             # # Generate a new Node Class
             # ret = "WIPPPP"
@@ -737,7 +678,6 @@ class NodeWrapper():
             # #     enable_call=enable_call,
 
             # # )
-
 
             # self._base_node_cls
 
@@ -752,25 +692,25 @@ class NodeWrapper():
 
         return _decorate
 
-
-    def newNode_V1(self,
-
+    def newNode_V1(
+        self,
         override=True,
-        prefix = "__node__",
-
+        prefix="__node__",
         # Only relavant if override is True, otherwise can be
-        enable_getattr=None, # None=> enable if nothing present, True => Always, False => Never
+        enable_getattr=None,  # None=> enable if nothing present, True => Always, False => Never
         enable_getitem=None,
         enable_call=None,
-
-        **kwargs): #, *args, **kwargs):
+        **kwargs,
+    ):  # , *args, **kwargs):
         """
         Transform a class to a NodeClass WITH LIVE PATCH
-        
+
         Forward all kwargs to NodeCtrl()
         """
 
-        assert not "obj_mixins" in kwargs, f"Usage of obj_mixins in decorator is forbidden, please use 'addMixin' instea"
+        assert (
+            not "obj_mixins" in kwargs
+        ), f"Usage of obj_mixins in decorator is forbidden, please use 'addMixin' instea"
 
         def _decorate(cls):
 
@@ -781,14 +721,12 @@ class NodeWrapper():
             }
             node_params.update(kwargs)
 
-
             # __node__mixins__
             # __node__params__
 
             # Create mixin configs
             node_mixins = dict(getattr(cls, "__node__mixins__", {}))
             node_params["obj_mixins"] = node_mixins
-            
 
             # Generate a new Node Class
             ret = "WIPPPP"
@@ -809,22 +747,16 @@ class NodeWrapper():
 
         return _decorate
 
-
-
-
-
     def addMixin(self, mixin, mixin_key=None, mixin_conf=None, **kwargs):
         "Add features/mixins to class"
 
-
         # Fetch mixin class
         if isinstance(mixin, str):
-            #mixin_name = mixin
+            # mixin_name = mixin
             mixin_cls = import_module(mixin)
-        else:        
-            #mixin_name = mixin.__name__
+        else:
+            # mixin_name = mixin.__name__
             mixin_cls = mixin
-
 
         # Get mixin config
         mixin_key = mixin_key or mixin_cls.mixin_key
@@ -835,20 +767,18 @@ class NodeWrapper():
         assert isinstance(mixin_key, str)
 
         mixin_def = dict(mixin_conf)
-        mixin_def.update({
-            "mixin": mixin_cls,
-            "mixin_key": mixin_key
-        })
+        mixin_def.update({"mixin": mixin_cls, "mixin_key": mixin_key})
 
         def _decorate(cls):
-
 
             # Ensure idempotency
             if not hasattr(cls, "__node__mixins__"):
                 cls.__node__mixins__ = {}
 
             # print ("ASSIGN MIXIN", cls, type(cls))
-            assert not mixin_key in cls.__node__mixins__, f"Already assigned key: {mixin_key}" 
+            assert (
+                not mixin_key in cls.__node__mixins__
+            ), f"Already assigned key: {mixin_key}"
 
             cls.__node__mixins__[mixin_key] = mixin_def
 
@@ -857,28 +787,23 @@ class NodeWrapper():
         return _decorate
 
 
-
-
-
-
-
 # Common default instance
 ################################################################
 
 
-
 # Generic default node class with metaclass
-#class NodeV2(Node, metaclass=NodeMetaclass, node_prefix="__nodev2__"):
-#class Node( metaclass=NodeMetaclass, node_prefix="__nodev2__"):
+# class NodeV2(Node, metaclass=NodeMetaclass, node_prefix="__nodev2__"):
+# class Node( metaclass=NodeMetaclass, node_prefix="__nodev2__"):
+
 
 class Node(CaframNode, metaclass=NodeMetaclass):
-#class Node(metaclass=NodeMetaclass):
+    # class Node(metaclass=NodeMetaclass):
     "Default Cafram Node"
 
     ATTR1 = True
 
     def node_method(self):
-        print ("Hello node_method")
+        print("Hello node_method")
         return True
 
     # def __init__(self):
@@ -887,12 +812,8 @@ class Node(CaframNode, metaclass=NodeMetaclass):
     #     super().__init__()
 
 
-
-
-
 # DECORATORS
 ################################################################
-
 
 
 # print ("============== RECAP")
@@ -902,15 +823,21 @@ class Node(CaframNode, metaclass=NodeMetaclass):
 # print ("==============")
 
 
-
 Node2 = None
-#Node = NodeMetaclass.dyn_class("__nodev2__", name="TOTO", package="TITI")
-#Node = NodeMetaclass.dyn_class("__nodev2__", name="Node2")
-#Node = node_class_builder("__nodev2__", name="Node2", doc="Default Cafram Nodev2", module="faked")
+# Node = NodeMetaclass.dyn_class("__nodev2__", name="TOTO", package="TITI")
+# Node = NodeMetaclass.dyn_class("__nodev2__", name="Node2")
+# Node = node_class_builder("__nodev2__", name="Node2", doc="Default Cafram Nodev2", module="faked")
 
-#Node = node_class_builder("__nodev2__", name="Node2", doc="Default Cafram Nodev2", bases=)
+# Node = node_class_builder("__nodev2__", name="Node2", doc="Default Cafram Nodev2", bases=)
 
-Node2 = NodeMetaclass("Node", (), {"ATTR1":True, "__doc__":"Custom doc"}, node_bases=[CaframNode], node_override=True, node_doc="Custom doc")
+Node2 = NodeMetaclass(
+    "Node",
+    (),
+    {"ATTR1": True, "__doc__": "Custom doc"},
+    node_bases=[CaframNode],
+    node_override=True,
+    node_doc="Custom doc",
+)
 
 # CaframNode
 # CaframNode
@@ -923,56 +850,11 @@ Node2 = NodeMetaclass("Node", (), {"ATTR1":True, "__doc__":"Custom doc"}, node_b
 # print ("==============")
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # if False:
-
 
 
 #     class Node3(metaclass=NodeMetaclass, node_prefix="__nodev2__"):
 #         "Node Override"
-
-
 
 
 #     # In library: myapp.py
@@ -1065,9 +947,6 @@ Node2 = NodeMetaclass("Node", (), {"ATTR1":True, "__doc__":"Custom doc"}, node_b
 #     assert False, "OOKKKK WIPPP"
 
 
-
-
-
 #     ##########################
 
 #     # In user code
@@ -1087,7 +966,6 @@ Node2 = NodeMetaclass("Node", (), {"ATTR1":True, "__doc__":"Custom doc"}, node_b
 
 #         def method1(self):
 #             print ("Hello method1")
-
 
 
 #     #app = MyClass(prefix="__NODE666__FORBIDDEN")
@@ -1122,8 +1000,6 @@ Node2 = NodeMetaclass("Node", (), {"ATTR1":True, "__doc__":"Custom doc"}, node_b
 #     # )
 #     # class MyApp2():
 #     #     "This is my main app"
-
-
 
 
 #     # print ("APP DECO")

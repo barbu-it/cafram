@@ -15,9 +15,6 @@ from ..lib.utils import truncate, update_classattr_from_dict
 from ..common import CaframObj, CaframMixin, CaframCtrl
 
 
-
-
-
 # Helpers
 ################################################################
 
@@ -25,8 +22,8 @@ from ..common import CaframObj, CaframMixin, CaframCtrl
 
 # def update_classattr_from_dict(obj, kwargs, prefix="mixin_param__"):
 #     """List args/kwargs parameters
-    
-#     Loop over each key/value of kwargs, 
+
+#     Loop over each key/value of kwargs,
 
 #     Scan a given object `obj`, find all its attributes starting with `prefix`,
 #     and update all matched attributes from kwargs
@@ -48,9 +45,6 @@ from ..common import CaframObj, CaframMixin, CaframCtrl
 #         ret[new_name] = val
 
 #     return ret
-
-
-
 
 
 # Base mixins
@@ -136,8 +130,8 @@ class BaseMixin(CaframMixin):
         mixin_conf = mixin_conf or {}
         param_conf = update_classattr_from_dict(self, kwargs, prefix="mixin_param__")
 
-        print ("MIXIN INIT: ", self)
-        pprint (
+        print("MIXIN INIT: ", self)
+        pprint(
             {
                 "mixin_conf": mixin_conf,
                 "param_conf": param_conf,
@@ -152,7 +146,6 @@ class BaseMixin(CaframMixin):
         self.mixin_conf = mixin_conf
         self._mixin_alias_map = self._list_aliases()
 
-
     def _update_attrs_conf(self, mixin_conf, creates=False):
         "Update object attributes from a dict. Fail if key does not already exists when create=False"
 
@@ -165,7 +158,6 @@ class BaseMixin(CaframMixin):
                     assert False, f"Unknown config option '{key}={value}' for {self}"
 
             setattr(self, key, value)
-                 
 
     def _prepare_conf(self, value):
         "List args/kwargs parameters"
@@ -182,15 +174,10 @@ class BaseMixin(CaframMixin):
                 def wrapper(*args, **kwargs):
                     return _func(self, *args, **kwargs)
 
-                self._log.debug(
-                    f"Overriden method is now available '{key}': {value}"
-                )
+                self._log.debug(f"Overriden method is now available '{key}': {value}")
                 value = wrapper
 
         return value
-
-
-
 
     def _list_aliases(self):
         "List internal aliases"
@@ -207,12 +194,11 @@ class BaseMixin(CaframMixin):
             attr_name = attr.replace("mixin_alias__", "")
             attr_param = getattr(self, attr)
             self._log.debug(
-                    f"Configure alias for '{self.node_ctrl._obj.__class__.__name__}': 'o.{attr_param}' => 'o.__node__.{self.mixin_key}.{attr_name}'"
-                )
+                f"Configure alias for '{self.node_ctrl._obj.__class__.__name__}': 'o.{attr_param}' => 'o.__node__.{self.mixin_key}.{attr_name}'"
+            )
             aliases[attr_param] = attr_name
 
         return aliases
-
 
     def _register_alias(self, name, value):
         "Method for mixins to register alias into NodeCtrl"

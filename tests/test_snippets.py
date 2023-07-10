@@ -1,4 +1,3 @@
-
 #!/usr/bin/env pytest
 # -*- coding: utf-8 -*-
 
@@ -32,15 +31,13 @@ from cafram.mixins.tree import NodePayload, NodeConf, NodeConfDict, NodeConfList
 from cafram.mixins.tree import ConfMixin, ConfDictMixin, ConfListMixin
 
 
-
 from cafram.decorators import newNode, addMixin
 from cafram.decorators import newNode, addMixin
 
 
 # WIPPP MIGRATION TO v2
-#from cafram.nodes2 import Node
+# from cafram.nodes2 import Node
 from cafram.nodes3 import Node
-
 
 
 def test_app1_post_init():
@@ -48,15 +45,15 @@ def test_app1_post_init():
 
     # Sample Data
     @newNode()
-    class MyApp():
-        
+    class MyApp:
+
         my_option = "DEFAULT"
 
         def __post_init__(self, *args, **kwargs):
             "Default __post_init__ class with no argument matching"
             print(f"I'm initing myself '{self}'")
-            print (f"My args: {args}")
-            print (f"My kwargs: {kwargs}")
+            print(f"My args: {args}")
+            print(f"My kwargs: {kwargs}")
             self.my_option = kwargs.get("my_option", "UNSET")
 
             self.TEST_INITED = True
@@ -70,17 +67,20 @@ def test_app1_post_init():
 
             self.TEST_EXECUTED = True
 
-
-
     # Test all different accesses
     app1 = MyApp()
     assert app1.TEST_INITED is True
     assert app1.TEST_EXECUTED is False
     assert app1.my_option == "UNSET"
     app1.demo()
-    
 
-    app2 = MyApp("first_param", "second_param", random_opt1=False, random_opt2=True, my_option="SUCCESS")
+    app2 = MyApp(
+        "first_param",
+        "second_param",
+        random_opt1=False,
+        random_opt2=True,
+        my_option="SUCCESS",
+    )
     assert app2.TEST_INITED is True
     assert app2.TEST_EXECUTED is False
     assert app2.my_option == "SUCCESS"
@@ -93,12 +93,12 @@ def test_app1_post_init():
     assert app1.TEST_ARGS == ()
     assert app1.TEST_KWARGS == {}
 
-
     assert app2.TEST_INITED is True
     assert app2.TEST_EXECUTED is True
     assert app2.TEST_ARGS == ("first_param", "second_param")
-    assert app2.TEST_KWARGS == dict(random_opt1=False, random_opt2=True, my_option="SUCCESS")
-
+    assert app2.TEST_KWARGS == dict(
+        random_opt1=False, random_opt2=True, my_option="SUCCESS"
+    )
 
 
 def test_app2_post_init_args():
@@ -106,18 +106,18 @@ def test_app2_post_init_args():
 
     # Sample Data
     @newNode()
-    class MyApp():
-        
+    class MyApp:
+
         my_option = "DEFAULT"
 
-        def __post_init__(self, my_arg,  *args, my_option="UNSET", **kwargs):
+        def __post_init__(self, my_arg, *args, my_option="UNSET", **kwargs):
             "Default __post_init__ class with params and options"
 
-            print (f"I'm initing myself '{self}'")
-            print (f"param: my_arg: {my_arg}")
-            print (f"param: my_opt: {my_option}")
-            print (f"My args: {args}")
-            print (f"My kwargs: {kwargs}")
+            print(f"I'm initing myself '{self}'")
+            print(f"param: my_arg: {my_arg}")
+            print(f"param: my_opt: {my_option}")
+            print(f"My args: {args}")
+            print(f"My kwargs: {kwargs}")
 
             self.my_option = my_option
             self.my_arg = my_arg
@@ -132,8 +132,6 @@ def test_app2_post_init_args():
 
             self.TEST_EXECUTED = True
 
-
-
     # Test all different accesses
     app1 = MyApp("RUNTIME_PARAM", my_option="RUNTIME_SETTING", extra_param="unknown")
     assert app1.TEST_INITED is True
@@ -143,7 +141,7 @@ def test_app2_post_init_args():
     assert app1.TEST_KWARGS == dict(extra_param="unknown")
     assert app1.TEST_ARGS == ()
     app1.demo()
-    
+
     # Should throuh BadArguments exception if passed with no parameter
     try:
         app2 = MyApp()
@@ -161,27 +159,25 @@ def test_app2_post_init_args():
     app1.demo()
 
 
-
 # ==============================================
 # Possible Instanciation Tests
 # ==============================================
 
 
-class MyAppExample():
-    
+class MyAppExample:
+
     TEST_ATTR = "DEFAULT"
     TEST_INIT_NEW = False
     TEST_POST_INIT_NEW = False
 
     def __init__(self, *args, my_opts=None, **kwargs):
-        print ("EXEC POST INIT")
+        print("EXEC POST INIT")
         self.TEST_INIT_NEW = True
 
         super().__init__(*args, **kwargs)
 
-
     def __post_init__(self, *args, my_opts=None, **kwargs):
-        print ("EXEC POST INIT")
+        print("EXEC POST INIT")
         self.TEST_POST_INIT_NEW = True
         self.TEST_ATTR = my_opts
 
@@ -190,23 +186,24 @@ class MyAppExample():
 
 
 def test_integration1_deco_override():
-    """Test that show how to use new node, 
-    
+    """Test that show how to use new node,
+
     some methods are protected such as __init__, __getattr__ and so ...
-    
+
     """
 
     # Sample Data
-    @newNode(override=True, 
+    @newNode(
+        override=True,
         # node_attr = "__node__",
-        ) 
+    )
     class MyApp1(MyAppExample):
         "Simple placeholder"
 
     app1 = MyApp1()
     assert app1.demo() == "SUCCESS"
 
-    pprint (app1.__dict__)
+    pprint(app1.__dict__)
     pprint(dir(MyApp1))
     assert app1.TEST_INIT_NEW is False
     assert app1.TEST_POST_INIT_NEW is True
@@ -216,23 +213,22 @@ def test_integration1_deco_loose():
     "Test that show how to use loose inheritance, with override=false"
 
     # Sample Data
-    @newNode(override=False) 
+    @newNode(override=False)
     class MyApp1(MyAppExample):
         "Simple placeholder"
 
     app1 = MyApp1()
     assert app1.demo() == "SUCCESS"
 
-    pprint (app1.__dict__)
+    pprint(app1.__dict__)
     pprint(dir(MyApp1))
     assert app1.TEST_INIT_NEW is True
     assert app1.TEST_POST_INIT_NEW is True
 
 
-
 def test_integration2_inheritance():
     """Test that show how to use without decorators
-    
+
     But ther is no way to customize nodectrl instanciation
     """
 
@@ -240,20 +236,18 @@ def test_integration2_inheritance():
     class MyApp1(Node, MyAppExample):
         "Simple placeholder"
 
-
     # Test all different accesses
     app1 = MyApp1()
 
-    pprint (app1.__dict__)
+    pprint(app1.__dict__)
     pprint(dir(MyApp1))
     assert app1.TEST_INIT_NEW is False
     assert app1.TEST_POST_INIT_NEW is True
 
 
-
 def test_integration2_inheritance_configured():
     """Test that show how to use without decorators
-    
+
     But ther is no way to customize nodectrl instanciation
     """
 
@@ -282,8 +276,6 @@ def test_integration2_inheritance_configured():
 
         # Then all of this is tranformed in: NodeCtrl params !
 
-
-
     # Example with mixin:
     # class MixinExample(BaseMixin):
     #     "Flat config for mixins ..."
@@ -303,15 +295,13 @@ def test_integration2_inheritance_configured():
     #     <ATTR> = # Parametrizable attribute via config (via mixin_conf)
     #     _<ATTR> = # Internal attributes
 
-
     # Test all different accesses
     app1 = MyApp1()
 
-    pprint (app1.__dict__)
+    pprint(app1.__dict__)
     pprint(dir(MyApp1))
     assert app1.TEST_INIT_NEW is False
     assert app1.TEST_POST_INIT_NEW is True
-
 
 
 # ==============================================
@@ -319,12 +309,12 @@ def test_integration2_inheritance_configured():
 # ==============================================
 
 
-class MyAppDeco():
-    
+class MyAppDeco:
+
     my_option = "DEFAULT"
 
     def __post_init__(self, *args, **kwargs):
-        print ("EXEC POST INIT")
+        print("EXEC POST INIT")
         self.TEST_INIT_NEW = True
 
     def demo(self):
@@ -335,18 +325,17 @@ def test_deco1_override_true():
     "Test that show how to use override (enabled by default)"
 
     # Sample Data
-    @newNode(override=True) 
+    @newNode(override=True)
     class MyApp(MyAppDeco):
         "Simple placeholder"
 
         def __init__(self):
-            print ("EXEC REGULAR INIT, NEVER CALLED HERE")
-            self.TEST_INIT_REGULAR=True
+            print("EXEC REGULAR INIT, NEVER CALLED HERE")
+            self.TEST_INIT_REGULAR = True
 
             # Required in this case to call Node __init__
             super().__init__()
             # If not called, Node Object can't be initialized
-
 
     # Test all different accesses
     app1 = MyApp()
@@ -366,26 +355,24 @@ def test_deco2_override_false():
         "Simple placeholder"
 
         custom_attr = True
-        
+
         def __init__(self):
-            print ("EXEC REGULAR INIT")
-            self.TEST_INIT_REGULAR=True
+            print("EXEC REGULAR INIT")
+            self.TEST_INIT_REGULAR = True
 
             # Required in this case to call Node __init__
             super().__init__()
             # If not called, Node Object can't be initialized
-
 
     # Test all different accesses
     app1 = MyApp()
     assert app1.TEST_INIT_REGULAR is True
     assert app1.demo() == "SUCCESS"
 
-    pprint (app1.__dict__)
+    pprint(app1.__dict__)
 
     # Ensure __init__ method never executed
     assert hasattr(app1, "TEST_INIT_NEW")
-
 
 
 def test_deco3_override_bad():
@@ -397,15 +384,14 @@ def test_deco3_override_bad():
         "Simple placeholder"
 
         custom_attr = True
-        
+
         def __init__(self):
-            print ("EXEC REGULAR INIT")
-            self.TEST_INIT_REGULAR=True
+            print("EXEC REGULAR INIT")
+            self.TEST_INIT_REGULAR = True
 
             # Required in this case to call Node __init__
-            #super().__init__()
+            # super().__init__()
             # If not called, Node Object can't be initialized
-
 
     # Test all different accesses
     app1 = MyApp()
@@ -425,19 +411,18 @@ def test_deco4_inherit():
         "Simple placeholder"
 
         custom_attr = True
-        
-        def __post_init__(self, *args, **kwargs):
-            print ("EXEC POST INIT NEVER CALLED")
-            self.TEST_INIT_NEW = "ERROR"
 
+        def __post_init__(self, *args, **kwargs):
+            print("EXEC POST INIT NEVER CALLED")
+            self.TEST_INIT_NEW = "ERROR"
 
     # Sample Data
     @newNode()
     class MyApp(MyAppParent):
         "Simple placeholder"
-        
+
         def __post_init__(self, *args, **kwargs):
-            print ("EXEC POST INIT")
+            print("EXEC POST INIT")
             self.TEST_INIT_NEW = "OVERRIDE"
 
     # Test all different accesses
@@ -446,8 +431,7 @@ def test_deco4_inherit():
     assert app1.demo() == "SUCCESS"
 
     # Ensure __init__ method never executed because not super().__init__()
-    #assert not hasattr(app1, "TEST_INIT_NEW")
-
+    # assert not hasattr(app1, "TEST_INIT_NEW")
 
 
 # ==============================================
@@ -459,13 +443,14 @@ def test_deco4_inherit():
 # ---------------------
 
 from cafram.mixins.base import LoggerMixin
+
+
 def test_mixin_logger1():
     "Test that show how to use the logger"
 
     @newNode()
     @addMixin("cafram.mixins.base:LoggerMixin")
-    class MyApp1():
-        
+    class MyApp1:
         def __post_init__(self, *args, **kwargs):
             self.log.debug("DEBUG_Messages: INIT")
 
@@ -475,22 +460,23 @@ def test_mixin_logger1():
             self.log.warning("WARNING_Messages")
             self.log.error("ERROR_Messages")
 
-
     app = MyApp1()
     app.demo()
-    pprint (app.__node__.__dict__)
-    pprint (LoggerMixin.__dict__)
+    pprint(app.__node__.__dict__)
+    pprint(LoggerMixin.__dict__)
     assert hasattr(app, LoggerMixin.mixin_alias__log)
     assert hasattr(app, LoggerMixin.mixin_key)
-    
-
-
 
 
 # Config
 # ---------------------
 
-from cafram.mixins.tree import NodeConf, map_node_class, ConfDictMixin, map_node_class_full
+from cafram.mixins.tree import (
+    NodeConf,
+    map_node_class,
+    ConfDictMixin,
+    map_node_class_full,
+)
 
 
 app_config = {
@@ -504,7 +490,6 @@ app_config = {
             "second.env",
         ],
     },
-
     "repos": [
         {
             "name": "my_repo1.git",
@@ -523,38 +508,30 @@ app_config = {
 }
 
 
-
 def test_mixin_confdict1_children_true():
     "Test to show how to not create children with True (DEFAULT BEHAVIOR)"
 
     # Example Class
     @newNode()
-    @addMixin("cafram.mixins.tree:ConfDictMixin", # "titi",
-        children=True
-    )
-
-    class MyApp():
+    @addMixin("cafram.mixins.tree:ConfDictMixin", children=True)  # "titi",
+    class MyApp:
         "This is my main app"
 
         def __post_init__(self, my_opt=True, *args, **kwargs):
             print(f"LOCAL __INIT__ !: {my_opt}, {args}, {kwargs}")
 
-
         def demo(self):
 
             self.log.warning("WARNING_Messages")
 
-
     # Launch with config in init
     app = MyApp(payload=app_config)
     # Test for aliases
-    for attr in ["config", "repos",    "value", "conf"]:
+    for attr in ["config", "repos", "value", "conf"]:
         assert hasattr(app, attr)
 
     # Assert config is OK
     assert app["conf"].value == app_config
-
-
 
     # Launch without init config and load after
     app2 = MyApp()
@@ -571,7 +548,6 @@ def test_mixin_confdict1_children_true():
     app2.value = app_config
     assert app2.value == app_config
 
-
     # Test config json/yaml methods
     _yaml_conf = app2.conf.to_yaml()
     _json_conf = app2.conf.to_json()
@@ -583,24 +559,18 @@ def test_mixin_confdict1_children_true():
     app2.conf.from_json(_json_conf)
 
 
-
-
 def test_mixin_confdict2_children_false():
     "Test to show how to not create children with False"
 
     # Example Class
     @newNode()
-    @addMixin("cafram.mixins.tree:ConfDictMixin", # "titi",
-        children=False
-    )
-
-    class MyApp():
+    @addMixin("cafram.mixins.tree:ConfDictMixin", children=False)  # "titi",
+    class MyApp:
         "This is my main app"
 
         def demo(self):
 
             self.log.warning("WARNING_Messages")
-
 
     # Launch with config in init
     app = MyApp(payload=app_config)
@@ -617,23 +587,18 @@ def test_mixin_confdict2_children_false():
     assert app["conf"].value == app_config
 
 
-
 def test_mixin_confdict3_children_none():
     "Test to show how to use children with None"
 
     # Example Class
     @newNode()
-    @addMixin("cafram.mixins.tree:ConfDictMixin", # "titi",
-        children=None
-    )
-
-    class MyApp():
+    @addMixin("cafram.mixins.tree:ConfDictMixin", children=None)  # "titi",
+    class MyApp:
         "This is my main app"
 
         def demo(self):
 
             self.log.warning("WARNING_Messages")
-
 
     # Launch with config in init
     app = MyApp(payload=app_config)
@@ -655,17 +620,13 @@ def test_mixin_confdict4_children_nodeconf_cls():
 
     # Example Class
     @newNode()
-    @addMixin("cafram.mixins.tree:ConfDictMixin", # "titi",
-        children=NodeConf
-    )
-
-    class MyApp():
+    @addMixin("cafram.mixins.tree:ConfDictMixin", children=NodeConf)  # "titi",
+    class MyApp:
         "This is my main app"
 
         def demo(self):
 
             self.log.warning("WARNING_Messages")
-
 
     # Launch with config in init
     app = MyApp(payload=app_config)
@@ -687,17 +648,16 @@ def test_mixin_confdict5_children_nodeconf_str():
 
     # Example Class
     @newNode()
-    @addMixin("cafram.mixins.tree:ConfDictMixin", # "titi",
-        children="cafram.mixins.tree:NodeConf"
+    @addMixin(
+        "cafram.mixins.tree:ConfDictMixin",  # "titi",
+        children="cafram.mixins.tree:NodeConf",
     )
-
-    class MyApp():
+    class MyApp:
         "This is my main app"
 
         def demo(self):
 
             self.log.warning("WARNING_Messages")
-
 
     # Launch with config in init
     app = MyApp(payload=app_config)
@@ -721,20 +681,13 @@ def test_mixin_confdict5_children_nodeconf_str():
 
     # pprint (app.config.value)
 
-
-
-
     # # pprint (app.repos.__dict__)
     # # pprint (app.repos.__node__.__dict__)
-    
+
     # assert False, "WIPPP"
 
     # assert app.config.value == app_config["config"]
     # assert app.repos.value == app_config["repos"]
-
-
-
-
 
 
 # def test_mixin_confdict6_children_custom_cls():
@@ -773,6 +726,3 @@ def test_mixin_confdict5_children_nodeconf_str():
 #     assert app.repos.value == app_config["repos"]
 
 #     assert False
-
-
-

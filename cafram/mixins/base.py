@@ -181,8 +181,8 @@ class PayloadMixin(BaseMixin):
         super().__init__(*args, **kwargs)
         # self._super__init__(super(), *args, **kwargs)
 
-        print ("PayloadMixin INIT payload", self._payload)
-        print ("PayloadMixin INIT params", args, kwargs)
+        print("PayloadMixin INIT payload", self._payload)
+        print("PayloadMixin INIT params", args, kwargs)
         self._value = None
         self.set_value(self._payload)
         # self._register_alias()
@@ -268,7 +268,7 @@ class PayloadMixin(BaseMixin):
 class NodePayload(Node):
     "Payload Node"
 
-    #_node_conf = [{"mixin": PayloadMixin}]
+    # _node_conf = [{"mixin": PayloadMixin}]
     __node__mixins__ = [{"mixin": PayloadMixin}]
 
 
@@ -296,7 +296,7 @@ class LoggerMixin(BaseMixin):
 
     # Logger config
     # log_alias = "log"
-    #_alias_log = "log"
+    # _alias_log = "log"
     mixin_alias__log = "log"
 
     # Logger level: Logging level, can be object, string or number
@@ -319,18 +319,17 @@ class LoggerMixin(BaseMixin):
         if index is not None:
             index = f".{index}"
         else:
-            index = ''
-            
+            index = ""
+
         return f"{self.get_obj_fqn()}{index}"
         # return f"{self.get_obj_prefix()}{index}"
         # return f"{self.get_obj_fqn()}{index}"
-
 
     def set_logger(self, logger=None):
         """Set instance logger name or instance"""
 
         if not logger:
-            #name = self.get_ident()
+            # name = self.get_ident()
             name = self.get_logger_inst_name()
             logger = logging.getLogger(name)
 

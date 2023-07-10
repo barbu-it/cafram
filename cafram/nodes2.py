@@ -22,14 +22,14 @@ def scan_class_attr_config(obj, prefix="__node__obj_"):
     right_part = "__"
     ret = {}
     reduced = [item for item in dir(obj) if item.startswith(prefix)]
-    pprint (reduced)
+    pprint(reduced)
     for attr in reduced:
 
         attr_name = attr.replace(prefix, "")
-        print ("SCAN", attr_name)
+        print("SCAN", attr_name)
         attr_name = attr_name.rtrim(right_part)
         if attr_name:
-            print ("SCAN", attr_name)
+            print("SCAN", attr_name)
 
 
 class NodeBase(CaframNode):
@@ -41,14 +41,12 @@ class NodeBase(CaframNode):
 
     __node__ = None
     __node__params__ = {}
-    #__node__mixins__ = {}
-
+    # __node__mixins__ = {}
 
     def __init__(self, *args, **kwargs):
         """
         Create a new Node object.
         """
-
 
         self.__node__ = None
 
@@ -63,21 +61,20 @@ class NodeBase(CaframNode):
         # 3. Read nodectrl_conf from kwargs  # Override
         #     if mixin_conf in those, then it override completely inherited conf
 
-
         # 0. init
-        __node__params__ =  {}
+        __node__params__ = {}
 
         # 1.Update from inherited
-        #inherited = update_classattr_from_dict(self, kwargs, prefix="__node__")
+        # inherited = update_classattr_from_dict(self, kwargs, prefix="__node__")
 
         inherited = scan_class_attr_config(self, prefix="__node__obj_")
         if inherited:
-            print ("================== INHERITED PARAMS")
-            pprint (inherited)
+            print("================== INHERITED PARAMS")
+            pprint(inherited)
             assert False, "WIP"
 
         # assert False, "WIPPP HERE"
-        #__node__params__.update(inherited)
+        # __node__params__.update(inherited)
 
         # 2.Update from decorators
         __node__params__.update(self.__node__params__)
@@ -91,42 +88,42 @@ class NodeBase(CaframNode):
         #     print ("2. Pre-Init new NodeCtrl", self)
         #     assert __node__params__, f"__node__param is empty !!! => {self.__node__params__}"
 
-        print (f"NEW NODECTRL: {self}")
-        pprint (__node__params__)
+        print(f"NEW NODECTRL: {self}")
+        pprint(__node__params__)
 
         NodeCtrl(
             self,
             **__node__params__,
-                # Contains:
-                #  obj_conf: {}
-                #  obj_attr: "__node__"
-                #  obj_prefix
-                #  obj_prefix_hooks
-                #  obj_prefix_class_params
-                #  obj_prefix
-
+            # Contains:
+            #  obj_conf: {}
+            #  obj_attr: "__node__"
+            #  obj_prefix
+            #  obj_prefix_hooks
+            #  obj_prefix_class_params
+            #  obj_prefix
         )
 
-        # Ensure __post__init__ 
+        # Ensure __post__init__
         if hasattr(self, "__post_init__"):
             # pprint(inspect.getargspec(self.__post_init__))
             try:
                 self.__post_init__(*args, **kwargs)
             except TypeError as err:
-                
+
                 fn_details = inspect.getfullargspec(self.__post_init__)
-                msg = f"{err}. Current {self}.__post_init__ function specs: {fn_details}"
+                msg = (
+                    f"{err}. Current {self}.__post_init__ function specs: {fn_details}"
+                )
                 if not fn_details.varargs or not fn_details.varkw:
                     msg = f"Missing *args or **kwargs in __post_init__ method of {self}"
 
                 raise errors.BadArguments(msg)
 
-
     # def __post_init__(self, *args, **kwargs):
     #     """
     #     Placeholder for custom class __init__ without requiring usage of `super`.
     #     """
-        
+
     #     print(f"DEFAULT __INIT__ !: {args}, {kwargs}")
 
     #     pprint(super())
@@ -172,10 +169,6 @@ class Node(NodeBase):
         msg = f"Getattr '{name}' is not available for '{self}' as there is no nodectrl yet"
         raise errors.CaframAttributeError(msg)
 
-
-
-
-
         # if "_node" in self.__dict__:
         #     return self.__node__[name]
 
@@ -192,18 +185,14 @@ class Node(NodeBase):
     #     return payload
 
 
-
 def NodeWrapperConfGenerator(
-    cls, # Target class to be wrapped
-
-    extra_attr=None,        # Extra attributes to attach to generated object
-    override=True,      # SHould the NodeClass override or inherit ?
-
-    enable_getattr=None,    # None=> enable if nothing present, True => Always, False => Never
+    cls,  # Target class to be wrapped
+    extra_attr=None,  # Extra attributes to attach to generated object
+    override=True,  # SHould the NodeClass override or inherit ?
+    enable_getattr=None,  # None=> enable if nothing present, True => Always, False => Never
     enable_getitem=None,
-    enable_call=None
-    
-    ):
+    enable_call=None,
+):
     "Create dynamically a NodeWrapper class"
 
     extra_attr = extra_attr or {}
@@ -214,23 +203,23 @@ def NodeWrapperConfGenerator(
     # Optional class methods to inject
     cls_feat = Node
 
-
     # Helper to add features
     def _add_feature(ret, option, method_name, src):
         "Create a dict with methods"
 
         assert isinstance(ret, dict)
         assert isinstance(src, (dict, MappingProxyType)), f"{type(src)}"
-        
+
         if option in [None, True]:
             if option is True:
                 ret[method_name] = getattr(cls_feat, method_name)
             else:
                 if not method_name in src:
                     ret[method_name] = getattr(cls_feat, method_name)
+
     # def _add_feature2(ret, option, method_name):
     #     "Create a dict with methods"
-        
+
     #     if option in [None, True]:
     #         if option is True:
     #             setattr(ret, method_name, getattr(cls_feat, method_name))
@@ -238,11 +227,9 @@ def NodeWrapperConfGenerator(
     #             if not hasattr(ret, method_name):
     #                 setattr(ret, method_name, getattr(cls_feat, method_name))
 
-
     # Create base attributes
     cls_members = {}
-    cls_members.update(extra_attr)                      # Inject extra_attrs
-    
+    cls_members.update(extra_attr)  # Inject extra_attrs
 
     # Append dynamic methods
     cls_dict = cls.__dict__ if cls else {}
@@ -251,27 +238,26 @@ def NodeWrapperConfGenerator(
         _add_feature(cls_members, enable_getitem, "__getitem__", cls_dict)
         _add_feature(cls_members, enable_call, "__call__", cls_dict)
 
-
     # Create new class
-    #cls_name =  f"{NodeBase.__name__}.{cls.__name__}"
-    cls_name =  f"{cls.__name__}.Wrapped"
+    # cls_name =  f"{NodeBase.__name__}.{cls.__name__}"
+    cls_name = f"{cls.__name__}.Wrapped"
     # print ("CREATE WRAPPED CLASS:", cls_name, (cls_base, cls))
     # pprint (cls_members)
 
-     
-    #ret = type(cls_name, (cls_base, cls), cls_members)
+    # ret = type(cls_name, (cls_base, cls), cls_members)
     ret = cls
     if not cls_base in cls.__mro__:
         if override is True:
             ret = type(cls_name, (cls_base, cls), {})
         else:
             ret = type(cls_name, (cls, cls_feat), {})
-        
+
         # Update package name when class has been defined
-        cls_members.update({"__module__": cls.__module__})  # Allow to keep module reference
+        cls_members.update(
+            {"__module__": cls.__module__}
+        )  # Allow to keep module reference
 
-
-    #pprint (ret.__dict__)
+    # pprint (ret.__dict__)
 
     # Update special args and methods
     for key, val in cls_members.items():
@@ -282,11 +268,8 @@ def NodeWrapperConfGenerator(
     #     _add_feature2(ret, enable_getitem, "__getitem__")
     #     _add_feature2(ret, enable_call, "__call__")
 
-
-    #pprint (ret.__dict__)
+    # pprint (ret.__dict__)
     return ret
-
-
 
 
 class _Node_OLD(CaframNode):
@@ -342,7 +325,7 @@ class _Node_OLD(CaframNode):
 
         self._node = None
         _node = NodeCtrl(
-            #node_obj=self,
+            # node_obj=self,
             self,
             # node_conf=node_conf or self._node_conf,
             # node_attr="_node",
@@ -350,7 +333,7 @@ class _Node_OLD(CaframNode):
         )
 
         # Instanciate other parent classes
-        #super().__init__(*args, **kwargs)
+        # super().__init__(*args, **kwargs)
         super().__init__()
 
         # Instanciate class
@@ -395,7 +378,6 @@ class _Node_OLD(CaframNode):
         msg = f"Getattr '{name}' is not available for '{self}' as there is no nodectrl yet"
         raise errors.CaframException(msg)
 
-
         # if "_node" in self.__dict__:
         #     return self._node[name]
 
@@ -410,6 +392,3 @@ class _Node_OLD(CaframNode):
     # def _node_init(self, payload):
     #     print ("Node Conf Transform !!!")
     #     return payload
-
-
-

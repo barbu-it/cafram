@@ -7,7 +7,8 @@ from .lib.utils import import_module
 
 from cafram.mixins.base import LoggerMixin, IdentMixin
 from cafram.mixins.tree import ConfDictMixin, ConfListMixin, NodeConfDict, NodeConfList
-#from cafram.nodes2 import Node
+
+# from cafram.nodes2 import Node
 import cafram.errors as errors
 
 from cafram.ctrl2 import NodeCtrl
@@ -38,8 +39,6 @@ from .nodes2 import NodeWrapperConfGenerator
 ################################################################
 
 
-
-
 # IMPORTED FROM ctrl2.py
 def nodectrl_conf_from_attr(obj, prefix=None):
     """Scan all object's attributes and return a dict of key starting with prefix
@@ -59,6 +58,7 @@ def nodectrl_conf_from_attr(obj, prefix=None):
                 ret[short_name] = getattr(obj, attr)
 
     return ret
+
 
 # IMPORTED FROM ctrl2.py
 def mixin_conf_from_obj_attr(obj, prefix=None):
@@ -99,7 +99,6 @@ def mixin_conf_from_obj_attr(obj, prefix=None):
     return ret
 
 
-
 import json
 
 # From chat GPT
@@ -108,7 +107,7 @@ def to_env(json_string):
     json_data = json.loads(json_string)
     env_dict = {}
 
-    def traverse_json(data, path=''):
+    def traverse_json(data, path=""):
         if isinstance(data, dict):
             for key, value in data.items():
                 new_path = f"{path}.{key}" if path else key
@@ -124,8 +123,6 @@ def to_env(json_string):
     return env_dict
 
 
-
-
 # NEW OBJ CONF PARSER
 def gen_netctrl_conf(obj, prefix=None):
     """Scan all object's attributes and return a dict of key starting with prefix
@@ -138,9 +135,7 @@ def gen_netctrl_conf(obj, prefix=None):
     if not obj:
         return {}
 
-    ret = {
-        "obj_conf": {}
-    }
+    ret = {"obj_conf": {}}
 
     for attr in dir(obj):
 
@@ -150,10 +145,10 @@ def gen_netctrl_conf(obj, prefix=None):
 
         short_name = attr.replace(prefix, "")
 
-        # Parse Item Config 
+        # Parse Item Config
         if short_name.startswith("__"):
             short_name = short_name[2:]
-            key, short_name = short_name.replace('__',' ').split(' ', 2)
+            key, short_name = short_name.replace("__", " ").split(" ", 2)
 
             # TODO: Handle Dict AND lists
             # Lists => https://stackoverflow.com/a/2133116
@@ -172,48 +167,34 @@ def gen_netctrl_conf(obj, prefix=None):
 
         # Not parseable
         else:
-            print (f"WARN: Ignoring class pattern: {attr}")
+            print(f"WARN: Ignoring class pattern: {attr}")
             assert False
-        
+
     return ret
-
-
-
-
-
-     
-
-
-
-
-
-
-
 
 
 # DECORATORS
 ################################################################
 
 
-
 def newNode(
-
     override=True,
-    prefix = "__node__",
-
+    prefix="__node__",
     # Only relavant if override is True, otherwise can be
-    enable_getattr=None, # None=> enable if nothing present, True => Always, False => Never
+    enable_getattr=None,  # None=> enable if nothing present, True => Always, False => Never
     enable_getitem=None,
     enable_call=None,
-
-    **kwargs): #, *args, **kwargs):
+    **kwargs,
+):  # , *args, **kwargs):
     """
     Transform a class to a NodeClass WITH LIVE PATCH
-    
+
     Forward all kwargs to NodeCtrl()
     """
 
-    assert not "obj_mixins" in kwargs, f"Usage of obj_mixins in decorator is forbidden, please use 'addMixin' instea"
+    assert (
+        not "obj_mixins" in kwargs
+    ), f"Usage of obj_mixins in decorator is forbidden, please use 'addMixin' instea"
 
     def _decorate(cls):
 
@@ -224,24 +205,23 @@ def newNode(
         }
         node_params.update(kwargs)
 
-
         # __node__mixins__
         # __node__params__
 
         # Create mixin configs
         node_mixins = dict(getattr(cls, "__node__mixins__", {}))
         node_params["obj_mixins"] = node_mixins
-        
 
         # Generate a new Node Class
-        ret = NodeWrapperConfGenerator(cls,
+        ret = NodeWrapperConfGenerator(
+            cls,
             override=override,
-            extra_attr={"__node__params__": node_params},  # Forward nodectrl init params
-
-            enable_getattr=enable_getattr, # None=> enable if nothing present, True => Always, False => Never
+            extra_attr={
+                "__node__params__": node_params
+            },  # Forward nodectrl init params
+            enable_getattr=enable_getattr,  # None=> enable if nothing present, True => Always, False => Never
             enable_getitem=enable_getitem,
             enable_call=enable_call,
-
         )
 
         # print ("1. New Wrapped Node", ret)
@@ -252,21 +232,16 @@ def newNode(
     return _decorate
 
 
-
-
-
 def addMixin(mixin, mixin_key=None, mixin_conf=None, **kwargs):
     "Add features/mixins to class"
 
-
     # Fetch mixin class
     if isinstance(mixin, str):
-        #mixin_name = mixin
+        # mixin_name = mixin
         mixin_cls = import_module(mixin)
-    else:        
-        #mixin_name = mixin.__name__
+    else:
+        # mixin_name = mixin.__name__
         mixin_cls = mixin
-
 
     # Get mixin config
     mixin_key = mixin_key or mixin_cls.mixin_key
@@ -277,36 +252,24 @@ def addMixin(mixin, mixin_key=None, mixin_conf=None, **kwargs):
     assert isinstance(mixin_key, str)
 
     mixin_def = dict(mixin_conf)
-    mixin_def.update({
-        "mixin": mixin_cls,
-        "mixin_key": mixin_key
-    })
+    mixin_def.update({"mixin": mixin_cls, "mixin_key": mixin_key})
 
     def _decorate(cls):
-
 
         # Ensure idempotency
         if not hasattr(cls, "__node__mixins__"):
             cls.__node__mixins__ = {}
 
         # print ("ASSIGN MIXIN", cls, type(cls))
-        assert not mixin_key in cls.__node__mixins__, f"Already assigned key: {mixin_key}" 
+        assert (
+            not mixin_key in cls.__node__mixins__
+        ), f"Already assigned key: {mixin_key}"
 
         cls.__node__mixins__[mixin_key] = mixin_def
 
         return cls
 
     return _decorate
-
-
-
-
-
-
-
-
-
-
 
 
 # OLLLDDDD
@@ -332,7 +295,7 @@ def addMixin(mixin, mixin_key=None, mixin_conf=None, **kwargs):
 #     def _decorate(cls):
 
 #         try:
-#             ret = type( f"{base_cls.__name__}.{cls.__name__}", 
+#             ret = type( f"{base_cls.__name__}.{cls.__name__}",
 #                     (base_cls, cls), {}
 #                 )
 #             print (f"DECORATE v1 {cls} with {base_cls}")
@@ -360,10 +323,8 @@ def addMixin(mixin, mixin_key=None, mixin_conf=None, **kwargs):
 # #         def __init__(self):
 # #             super(DecoratorClass, self).__init__()
 # #             self.foo = 42  # more operations
-# #             ...    
+# #             ...
 # #     return DecoratorClass
-
-
 
 
 # def NodeDef2(base_name, **kwargs): #, *args, **kwargs):
@@ -391,12 +352,12 @@ def addMixin(mixin, mixin_key=None, mixin_conf=None, **kwargs):
 #         # assert not hasattr(cls, "__init__"), f"FAILED: {getattr(cls, '__init__')}"
 #         # print ("ASSERT")
 
-        
+
 #         try:
-#             # ret = type( f"{base_cls.__name__}.{cls.__name__}", 
+#             # ret = type( f"{base_cls.__name__}.{cls.__name__}",
 #             #         (base_cls, cls), {}
 #             #     )
-#             ret = type( f"{base_cls.__name__}.{cls.__name__}", 
+#             ret = type( f"{base_cls.__name__}.{cls.__name__}",
 #                 (cls, base_cls), {}
 #             )
 #             print (f"DECORATE {cls} with {base_cls}")
@@ -416,4 +377,3 @@ def addMixin(mixin, mixin_key=None, mixin_conf=None, **kwargs):
 #     return _decorate
 
 #     return cls
-

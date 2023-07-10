@@ -1,4 +1,3 @@
-
 #!/usr/bin/env pytest
 # -*- coding: utf-8 -*-
 
@@ -31,7 +30,6 @@ from cafram.mixins.tree import NodePayload, NodeConf, NodeConfDict, NodeConfList
 from cafram.mixins.tree import ConfMixin, ConfDictMixin, ConfListMixin
 
 
-
 from cafram.decorators import newNode, addMixin
 
 # ConfigLoader
@@ -43,20 +41,13 @@ from cafram.mixins import BaseMixin
 from cafram.ctrl2 import NodeCtrl
 
 
-
 # Metaclasses
-#from cafram.nodes2 import Node
+# from cafram.nodes2 import Node
 from cafram.nodes3 import Node
-
-
-
-
 
 
 def test_configloader_nodectrl_NEW():
     "Test good functionning of NodeConfigLoader"
-
-
 
     class NodeCls(Node):
 
@@ -83,7 +74,6 @@ def test_configloader_nodectrl_NEW():
         _node_mixin__mixin9__mixin_enabled = False
         _node_mixin__mixin9__aconf = "VALUE"
 
-
         # Node: Config via decorator attrs
         # ----------------------------------------
         # Note:
@@ -95,9 +85,7 @@ def test_configloader_nodectrl_NEW():
         #  When you use decorators, it works with 2 class attributes: __node_params__ and __node_mixins__
         #  If you enable inheritance, then all attributes are added to class (see above)
 
-        __node_params__ = {
-            "KEY1": "OVERRIDED by Decorator"
-        }
+        __node_params__ = {"KEY1": "OVERRIDED by Decorator"}
         __node_mixins__ = {
             "mixin1": {
                 "mixin_key": "NEWKEY",
@@ -105,12 +93,10 @@ def test_configloader_nodectrl_NEW():
             "mixin2": {
                 "mixin_key": "NEWKEY",
             },
-
             "mixin8": {
                 "mixin_key": "NEWKEY",
             },
         }
-
 
     # Node: Config via mixin_conf from __init__()
     # ----------------------------------------
@@ -133,14 +119,14 @@ def test_configloader_nodectrl_NEW():
         },
         "mixin7": {
             "mixin_enabled": True,
-        }
+        },
     }
 
     # Direct __init__ param override
     kwargs = {
-            "KEY2": "OVERRIDEDN BY KWARGS",
-            "obj_attr": "__node__",
-        }
+        "KEY2": "OVERRIDEDN BY KWARGS",
+        "obj_attr": "__node__",
+    }
 
     tobj1 = NodeCls()
 
@@ -158,11 +144,11 @@ def test_configloader_nodectrl_NEW():
     mixin_conf = tloader.build(kwargs_mixins=mixin_conf, kwargs=kwargs, strict=STRICT)
 
     # DEbug
-    print ("DEBUG")
-    pprint (tobj1.__dict__)
-    pprint (tobj1.__node__.__dict__)
-    pprint (mixin_conf)
-    print ("EOOOFFF")
+    print("DEBUG")
+    pprint(tobj1.__dict__)
+    pprint(tobj1.__node__.__dict__)
+    pprint(mixin_conf)
+    print("EOOOFFF")
 
     # Test nodectrl configuration
     assert tobj1.__node__.KEY1 == "OVERRIDED by Decorator"
@@ -171,33 +157,32 @@ def test_configloader_nodectrl_NEW():
 
     # Test mixin configuration
     assert mixin_conf == {
-        'KEY1': 'OVERRIDED by Decorator',
-        'KEY2': 'OVERRIDEDN BY KWARGS',
-        'KEY3': True,
-        'obj_attr': '__node__',
-        'obj_conf': {'mixin1': {'aconf': 'VALUE',
-                                'mixin_enabled': True,
-                                'mixin_key': 'NEWKEY'},
-                    'mixin2': {'mixin_enabled': True, 'mixin_key': 'NEWKEY2'},
-                    'mixin3': {'mixin_enabled': True},
-                    'mixin7': {'mixin_enabled': True},
-                    'mixin8': {'mixin_key': 'NEWKEY'},
-                    'mixin9': {'aconf': 'VALUE', 'mixin_enabled': False}}
+        "KEY1": "OVERRIDED by Decorator",
+        "KEY2": "OVERRIDEDN BY KWARGS",
+        "KEY3": True,
+        "obj_attr": "__node__",
+        "obj_conf": {
+            "mixin1": {"aconf": "VALUE", "mixin_enabled": True, "mixin_key": "NEWKEY"},
+            "mixin2": {"mixin_enabled": True, "mixin_key": "NEWKEY2"},
+            "mixin3": {"mixin_enabled": True},
+            "mixin7": {"mixin_enabled": True},
+            "mixin8": {"mixin_key": "NEWKEY"},
+            "mixin9": {"aconf": "VALUE", "mixin_enabled": False},
+        },
     }
 
 
 def test_configloader_mixins():
     "Test good functionning of MixinConfigLoader"
 
-
     # Mock mixin
     class MixinCls(BaseMixin):
         mixin_enabled = True
         mixin_cls = None
         mixin_key = "MyKey"
-        mixin_param__ATTR1 = "attr1"    # Declare param and remap
-        mixin_param__ATTR2 = "attr2"    # Declare param and remap
-        mixin_param__ATTR3 = None       # Declare param only, no change
+        mixin_param__ATTR1 = "attr1"  # Declare param and remap
+        mixin_param__ATTR2 = "attr2"  # Declare param and remap
+        mixin_param__ATTR3 = None  # Declare param only, no change
         mixin_alias__ALIAS1 = "alias1"
         mixin_alias__ALIAS2 = "alias2"
         mixin_alias__ALIAS3 = "alias3"
@@ -210,14 +195,11 @@ def test_configloader_mixins():
 
         BUILT_CONFIG = None
 
-
     # Must always reference existing mixin attributes, sent in __init__ mixin_conf
     mixin_conf = {
         "mixin_enabled": False,
-
         "mixin_key": "MyKey",
-        #"mixin_key_FAIL": "MyKey",
-
+        # "mixin_key_FAIL": "MyKey",
         # Conf override
         "mixin_param__ATTR2": "attr2_new",  # Change remap for ATTR2
         "mixin_alias__ALIAS2": "alias2_new",
@@ -228,22 +210,19 @@ def test_configloader_mixins():
         "attr1": "INIT override value1",
         "attr2_new": "INIT override value2_new",
         "ATTR3": "user default param",
-
         # "alias1": "INIT alias1",
         # "alias2_new": "INIT alias2_new",
     }
-
-
 
     # # Test load
     tobj1 = Node()
     tobj2 = MixinCls(tobj1.__node__)
     tloader = MixinConfigLoader(tobj2)
 
-    #aliases = tloader.build(mixin_conf=mixin_conf, kwargs=runtime_params, strict=False)
+    # aliases = tloader.build(mixin_conf=mixin_conf, kwargs=runtime_params, strict=False)
     aliases = tloader.build(mixin_conf=mixin_conf, kwargs=runtime_params, strict=True)
 
-    pprint (tobj2.__dict__)
+    pprint(tobj2.__dict__)
 
     # Check dynconf
     assert tobj2.mixin_enabled == False
@@ -254,12 +233,8 @@ def test_configloader_mixins():
     assert tobj2.ATTR2 == "INIT override value2_new"
     assert tobj2.ATTR3 == "user default param"
 
-    pprint (aliases)
+    pprint(aliases)
 
-    #assert aliases == {'ALIAS1': 'alias1', 'ALIAS2': 'alias2_new', 'ALIAS3': 'alias3'}
+    # assert aliases == {'ALIAS1': 'alias1', 'ALIAS2': 'alias2_new', 'ALIAS3': 'alias3'}
 
-    #assert False, "WIPP"
-
-
-
- 
+    # assert False, "WIPP"

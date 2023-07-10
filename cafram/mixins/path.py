@@ -53,7 +53,6 @@ class FileNotFound(PathMixinException):
     """When a file can't be find"""
 
 
-
 # Conf mixins (Composed classes)
 ################################################################
 
@@ -129,7 +128,6 @@ class PathMixin(PathMixinGroup):
     # -----------------
     # def __str__(self):
     #     return self.get_path()
-    
 
     def set_path(self, value):
         "Set the path"
@@ -151,7 +149,6 @@ class PathMixin(PathMixinGroup):
     def is_root_abs(self):
         "Return true if the root path is absolute"
         return os.path.isabs(self.root)
-
 
     # Path methods
     # -----------------
@@ -190,8 +187,6 @@ class PathMixin(PathMixinGroup):
             result = os.path.relpath(real_path) or "."
         return result
 
-
-
     # Path extended methods
     # -----------------
     def get_dir(self):
@@ -206,14 +201,13 @@ class PathMixin(PathMixinGroup):
         "Return filename extensions, or empty string if not found"
 
         split = os.path.splitext(self.get_path())
-        ret = '.'.join(split[1:])
+        ret = ".".join(split[1:])
         return ret
-
-
 
 
 class FilePathMixin(PathMixin):
     "Conf mixin that manage a file"
+
 
 #     mixin_key = "file"
 
@@ -281,9 +275,6 @@ class FilePathMixin(PathMixin):
 #         self.root = self.root or self.set_root_path()
 
 
-
-
-
 class PathFinderMixin(PathMixin):
     "Conf mixin that search files in paths"
 
@@ -304,19 +295,18 @@ class PathFinderMixin(PathMixin):
     # # Keep tells if get_path should return original path or not
     # keep = True
 
-    file_name = None #"my_super_file.toto.yml"
-    file_prefix = None #"docker-compose"
+    file_name = None  # "my_super_file.toto.yml"
+    file_prefix = None  # "docker-compose"
     file_suffix = None  # ["yml", "yaml", "toml", "json"]
     # file_location = "current/up/down"
     file_location = None
     file_type = "file"
-    #file_type = "file|symlink|dir"
+    # file_type = "file|symlink|dir"
 
-    #file_match = "first|last|all"
+    # file_match = "first|last|all"
     file_match = "first"
 
     # mixin_param__raw = "path"
-
 
     # pylint: disable=line-too-long
     _schema = {
@@ -345,25 +335,19 @@ class PathFinderMixin(PathMixin):
         },
     }
 
-
-
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.set_path(self.find_files())
 
-
     def find_files(self, file_name=None, file_match=None, file_location=None):
         "Find files"
-
 
         search_paths = None
         file_name = file_name or self.file_name
         file_match = file_match or self.file_match
         file_location = file_location or self.file_location
 
-        
         search_path = self.get_path()
 
         if file_location is None:
@@ -375,7 +359,6 @@ class PathFinderMixin(PathMixin):
 
         if not search_paths:
             return None
-        
 
         files = []
 
@@ -393,7 +376,7 @@ class PathFinderMixin(PathMixin):
 
             # Assemble
             files = []
-            if file_prefix and file_suffix: 
+            if file_prefix and file_suffix:
                 for prefix in file_prefix:
                     for suffix in file_suffix:
                         fpath = f"{prefix}.{suffix}"
@@ -402,12 +385,12 @@ class PathFinderMixin(PathMixin):
                 files = file_prefix
             else:
                 assert False, "Extension search is not supported yet"
-            
+
         else:
             files = [file_name]
 
-        print ("SEARCH FILE in", self.get_path())
-        print ("SEARCH FOR FILES", files)
+        print("SEARCH FILE in", self.get_path())
+        print("SEARCH FOR FILES", files)
 
         matches = []
         for i in search_paths:
@@ -434,7 +417,6 @@ class PathFinderMixin(PathMixin):
         # print ("MATCHES")
         # pprint(matches)
         return matches
-
 
         # # self._super__init__(super(), *args, **kwargs)
 

@@ -44,7 +44,6 @@ class CaframNode(CaframObj):
     "An empty root class to determine a cafram object or not"
 
 
-
 class CaframInternalsGroup(CaframObj):
     "Cafram Internals"
 
@@ -56,7 +55,7 @@ class CaframInternalsGroup(CaframObj):
     _obj_logger_indent = 0
 
     # Do yo want native logger to be impersonated as well, None to use defaults
-    #_obj_logger_impersonate = False
+    # _obj_logger_impersonate = False
 
     # Prefix of the impersonated object, string or None to be ignored
     _obj_logger_impersonate_prefix = None
@@ -64,7 +63,6 @@ class CaframInternalsGroup(CaframObj):
     # Class attr
     _obj = None
     _log = None
-
 
     # Init method
     # --------------------
@@ -75,13 +73,14 @@ class CaframInternalsGroup(CaframObj):
         if isinstance(debug, bool):
             self._obj_debug = debug
         if impersonate:
-            assert isinstance(impersonate, str), "impersonate must be a string, got: {impersonate}"
+            assert isinstance(
+                impersonate, str
+            ), "impersonate must be a string, got: {impersonate}"
             self._obj_logger_impersonate_prefix = impersonate
         if log_level:
             self._obj_logger_level = log_level
 
         self._init_logger(level=log_level)
-
 
     # Object management
     # --------------------
@@ -121,16 +120,14 @@ class CaframInternalsGroup(CaframObj):
 
         if self._obj_debug:
             # prefix = f'YOOOOOOOOOOOOOOOOOO{self.get_obj_fqn()}[{self.get_prefix()}.{self.get_name()}]'
-            #prefix = f"{self.get_obj_fqn()}[{self.get_prefix()}]"
+            # prefix = f"{self.get_obj_fqn()}[{self.get_prefix()}]"
             ident = f"{self.get_obj_fqn()}[{self.get_name()}]"
             return ident
         return super().get_fqn()
 
-
     def __repr__(self):
         "Mixin representation"
         return self.get_ident()
-
 
     def get_ctrl(self):
         "Return current Node controller"
@@ -143,8 +140,7 @@ class CaframInternalsGroup(CaframObj):
         "Return if object is impersonated or not"
         return self._obj_debug
 
-
-    def get_logger_name(self): #, impersonate=None):
+    def get_logger_name(self):  # , impersonate=None):
         "Get logger internal name"
 
         if self.is_impersonated() is True:
@@ -159,9 +155,9 @@ class CaframInternalsGroup(CaframObj):
             else:
                 logger_name = f"{self.get_obj_fqn()}"
         else:
-            #logger_name = str(self.__class__)
+            # logger_name = str(self.__class__)
             logger_name = self.get_fqn()
-            #logger_name = self.get_name()
+            # logger_name = self.get_name()
 
         return logger_name
 
@@ -178,15 +174,16 @@ class CaframInternalsGroup(CaframObj):
         else:
             _log = logging.getLogger(logger_name)
 
-        #level = level or self.get_ctrl()._obj_logger_level
+        # level = level or self.get_ctrl()._obj_logger_level
         level = level or self._obj_logger_level
         if level is not None:
-           # print ("SET LEVEL", level)
+            # print ("SET LEVEL", level)
             _log.setLevel(level)
-        _log.info(f"Get {impersonated} Cafram logger for {self}: {logger_name} {self.__class__} ({self.is_impersonated()})")
+        _log.info(
+            f"Get {impersonated} Cafram logger for {self}: {logger_name} {self.__class__} ({self.is_impersonated()})"
+        )
 
         self._log = _log
-
 
 
 class CaframCtrl(CaframInternalsGroup):
@@ -194,7 +191,6 @@ class CaframCtrl(CaframInternalsGroup):
 
     _obj_attr = "__node__"
     _obj_logger_impersonate_prefix = "cafram"
-
 
     # OVERRIDES
     def get_ident(self):
@@ -205,7 +201,7 @@ class CaframCtrl(CaframInternalsGroup):
             key = self._obj_attr
         ident = f"{self.get_obj_fqn()}[{key}]({self.get_name()})"
         return ident
-        #return super().get_fqn()
+        # return super().get_fqn()
 
 
 class CaframMixin(CaframInternalsGroup):
@@ -223,17 +219,17 @@ class CaframMixin(CaframInternalsGroup):
         "Return current object"
         return self.get_ctrl().get_obj()
 
-
     def __init__(self, node_ctrl, debug=None, impersonate=None, log_level=None):
         "Create new mixin. Ensure nodectrl is always registered and logger ready to be used"
 
         # Ensure node_ctrl is added
-        assert issubclass(type(node_ctrl), CaframCtrl), f"Got: {node_ctrl} ({type(node_ctrl)})"
+        assert issubclass(
+            type(node_ctrl), CaframCtrl
+        ), f"Got: {node_ctrl} ({type(node_ctrl)})"
         self.node_ctrl = node_ctrl
 
         # Call parent methods
         super().__init__(debug=debug, impersonate=impersonate, log_level=log_level)
-
 
     # OVERRIDES
     def get_ident(self):
@@ -246,4 +242,4 @@ class CaframMixin(CaframInternalsGroup):
         # TODO: Bug below !!!
         ident = f"{self.get_obj_fqn()}[{key}]({self.get_name()})"
         return ident
-        #return super().get_fqn()
+        # return super().get_fqn()

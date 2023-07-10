@@ -26,10 +26,6 @@ if "ruamel.yaml" in sys.modules:
     yaml.explicit_start = True
 
 
-
-
-
-
 # =====================================================================
 # Misc functions
 # =====================================================================
@@ -37,17 +33,16 @@ if "ruamel.yaml" in sys.modules:
 # Sort hthings here ...
 
 
-
-
 # =====================================================================
 # Class attribute helpers functions
 # =====================================================================
 from pprint import pprint
 
+
 def update_classattr_from_dict(obj, kwargs, prefix="mixin_param__"):
 
     """List args/kwargs parameters
-    
+
     Scan a given object `obj`, find all its attributes starting with `prefix`,
     and update all matched attributes from kwargs
     """
@@ -58,7 +53,7 @@ def update_classattr_from_dict(obj, kwargs, prefix="mixin_param__"):
 
     ret = {}
     reduced = [item for item in dir(obj) if item.startswith(prefix)]
-    pprint (reduced)
+    pprint(reduced)
     for attr in reduced:
 
         attr_name = attr.replace(prefix, "")
@@ -66,7 +61,7 @@ def update_classattr_from_dict(obj, kwargs, prefix="mixin_param__"):
             attr_match = getattr(obj, attr, None) or attr_name
 
             if isinstance(attr_match, str):
-                print ("YOOOO", attr_name, attr_match)
+                print("YOOOO", attr_name, attr_match)
 
                 if True:
                     # V1 is the good one
@@ -80,8 +75,6 @@ def update_classattr_from_dict(obj, kwargs, prefix="mixin_param__"):
                         ret[attr_match] = attr_value2
 
     return ret
-
-
 
 
 # =====================================================================
@@ -101,7 +94,6 @@ def truncate(data, max=72, txt=" ..."):
     return data
 
 
-
 # TODO: Add tests on this one
 def to_domain(string, sep=".", alt="-"):
     "Transform any string to valid domain name"
@@ -114,7 +106,6 @@ def to_domain(string, sep=".", alt="-"):
         result.append(part)
 
     return ".".join(result)
-
 
 
 # =====================================================================
@@ -130,6 +121,7 @@ def merge_dicts_v1(dict1, dict2):
     result = dict1.copy()
     result.update(dict2)
     return result
+
 
 def merge_dicts(*dicts):
     """Given X dictionaries, merge them into a new dict as a shallow copy.
@@ -183,10 +175,10 @@ def merge_keyed_dicts(dict1, dict2):
 
     Compatibility for Python 3.5 and above"""
     # Source: https://stackoverflow.com/a/26853961/2352890
-    
+
     result = dict1.copy()
     for key, val in dict2.items():
-        
+
         if not key in result:
             result[key] = {}
 
@@ -198,10 +190,9 @@ def merge_keyed_dicts(dict1, dict2):
 
 
 def dict_to_fdict(payload, sep="__"):
-    """Transform dict to fdict
-
-    """
+    """Transform dict to fdict"""
     assert False, "Not implemented yet"
+
 
 def fdict_to_dict(payload, sep="__"):
     """Transform fdict to dict
@@ -230,13 +221,13 @@ def fdict_to_dict(payload, sep="__"):
         parts = key.split(sep)
 
         parent = ret
-        if len(parts) > 1:    
+        if len(parts) > 1:
             for part in parts[:-1]:
                 if not part in parent:
                     parent[part] = {}
                 parent = ret[part]
         key = parts[-1]
-        parent[key] =  val
+        parent[key] = val
 
     return ret
 
@@ -309,7 +300,6 @@ def serialize(obj, fmt="json"):
     return obj
 
 
-
 def to_bool(string):
     "Return a boolean"
     if isinstance(string, bool):
@@ -323,7 +313,6 @@ if "ruamel.yaml" in sys.modules:
     def from_yaml(string):
         "Transform YAML string to python dict"
         return yaml.load(string)
-
 
     # TODO: add tests
     def to_yaml(obj, headers=False):
@@ -341,13 +330,13 @@ if "ruamel.yaml" in sys.modules:
             output_str = output_str.split("\n", 2)[2]
         return output_str
 
+
 if "yaml" in sys.modules:
 
     # TODO: add tests
     def from_yaml(string):
         "Transform YAML string to python dict"
         return yaml.safe_load(string)
-
 
     # TODO: add tests
     def to_yaml(obj, headers=False):
@@ -380,15 +369,16 @@ def to_dict(obj):
     return json.loads(obj)
 
 
-
 # =====================================================================
 # Python modules
 # =====================================================================
+
 
 def import_from_str(name):
     "Import a module from a string. Returns ModuleNotFoundError if does not exists"
 
     return importlib.import_module(name)
+
 
 def get_pkg_dir(name):
     """Return the dir where the actual paasify source code lives"""
@@ -396,6 +386,7 @@ def get_pkg_dir(name):
     # pylint: disable=import-outside-toplevel
     mod = import_from_str(name)
     return os.path.dirname(mod.__file__)
+
 
 # New API
 
@@ -421,16 +412,15 @@ def import_module_from(package, *names):
             ret.append(getattr(mod, name))
         return set(ret)
 
+
 def import_module(name):
     "Simple helper to load python modules"
-    
+
     if ":" in name:
-        package, comp = name.rsplit(':', 1)
+        package, comp = name.rsplit(":", 1)
         return import_module_from(package, comp)
 
     return import_module_pkg(name)
-
-
 
 
 # =====================================================================
@@ -469,11 +459,13 @@ def ensure_dir_exists(path):
         return True
     return False
 
+
 # Migrated into cafram2
 def ensure_parent_dir_exists(path):
     """Ensure parent directories exist for a given path"""
     parent = os.path.dirname(os.path.normpath(path))
     return ensure_dir_exists(parent)
+
 
 def filter_existing_files(root_path, candidates):
     """Return only existing files"""
@@ -483,6 +475,7 @@ def filter_existing_files(root_path, candidates):
         if os.path.isfile(os.path.join(root_path, cand))
     ]
     return list(set(result))
+
 
 def list_parent_dirs(path):
     """
