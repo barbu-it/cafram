@@ -31,9 +31,6 @@ from .lib.utils import import_module
 ################################################################
 
 
-
-
-
 # Create a parsable mixin configurations
 
 
@@ -162,7 +159,7 @@ class NodeCtrl(CaframCtrl):
         # print ("MIXIN", self._obj_mixins, mixin_kwargs)
         self._load_mixins(self._obj_mixins, mixin_kwargs)
         self._log.debug(f"NodeCtrl {self} initialization is over: {self._obj_mixins}")
-        #print(f"NodeCtrl {self} initialization is over: {self._obj_mixins}")
+        # print(f"NodeCtrl {self} initialization is over: {self._obj_mixins}")
 
     def _load_mixins(self, mixin_confs, mixin_kwargs):
         "Load mixins from requested configuration"

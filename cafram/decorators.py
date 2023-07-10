@@ -1,6 +1,4 @@
-
-
-#assert False, "Decorator is deprecated"
+# assert False, "Decorator is deprecated"
 
 import traceback
 import logging

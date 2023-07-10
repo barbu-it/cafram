@@ -119,13 +119,10 @@ def node_class_builder(
 
         # __node__params__ = {}
         # __node__params__ = {}
-        #__node__mixins__ = {}
+        # __node__mixins__ = {}
 
         # __node__attrs__ =  clsmethods
         # __node__prefix__ =  prefix
-
-
-
 
         @classmethod
         def tmp__inherit(cls, obj, name=None, bases=None, override=True, attrs=None):
@@ -177,12 +174,10 @@ def node_class_builder(
                 return (name, tuple(bases), dct)
             return None
 
-
         # This should not be hardcoded !!!
         @classmethod
         def tmp__patch__(cls, obj, override=True):
             "Patch a class to become a node"
-
 
             # Build parameters
             # ------------------------
@@ -190,12 +185,10 @@ def node_class_builder(
             nodectrl_conf = getattr(obj, f"{prefix}_params__", {})
             mixin_confs = getattr(obj, f"{prefix}_mixins__", {})
 
-            #mixin_confs2 = getattr(obj, f"{prefix}_mixins2__", [])
+            # mixin_confs2 = getattr(obj, f"{prefix}_mixins2__", [])
             nodectrl_conf["obj_mixins"] = mixin_confs
             setattr(obj, f"{prefix}_params__", nodectrl_conf)
-            print ("SET ATTR", obj, f"{prefix}_params__", nodectrl_conf)
-
-
+            print("SET ATTR", obj, f"{prefix}_params__", nodectrl_conf)
 
             # Patch object if not patched
             # ------------------------
@@ -223,12 +216,10 @@ def node_class_builder(
 
             return obj
 
-
-########################
+        ########################
 
         @classmethod
         def tmp__patch__mixin__(cls, obj, conf, key=None):
-
 
             # Fetch mixin class
             assert "mixin" in conf
@@ -243,27 +234,20 @@ def node_class_builder(
             if mixin_key is True:
                 mixin_key = mixin_cls.mixin_key
 
-            assert isinstance(mixin_key , str)
+            assert isinstance(mixin_key, str)
 
             mixin_confs = getattr(obj, f"{prefix}_mixins__", {})
             mixin_confs2 = getattr(obj, f"{prefix}_mixins2__", [])
-
-
 
             mixin_confs[mixin_key] = conf
             mixin_confs2.append(conf)
 
             setattr(obj, f"{prefix}_mixins__", mixin_confs)
-            #setattr(cls, f"{prefix}_mixins2__", mixin_confs2)
+            # setattr(cls, f"{prefix}_mixins2__", mixin_confs2)
 
             return obj
 
-
-########################
-
-
-
-
+        ########################
 
         if "__init__" in clsmethods:
 
@@ -276,10 +260,10 @@ def node_class_builder(
                 __node__params__.update(getattr(self, f"{prefix}_params__", {}))
                 __node__params__.update(kwargs)
 
-                print ("INIT NODECTRL WITH PARAMS", __node__params__)
-                print (self, self.__class__)
-                pprint (self.__dict__)
-                pprint (self.__class__.__dict__)
+                print("INIT NODECTRL WITH PARAMS", __node__params__)
+                print(self, self.__class__)
+                pprint(self.__dict__)
+                pprint(self.__class__.__dict__)
 
                 tmp = NodeCtrl(
                     self,
@@ -429,7 +413,6 @@ class NodeMetaclass(type):
                 attrs=node_attrs,
             )
 
-
         # Generate type arguments
         ret = node_cls.tmp__inherit(cls, bases=bases, attrs=dct, name=name)
         if ret:
@@ -437,7 +420,6 @@ class NodeMetaclass(type):
 
         # Return a new class
         return super().__new__(cls, name, bases, dct)
-
 
     #     #node_prefix = node_prefix or getattr(cls, "_node__attr", None) or NODE_PREFIX
 
@@ -453,7 +435,6 @@ class NodeMetaclass(type):
 
     #     node_prefix = node_prefix or tmp or NODE_PREFIX
     #     cls_node = node_class_builder(node_prefix)
-
 
     #     # Minimal placeholder
     #     # cls = super().__new__(metacls, name, bases, namespace, **kwargs)
@@ -508,7 +489,6 @@ class NodeWrapper:
         Forward all kwargs to NodeCtrl()
         """
 
-
         # Decorator arguments
         base_cls = self._base_node_cls
         if not isinstance(override, bool):
@@ -530,17 +510,17 @@ class NodeWrapper:
             if patch:
                 ret = base_cls.tmp__patch__(ret, override=override)
             else:
-                ret = base_cls.tmp__inherit(cls, name=cls.__qualname__, override=override)
+                ret = base_cls.tmp__inherit(
+                    cls, name=cls.__qualname__, override=override
+                )
                 if ret:
                     name, bases, dct = ret
                 ret = type(name, bases, dct)
 
-
             # print ("AFTER METHODS", cls)
             # pprint (ret.__dict__)
 
-            return ret 
-                
+            return ret
 
             # # Create main parameters
             # node_params = {
@@ -581,7 +561,6 @@ class NodeWrapper:
 
         return _decorate
 
-
     def addMixin(self, mixin, mixin_key=None, mixin_conf=None, **kwargs):
         "Add features/mixins to class"
 
@@ -598,17 +577,16 @@ class NodeWrapper:
 
         # Validate data
         assert isinstance(mixin_conf, dict)
-        #assert isinstance(mixin_key, str)
+        # assert isinstance(mixin_key, str)
 
         mixin_def = dict(mixin_conf)
         mixin_def.update({"mixin": mixin})
         if mixin_key is not None:
             mixin_def.update({"mixin_key": mixin_key})
-        
+
         base_cls = self._base_node_cls
 
         def _decorate(cls):
-
 
             cls = base_cls.tmp__patch__mixin__(cls, mixin_def)
 
@@ -629,8 +607,6 @@ class NodeWrapper:
             return cls
 
         return _decorate
-
-
 
     # def addMixin_V111(self, mixin, mixin_key=None, mixin_conf=None, **kwargs):
     #     "Add features/mixins to class"
@@ -658,7 +634,6 @@ class NodeWrapper:
 
     #         base_cls = self._base_node_cls
 
-
     #         base_cls.tmp__patch__mixin__(cls, conf, key=None)
 
     #         # Ensure idempotency
@@ -677,18 +652,16 @@ class NodeWrapper:
     #     return _decorate
 
 
-
-
 # Common default instance
 ################################################################
 
 nw = NodeWrapper(
-        prefix="__node__",
-        override=True,  # THIS IS THE DEFAULT BEHVIOR !
-        name="Node",
-    )
+    prefix="__node__",
+    override=True,  # THIS IS THE DEFAULT BEHVIOR !
+    name="Node",
+)
 
-#nw = NodeWrapper(prefix="__node__")
+# nw = NodeWrapper(prefix="__node__")
 
 newNode = nw.newNode
 addMixin = nw.addMixin

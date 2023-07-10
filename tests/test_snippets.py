@@ -51,7 +51,7 @@ def test_app1_post_init():
     # )
 
     # Sample Data
-    #@node.newNode()
+    # @node.newNode()
     @newNode()
     class MyApp:
 
@@ -77,12 +77,12 @@ def test_app1_post_init():
 
     # Test all different accesses
     app1 = MyApp()
-    print ("+++ DEBUG +++")
-    pprint (app1.__class__.__mro__)
-    pprint (MyApp.__dict__)
-    pprint (app1)
-    pprint (app1.__dict__)
-    print ("+++ DEBUG +++")
+    print("+++ DEBUG +++")
+    pprint(app1.__class__.__mro__)
+    pprint(MyApp.__dict__)
+    pprint(app1)
+    pprint(app1.__dict__)
+    print("+++ DEBUG +++")
 
     assert app1.TEST_INITED is True
     assert app1.TEST_EXECUTED is False
@@ -468,12 +468,11 @@ from cafram.mixins.base import LoggerMixin
 def test_mixin_logger1():
     "Test that show how to use the logger"
 
-
     @newNode()
     @addMixin("cafram.mixins.base:LoggerMixin")
-    class MyApp1():
+    class MyApp1:
         def __post_init__(self, *args, **kwargs):
-            #self.log.debug("DEBUG_Messages: INIT")
+            # self.log.debug("DEBUG_Messages: INIT")
             print("DEBUG_Messages: INIT")
 
         def demo(self):
@@ -482,16 +481,14 @@ def test_mixin_logger1():
             self.log.warning("WARNING_Messages")
             self.log.error("ERROR_Messages")
 
+    print("DEBUUUGG 1")
+    pprint(MyApp1.__dict__)
 
-    print ("DEBUUUGG 1")
-    pprint (MyApp1.__dict__)
-
- 
     app = MyApp1()
 
-    print ("DEBUUUGG 2")
-    pprint (app.__dict__)
-    pprint (app.__node__.__dict__)
+    print("DEBUUUGG 2")
+    pprint(app.__dict__)
+    pprint(app.__node__.__dict__)
 
     app.demo()
 
