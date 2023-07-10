@@ -8,7 +8,7 @@ Path mixins
 import os
 
 
-from ..nodes2 import Node
+from ..nodes3 import Node
 from .. import errors
 from .base import PayloadMixin
 from . import BaseMixin, LoadingOrder

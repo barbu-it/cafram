@@ -4,7 +4,7 @@ Cafram tools
 
 from pprint import pprint
 
-from .nodes2 import Node
+from .nodes3 import Node
 from .mixins import BaseMixin
 
 

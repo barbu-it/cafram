@@ -23,7 +23,7 @@ from cafram.mixins.base import LoggerMixin, MapAttrMixin
 
 # from cafram.mixins.tree import  _ContainerMixin
 
-from cafram.nodes2 import Node, Node
+from cafram.nodes3 import Node, Node
 from cafram.mixins.base import PayloadMixin
 from cafram.mixins.hier import HierMixin, HierParentMixin, HierChildrenMixin
 from cafram.mixins.tree import NodePayload, NodeConf, NodeConfDict, NodeConfList
@@ -38,7 +38,8 @@ from cafram.mixins.tree import ConfMixin, ConfDictMixin, ConfListMixin
 
 from cafram.tools import NodeConfigLoader, MixinConfigLoader
 from cafram.mixins import BaseMixin
-from cafram.ctrl2 import NodeCtrl
+#from cafram.ctrl2 import NodeCtrl
+from cafram.nodes.ctrl import NodeCtrl
 
 
 # Metaclasses

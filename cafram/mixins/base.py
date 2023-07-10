@@ -12,7 +12,7 @@ from pprint import pprint
 # from ..nodes import Node
 from ..lib import logger
 
-from ..nodes2 import Node
+from ..nodes3 import Node
 from ..common import CaframObj
 from .. import errors
 from . import BaseMixin, LoadingOrder

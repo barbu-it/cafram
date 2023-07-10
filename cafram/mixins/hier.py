@@ -7,7 +7,7 @@ Tree mixins
 import copy
 
 # from ..nodes import Node
-from ..nodes2 import Node
+from ..nodes3 import Node
 
 # from .. import errors
 

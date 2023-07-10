@@ -23,7 +23,7 @@ from cafram.mixins.base import LoggerMixin, MapAttrMixin
 
 # from cafram.mixins.tree import  _ContainerMixin
 
-from cafram.nodes2 import Node, Node
+from cafram.nodes3 import Node
 from cafram.mixins.base import PayloadMixin
 from cafram.mixins.hier import HierMixin, HierParentMixin, HierChildrenMixin
 from cafram.mixins.tree import NodePayload, NodeConf, NodeConfDict, NodeConfList
@@ -38,16 +38,21 @@ from cafram.mixins.tree import ConfMixin, ConfDictMixin, ConfListMixin
 
 from cafram.tools import NodeConfigLoader, MixinConfigLoader
 from cafram.mixins import BaseMixin
-from cafram.ctrl2 import NodeCtrl
-from cafram.nodes2 import Node as OldNode
+#from cafram.ctrl2 import NodeCtrl
+from cafram.nodes.ctrl import NodeCtrl
+#from cafram.nodes2 import Node as OldNode
+import inspect
 
 
 # ===================================================
 # Dynamic Class Creator
 # ===================================================
 
-import inspect
-from cafram.nodes3 import node_class_builder, NodeMetaclass, NodeWrapper
+#from cafram.nodes3 import node_class_builder, NodeMetaclass, NodeWrapper
+
+from cafram.nodes.engine import node_class_builder, NodeMetaclass, NodeWrapper
+
+
 
 
 def test_clsbuilder_func_basic():
@@ -140,7 +145,7 @@ def test_clsbuilder_metaclass_with_class():
     print("MNANME", mname)
 
     assert str(DynCls) == f"<class '{mname}.Node'>"
-    assert str(type(DynCls)) == f"<class 'cafram.nodes3.NodeMetaclass'>"
+    assert str(type(DynCls)) == f"<class 'cafram.nodes.engine.NodeMetaclass'>"
 
     assert DynCls.__init__
     assert DynCls.__name__ == "Node"
@@ -176,7 +181,7 @@ def test_clsbuilder_metaclass_with_class_inheritance_onchildren():
     print("MNANME", mname)
 
     assert str(DynCls) == f"<class '{mname}.Node'>"
-    assert str(type(DynCls)) == f"<class 'cafram.nodes3.NodeMetaclass'>"
+    assert str(type(DynCls)) == f"<class 'cafram.nodes.engine.NodeMetaclass'>"
 
     assert DynCls.__init__
     assert DynCls.__name__ == "Node"
@@ -209,7 +214,7 @@ def test_clsbuilder_metaclass_with_class_inheritance_on_parent():
     print("MNANME", mname)
 
     assert str(DynCls) == f"<class '{mname}.Node'>"
-    assert str(type(DynCls)) == f"<class 'cafram.nodes3.NodeMetaclass'>"
+    assert str(type(DynCls)) == f"<class 'cafram.nodes.engine.NodeMetaclass'>"
 
     assert DynCls.__init__
     assert DynCls.__name__ == "Node"
@@ -315,7 +320,7 @@ def test_clsbuilder_decorator_base():
     # print ("MNANME", mname)
 
     # assert str(DynCls) == f"<class '{mname}.Node'>"
-    # assert str(type(DynCls)) == f"<class 'cafram.nodes3.NodeMetaclass'>"
+    # assert str(type(DynCls)) == f"<class 'cafram.nodes.engine.NodeMetaclass'>"
 
     # assert DynCls.__init__
     # assert DynCls.__name__ == "Node"
