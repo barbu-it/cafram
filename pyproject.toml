@@ -23,6 +23,7 @@ pylint = "^2.15.3"
 pytest-regressions = "^2.4.1"
 pytest-watcher = "^0.2.6"
 pytest-cov = "^3.0.0"
+isort = "^5.12.0"
 
 
 [tool.poetry.group.doc.dependencies]
@@ -42,4 +43,9 @@ log_cli_level = "DEBUG"
 #log_cli_level = "NOTSET"
 log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+
+
+[tool.isort]
+profile = "black"
+src_paths = ["cafram", "tests"]
 
