@@ -118,10 +118,10 @@ def node_class_builder(
         bases = tuple(bases)
 
     assert isinstance(bases, tuple), f"Got: {bases} (type={type(bases)})"
-    print(
-        f"Build new _NodeSkeleton: name={name}, prefix='{prefix}', bases={bases}, methods:",
-        clsmethods,
-    )
+    # print(
+    #     f"Build new _NodeSkeleton: name={name}, prefix='{prefix}', bases={bases}, methods:",
+    #     clsmethods,
+    # )
 
     class _NodeSkeleton(*bases):
         "Dynamic Node Class"
@@ -159,7 +159,7 @@ def node_class_builder(
                 if override:
                     # Create a new class WrapperClass that inherit from defined class
 
-                    print("NODE OVERRIDE", name, cls.__qualname__, tuple(bases), dct)
+                    # print("NODE OVERRIDE", name, cls.__qualname__, tuple(bases), dct)
                     bases.insert(0, cls)
 
                     # Pros:
@@ -172,7 +172,7 @@ def node_class_builder(
                 else:
                     # Append in the end WrapperClass inheritance
 
-                    print("NODE INHERIT", name, cls.__module__, tuple(bases), dct)
+                    # print("NODE INHERIT", name, cls.__module__, tuple(bases), dct)
                     bases.append(cls)
 
                     # Pros:
@@ -199,7 +199,7 @@ def node_class_builder(
             # mixin_confs2 = getattr(obj, f"{prefix}_mixins2__", [])
             nodectrl_conf["obj_mixins"] = mixin_confs
             setattr(obj, f"{prefix}_params__", nodectrl_conf)
-            print("SET ATTR", obj, f"{prefix}_params__", nodectrl_conf)
+            #print("SET ATTR", obj, f"{prefix}_params__", nodectrl_conf)
 
             # Patch object if not patched
             # ------------------------
@@ -207,7 +207,7 @@ def node_class_builder(
                 print(f"Skipping Wrapping Node {obj} with {cls}")
                 return obj
 
-            print(f"Wrapping Node {obj} with {cls} (Override={override})")
+            #print(f"Wrapping Node {obj} with {cls} (Override={override})")
 
             node_attrs = getattr(_NodeSkeleton, f"{prefix}_attrs__")
             for method_name in node_attrs:
@@ -218,7 +218,7 @@ def node_class_builder(
                         print("Skip method patch", method_name, tot)
                         continue
 
-                print("IMPORT METHOD", method_name)
+                #print("IMPORT METHOD", method_name)
                 method = getattr(cls, method_name)
                 setattr(obj, method_name, method)
 
@@ -272,10 +272,10 @@ def node_class_builder(
                 __node__params__.update(getattr(self, f"{prefix}_params__", {}))
                 __node__params__.update(kwargs)
 
-                print("INIT NODECTRL WITH PARAMS", __node__params__)
-                print(self, self.__class__)
-                pprint(self.__dict__)
-                pprint(self.__class__.__dict__)
+                # print("INIT NODECTRL WITH PARAMS", __node__params__)
+                # print(self, self.__class__)
+                # pprint(self.__dict__)
+                # pprint(self.__class__.__dict__)
 
                 tmp = NodeCtrl(
                     self,

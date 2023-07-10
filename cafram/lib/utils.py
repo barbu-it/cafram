@@ -50,7 +50,7 @@ def update_classattr_from_dict(obj, kwargs, prefix="mixin_param__"):
 
     ret = {}
     reduced = [item for item in dir(obj) if item.startswith(prefix)]
-    pprint(reduced)
+    #pprint(reduced)
     for attr in reduced:
 
         attr_name = attr.replace(prefix, "")
@@ -58,7 +58,7 @@ def update_classattr_from_dict(obj, kwargs, prefix="mixin_param__"):
             attr_match = getattr(obj, attr, None) or attr_name
 
             if isinstance(attr_match, str):
-                print("YOOOO", attr_name, attr_match)
+                #print("YOOOO", attr_name, attr_match)
 
                 if True:
                     # V1 is the good one

@@ -128,13 +128,14 @@ class BaseMixin(CaframMixin):
         mixin_conf = mixin_conf or {}
         param_conf = update_classattr_from_dict(self, kwargs, prefix="mixin_param__")
 
-        print("MIXIN INIT: ", self)
-        pprint(
-            {
-                "mixin_conf": mixin_conf,
-                "param_conf": param_conf,
-            }
-        )
+
+        # print("MIXIN INIT: ", self)
+        # pprint(
+        #     {
+        #         "mixin_conf": mixin_conf,
+        #         "param_conf": param_conf,
+        #     }
+        # )
 
         # Update mixin with gathered configs
         self._update_attrs_conf(mixin_conf, creates=False)
@@ -143,6 +144,8 @@ class BaseMixin(CaframMixin):
         # Assign aliases
         self.mixin_conf = mixin_conf
         self._mixin_alias_map = self._list_aliases()
+
+
 
     def _update_attrs_conf(self, mixin_conf, creates=False):
         "Update object attributes from a dict. Fail if key does not already exists when create=False"
@@ -298,7 +301,7 @@ class BaseMixin(CaframMixin):
         for cls in reversed(bases):
             print(f"    - {cls.__module__}.{cls.__name__}")
 
-        pprint(data)
+        # pprint(data)
         if "params" in data:
             sec = data["params"]
             print("\n  Parameters:")

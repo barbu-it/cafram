@@ -181,8 +181,8 @@ class PayloadMixin(BaseMixin):
         super().__init__(*args, **kwargs)
         # self._super__init__(super(), *args, **kwargs)
 
-        print("PayloadMixin INIT payload", self._payload)
-        print("PayloadMixin INIT params", args, kwargs)
+        # print("PayloadMixin INIT payload", self._payload)
+        # print("PayloadMixin INIT params", args, kwargs)
         self._value = None
         self.set_value(self._payload)
         # self._register_alias()
@@ -305,6 +305,7 @@ class LoggerMixin(BaseMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
 
         # Init logger if not provided in params
         self.set_logger(logger=self._logger)

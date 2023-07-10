@@ -532,9 +532,9 @@ class ConfDictMixin(_ConfContainerMixin):
 
                 # print ("LEVEL CAHNGE", self._obj_logger_indent, "=>", self._obj_logger_indent +1, child_cls)
                 # indent_get(self):
-                print(f"DictNode Children creation ({child_cls}) for: {self}")
-                pprint(child_cls.__dict__)
-                pprint(child_args)
+                # print(f"DictNode Children creation ({child_cls}) for: {self}")
+                # pprint(child_cls.__dict__)
+                # pprint(child_args)
                 self._log.info(
                     f"Create Node child '{child_key}': {child_cls.__name__} => {child_args}"
                 )
@@ -698,7 +698,7 @@ class ConfFileMixin(PathFinderMixin, ConfDictMixin):
 
         PathFinderMixin.__init__(self, *args, **kwargs)
 
-        print("INIT CONF FILEMIXIN")
+        # print("INIT CONF FILEMIXIN")
         fpath = self.get_path()
         # pprint (fpath)
         content = read_file(fpath)
@@ -722,10 +722,10 @@ class ConfFileMixin(PathFinderMixin, ConfDictMixin):
         # kwargs["payload"] = ret
         kwargs[self.mixin_param___payload] = dict(ret)
         # kwargs[self.mixin_param___children] = self.children
-        print("PARENT CALL")
-        pprint(kwargs)
+        # print("PARENT CALL")
+        # pprint(kwargs)
 
-        print("INSERT CONFIG INTO PAYLOAD")
+        # print("INSERT CONFIG INTO PAYLOAD")
         ConfDictMixin.__init__(self, *args, **kwargs)
 
 

@@ -127,8 +127,10 @@ class NodeCtrl(CaframCtrl):
 
         """
 
+
         # Respect OOP
         super().__init__(debug=None, impersonate=None, log_level=None)
+
 
         # Init Node Controller
         self._obj = obj
@@ -182,6 +184,7 @@ class NodeCtrl(CaframCtrl):
             self._log.info(f"Instanciate mixin '{mixin_name}': {mixin_cls.__name__}")
             mixin_inst = mixin_cls(self, mixin_conf=mixin_conf, **mixin_kwargs)
             self.mixin_register(mixin_inst)
+
 
         #####################################################
 
