@@ -30,7 +30,7 @@ from cafram.mixins.tree import NodePayload, NodeConf, NodeConfDict, NodeConfList
 from cafram.mixins.tree import ConfMixin, ConfDictMixin, ConfListMixin
 
 
-from cafram.decorators import newNode, addMixin
+#from cafram.decorators import newNode, addMixin
 
 # ConfigLoader
 # ------------------------

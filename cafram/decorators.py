@@ -1,3 +1,7 @@
+
+
+#assert False, "Decorator is deprecated"
+
 import traceback
 import logging
 from functools import wraps

@@ -12,7 +12,7 @@ from cafram.ctrl2 import NodeCtrl
 # from cafram.nodes2 import Node
 
 from cafram.common import CaframNode
-
+from .lib.utils import import_module
 import inspect
 
 # Globals
@@ -126,35 +126,39 @@ def node_class_builder(
 
         # This should not be hardcoded !!!
         @classmethod
-        def tmp__patch__(self, cls, override=True):
-            "Patch an object to become a node"
+        def tmp__patch__(cls, obj, override=True):
+            "Patch a class to become a node"
 
-            if not self in cls.__mro__:
-                print(f"Wrapping Node {cls} with {self}")
+            # Quit patching if 
+            if cls in obj.__mro__:
+                print(f"Skipping Wrapping Node {obj} with {cls}")
+                return obj
 
-                node_attrs = getattr(_NodeSkeleton, f"{prefix}_attrs__")
 
-                for method_name in node_attrs:
-                    print("IMPORT METHOD", method_name)
+            print(f"Wrapping Node {obj} with {cls} (Override={override})")
 
-                    if override is False:
-                        if hasattr(cls, method_name):
-                            tot = getattr(cls, method_name)
-                            print("Skip method patch", method_name, tot)
-                            continue
+            node_attrs = getattr(_NodeSkeleton, f"{prefix}_attrs__")
+            for method_name in node_attrs:
+                print("IMPORT METHOD", method_name)
 
-                    method = getattr(self, method_name)
-                    setattr(cls, method_name, method)
+                if override is False:
+                    if hasattr(obj, method_name):
+                        tot = getattr(obj, method_name)
+                        print("Skip method patch", method_name, tot)
+                        continue
 
-                setattr(cls, f"{prefix}_attrs__", node_attrs)
-                setattr(cls, f"{prefix}_prefix__", prefix)
-            else:
-                print(f"Skipping Wrapping Node {cls} with {self}")
+                method = getattr(cls, method_name)
+                setattr(obj, method_name, method)
 
-            return cls
+            setattr(obj, f"{prefix}_attrs__", node_attrs)
+            setattr(obj, f"{prefix}_prefix__", prefix)
+
+            return obj
+
 
         @classmethod
         def tmp__inherit(cls, obj, name=None, bases=None, override=True, attrs=None):
+            "Create a new class from any class and make the node as it's ancestors"
 
             # Assert obj is a class
 
@@ -163,7 +167,7 @@ def node_class_builder(
             ret = cls
             dct = attrs or {}
             bases = list(bases or [])
-            name = name or f"{obj.__qualname__}WrapperTMP"
+            name = name or obj.__qualname__
 
             # Do not reinject class if already present
             # base_names = [cls.__name__ for cls in bases]
@@ -200,20 +204,10 @@ def node_class_builder(
                     #   * Important methods  NOT protected
 
                 return (name, tuple(bases), dct)
-
-                # ret = type(name, tuple(bases), dct)
-                # ret = super().__new__(cls, name, tuple(bases), dct)
-
-                # if override:
-                #     ret = type(name, tuple(bases), dct)
-
-                # else:
-
-                #     # AKA in classmethof: x = super().__new__(cls, name, tuple(cls_bases), dct)
-
-                # setattr(ret, "__qualname__", name)
-
             return None
+
+
+
 
         if "__init__" in clsmethods:
 
@@ -361,12 +355,10 @@ class NodeMetaclass(type):
     ):
 
         name = node_name or name
-        w_name = f"{name}Wrapper"
-        # w_name = name
-
         node_prefix = node_prefix or NODE_PREFIX
         node_attrs = node_attrs or {}
 
+        # Create a root Node if not provided
         if not node_cls:
             node_cls = node_class_builder(
                 node_prefix,
@@ -376,101 +368,15 @@ class NodeMetaclass(type):
                 attrs=node_attrs,
             )
 
-        # Select inheritance strategy
 
-        # pprint (node_cls)
-        # pprint ()
-        # assert False, "WIP1"
-
-        # ###### EOFFFF
-
+        # Generate type arguments
         ret = node_cls.tmp__inherit(cls, bases=bases, attrs=dct, name=name)
-        # # # pprint (tmp)
-        print("ARGUMENTS1: ", ret)
-
         if ret:
             name, bases, dct = ret
 
-            # pprint (ret)
-            # print (ret[0], ret[1], ret[2] )
-            # pprint (type(ret))
-            # pprint (ret.__dict__)
-            # assert False
-            # x = super().__new__(cls, ret[0], ret[1], ret[2] )
-
-        #     # x = super().__new__(cls, name, tuple(cls_bases), dct)
-
-        # return x
-
+        # Return a new class
         return super().__new__(cls, name, bases, dct)
 
-        # ###### EOFFFF
-
-        cls_bases = list(bases)
-
-        # Do not reinject class if already present
-        base_names = [cls.__name__ for cls in cls_bases]
-        if not w_name in base_names:
-            # if not cls_node in bases:
-
-            if node_override:
-                cls_bases.insert(0, node_cls)
-            else:
-                cls_bases.append(node_cls)
-        else:
-            assert False, "TOFIX: Duplicate NodeWrapper"
-
-        # Other tweaks
-        if node_doc:
-            dct["__doc__"] = node_doc
-
-        # Test inhertiance !!!
-        dct["metaclass"] = cls
-
-        # print ("METACLASS NEW 2 ======================== ")
-        # print ("METACLASS NEW 2.1, params:", cls, name, bases, dct)
-        # # print ("METACLASS NEW 2.2, prefix:", node_prefix, f"(inherited={inherited})")
-        # print ("METACLASS NEW 2.2, cls_node:", node_cls)
-        # print ("METACLASS NEW 2.2, mro:", cls_bases)
-        # print ("METACLASS NEW 2.2, mro:", cls.__mro__)
-        # print ("METACLASS NEW 2.2, nodeattr1", getattr(cls, "_node__attr", None))
-        # print ("METACLASS NEW 2.2, nodeattr2", dct.get("_node__attr", None))
-        # print ("METACLASS NEW 2.2, nodeattr3", tmp)
-
-        print("ARGUMENTS2: ", name, tuple(cls_bases), dct)
-        assert False
-        x = super().__new__(cls, name, tuple(cls_bases), dct)
-
-        print("Actual result:")
-        pprint(x)
-        pprint(x.__dict__)
-
-        if node_name:
-            setattr(x, "__qualname__", node_name)
-        return x
-
-    #     # cls = type(metacls, name, bases, namespace)
-    #     # cls = type.__new__(metacls, name, bases, namespace)
-    #     # cls = super().__new__(metacls, name, bases, namespace)
-
-    # def __init__(self, name, bases, namespace, **kwargs):
-    #     # This will never be called because the return type of `__new__` is wrong
-    #     print ("NodeMetaclass __init__ SUCCESSS", self, name, bases, namespace, kwargs)
-
-    #     self.META_ATTR = "YOLOO"
-    #     pass
-
-    # def __new__WIP(cls, name, bases, dct,
-
-    #     node_prefix=None, #"__DEFAULT__",
-    #     node_override=True,
-    #     #node_root=False,
-
-    #     node_getattr=False,
-    #     node_getitem=False,
-    #     node_call=False,
-
-    #     ):
 
     #     #node_prefix = node_prefix or getattr(cls, "_node__attr", None) or NODE_PREFIX
 
@@ -487,36 +393,6 @@ class NodeMetaclass(type):
     #     node_prefix = node_prefix or tmp or NODE_PREFIX
     #     cls_node = node_class_builder(node_prefix)
 
-    #     # WIPPP
-    #     node_params = {key: val for key, val in dct.items() if key.startswith(f"_node__")}
-    #     #pprint (node_params)
-    #     #pprint (dir(cls))
-
-    #     # prefix config: _node__attr
-    #     # WIP ????
-    #     cls_bases = list(bases)
-    #     # if node_root:
-    #     #     del cls_bases[0]
-    #     if node_override:
-    #         cls_bases.insert(0, cls_node)
-    #     else:
-    #         cls_bases.append(cls_node)
-
-    #     # print ("METACLASS NEW 2 ======================== ")
-    #     # print ("METACLASS NEW 2.1, params:", cls, name, bases, dct)
-    #     # print ("METACLASS NEW 2.2, prefix:", node_prefix, f"(inherited={inherited})")
-    #     # print ("METACLASS NEW 2.2, mro:", cls_bases)
-    #     # print ("METACLASS NEW 2.2, mro:", cls.__mro__)
-    #     # print ("METACLASS NEW 2.2, cls_node:", cls_node)
-    #     # print ("METACLASS NEW 2.2, nodeattr1", getattr(cls, "_node__attr", None))
-    #     # print ("METACLASS NEW 2.2, nodeattr2", dct.get("_node__attr", None))
-    #     # print ("METACLASS NEW 2.2, nodeattr3", tmp)
-
-    #     #x = super().__new__(cls, name, tuple(cls_bases), dct)
-    #     #x = super().__new__(cls, name, bases , dct)
-    #     x = super().__new__(cls, name, tuple(cls_bases), dct)
-
-    #     return x
 
     #     # Minimal placeholder
     #     # cls = super().__new__(metacls, name, bases, namespace, **kwargs)
@@ -571,7 +447,6 @@ class NodeWrapper:
         Forward all kwargs to NodeCtrl()
         """
 
-        # assert not "obj_mixins" in kwargs, f"Usage of obj_mixins in decorator is forbidden, please use 'addMixin' instea"
 
         # Decorator arguments
         base_cls = self._base_node_cls
@@ -580,7 +455,7 @@ class NodeWrapper:
 
         def _decorate(cls):
 
-            patch = False
+            patch = True
 
             print("==== DECORATOR CLS INFO", cls)
             print("== Type", type(cls))
@@ -592,66 +467,15 @@ class NodeWrapper:
             ret = cls
 
             if patch:
-                ret = base_cls.tmp__patch__(ret)
+                ret = base_cls.tmp__patch__(ret, override=override)
             else:
-
-                # # ###### EOFFFF
-                # self._base_node_cls
-
-                ret = self._base_node_cls.tmp__inherit(cls, name=cls.__qualname__)
-                # # # pprint (tmp)
-                print("ARGUMENTS1: ", ret)
-
+                ret = base_cls.tmp__inherit(cls, name=cls.__qualname__, override=override)
                 if ret:
                     name, bases, dct = ret
+                ret = type(name, bases, dct)
 
-                return type(name, bases, dct)
-
-                # #return super().__new__(cls, name, bases, dct)
-
-                # # WIPPPPP EOF
-
-            #     if not base_cls in cls.__mro__:
-
-            #         dct = {}
-            #         #dct = cls.__dict__
-            #         #name = cls.__name__
-            #         name = cls.__qualname__
-            #         module = cls.__module__
-
-            #         # This returns a new object because we change inheritance
-
-            #         if override:
-            #             # Create a new class WrapperClass that inherit from defined class
-            #             print ("NODE OVERRIDE", name, tuple([base_cls, cls]), dct)
-            #             ret = type(name, tuple([base_cls, cls]), dct)
-
-            #             # Pros:
-            #             #   * Easy and ready to use
-            #             #   * Important methods are protected
-            #             # Cons:
-            #             #   * BREAK standard inheritance model
-            #             #   * All your attributes disapears on __dir__, unless dct=cls.__dict__
-            #             #   * HIgh level of magic
-            #         else:
-            #             # Append in the end WrapperClass inheritance
-            #             print ("NODE INHERIT", name, tuple([cls, base_cls]), dct)
-            #             ret = type(name, tuple([cls, base_cls]), dct)
-            #             # Pros:
-            #             #   * Respect standard inheritance model
-            #             #   * All your attributes/methods apears on __dir__
-            #             #   * Not that magic
-            #             # Cons:
-            #             #   * Important methods  NOT protected
-
-            #     setattr(ret, "__module__", module)
-
-            #     # assert False
-            # return ret
-
-            # self._base_node_cls
-
-            # type(cls_name, (cls_base, cls), {})
+            return ret 
+                
 
             # # Create main parameters
             # node_params = {
@@ -692,60 +516,6 @@ class NodeWrapper:
 
         return _decorate
 
-    def newNode_V1(
-        self,
-        override=True,
-        prefix="__node__",
-        # Only relavant if override is True, otherwise can be
-        enable_getattr=None,  # None=> enable if nothing present, True => Always, False => Never
-        enable_getitem=None,
-        enable_call=None,
-        **kwargs,
-    ):  # , *args, **kwargs):
-        """
-        Transform a class to a NodeClass WITH LIVE PATCH
-
-        Forward all kwargs to NodeCtrl()
-        """
-
-        assert (
-            not "obj_mixins" in kwargs
-        ), f"Usage of obj_mixins in decorator is forbidden, please use 'addMixin' instea"
-
-        def _decorate(cls):
-
-            # Create main parameters
-            node_params = {
-                "obj_clean": False,
-                "obj_attr": "__node__",
-            }
-            node_params.update(kwargs)
-
-            # __node__mixins__
-            # __node__params__
-
-            # Create mixin configs
-            node_mixins = dict(getattr(cls, "__node__mixins__", {}))
-            node_params["obj_mixins"] = node_mixins
-
-            # Generate a new Node Class
-            ret = "WIPPPP"
-            # ret = NodeWrapperConfGenerator(cls,
-            #     override=override,
-            #     extra_attr={"__node__params__": node_params},  # Forward nodectrl init params
-
-            #     enable_getattr=enable_getattr, # None=> enable if nothing present, True => Always, False => Never
-            #     enable_getitem=enable_getitem,
-            #     enable_call=enable_call,
-
-            # )
-
-            # print ("1. New Wrapped Node", ret)
-            # pprint (ret.__dict__)
-
-            return ret
-
-        return _decorate
 
     def addMixin(self, mixin, mixin_key=None, mixin_conf=None, **kwargs):
         "Add features/mixins to class"
@@ -789,6 +559,17 @@ class NodeWrapper:
 
 # Common default instance
 ################################################################
+
+nw = NodeWrapper(
+        prefix="__node__",
+        override=True,  # THIS IS THE DEFAULT BEHVIOR !
+        name="Node",
+    )
+
+#nw = NodeWrapper(prefix="__node__")
+
+newNode = nw.newNode
+addMixin = nw.addMixin
 
 
 # Generic default node class with metaclass
@@ -848,162 +629,3 @@ Node2 = NodeMetaclass(
 # pprint (Node2.__dict__)
 
 # print ("==============")
-
-
-# if False:
-
-
-#     class Node3(metaclass=NodeMetaclass, node_prefix="__nodev2__"):
-#         "Node Override"
-
-
-#     # In library: myapp.py
-#     # -------------------
-
-#     from cafram.nodes2 import Node
-
-
-#     def test_default_nodecls():
-#         "Test default node cls"
-
-#         print ("NEW NODE DUMP")
-#         pprint(NodeV2.__dict__)
-#         #pprint(dir(NodeV2))
-
-#         anode = NodeV2()
-#         pprint(anode.__dict__)
-
-#         pprint (anode.META_ATTR)
-
-#         assert anode.node_method() == True
-#         assert False
-
-#         print ("OLD NODE DUMP")
-#         pprint (Node)
-#         #pprint (dir(Node))
-#         anode = Node()
-#         pprint(anode.__dict__)
-
-#         print ("OLD NODE DUMP3")
-#         pprint (Node3)
-#         #pprint (dir(Node3))
-
-#     test_default_nodecls()
-
-#     assert False, "WIPPP"
-
-#     def test_simple_class_def():
-#         "Test good functionning of MixinConfigLoader"
-
-
-#         class MyParentClass(NodeV2):
-#             _node__attr = "__APP_OVERRIDE__"
-#             _node__debug = False
-
-#             attr1 = True
-
-#             def method1(self):
-#                 print ("Hello method2")
-
-
-#         class MyClass(MyParentClass):
-
-#             attr2 = True
-
-#             def method2(self):
-#                 print ("Hello method1")
-
-
-#         # Instanciate
-#         app1 = MyParentClass()
-#         app2 = MyClass()
-
-#         # Test methods
-#         app1.method1()
-#         app2.method1()
-#         app2.method2()
-
-
-#         print ("DUMPPPP")
-#         pprint (app1.__dict__)
-#         pprint (app2.__dict__)
-#         pprint (MyParentClass.__dict__)
-#         pprint (MyClass.__dict__)
-#         pprint (dir(app1))
-#         pprint (dir(app2))
-
-#         pprint (NodeV2.__dict__)
-#         app1.node_method()
-
-#         # Tests
-#         app1.DYN_NODE_ALWAYS()
-
-
-#     print ("START TESTS")
-
-#     test_simple_class_def()
-
-#     print ("OKKKKKKKK EOFFF")
-#     assert False, "OOKKKK WIPPP"
-
-
-#     ##########################
-
-#     # In user code
-#     # -------------------
-#     #class MyParentClass(NodeV2, node_prefix="__mine__", node_getattr=True, node_override=True):
-#     class MyParentClass(NodeV2):
-#         "Node Override"
-
-#         _node__attr = "__APP_OVERRIDE__"
-#         _node__debug = False
-
-#         def method2(self):
-#             print ("Hello method2")
-
-
-#     class MyClass(MyParentClass):
-
-#         def method1(self):
-#             print ("Hello method1")
-
-
-#     #app = MyClass(prefix="__NODE666__FORBIDDEN")
-#     appParent = MyParentClass()
-#     app = MyClass()
-
-#     print ("\nRESULLLLTTTT=========")
-#     # app.method1()
-#     # app.method2()
-#     # #app.extra_method("args1")
-#     # #app.metamethod()
-#     pprint(appParent.__dict__)
-#     pprint(app.__dict__)
-
-#     pprint (appParent._node__attr)
-#     pprint (app._node__attr)
-
-
-#     # # In user code with decorators
-#     # # -------------------
-
-
-#     # from cafram.decorators import newNode, addMixin
-#     # import logging
-#     # from cafram.mixins.tree import ConfDictMixin as TOTO
-#     # @newNode(prefix="__node333__")
-#     # @addMixin("cafram.mixins.base:LoggerMixin")
-#     # @addMixin("cafram.mixins.tree:ConfOrderedMixin", # "titi",
-#     #     mixin_logger_level= logging.DEBUG,
-
-#     #     children=True,
-#     # )
-#     # class MyApp2():
-#     #     "This is my main app"
-
-
-#     # print ("APP DECO")
-#     # app = MyClass(prefix="__NODE__")
-#     # app.method1()
-#     # app.method2()
-#     # pprint(app.__dict__)

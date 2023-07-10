@@ -31,19 +31,27 @@ from cafram.mixins.tree import NodePayload, NodeConf, NodeConfDict, NodeConfList
 from cafram.mixins.tree import ConfMixin, ConfDictMixin, ConfListMixin
 
 
+# from cafram.decorators import newNode, addMixin
 from cafram.decorators import newNode, addMixin
-from cafram.decorators import newNode, addMixin
+from cafram.nodes3 import newNode, addMixin
 
 
 # WIPPP MIGRATION TO v2
 # from cafram.nodes2 import Node
-from cafram.nodes3 import Node
+from cafram.nodes3 import Node, NodeWrapper
 
 
 def test_app1_post_init():
     "Test that show how to use __post_init__"
 
+    # node = NodeWrapper(
+    #     prefix="__node__",
+    #     override=False,
+    #     name="Node",
+    # )
+
     # Sample Data
+    #@node.newNode()
     @newNode()
     class MyApp:
 
@@ -69,6 +77,13 @@ def test_app1_post_init():
 
     # Test all different accesses
     app1 = MyApp()
+    print ("+++ DEBUG +++")
+    pprint (app1.__class__.__mro__)
+    pprint (MyApp.__dict__)
+    pprint (app1)
+    pprint (app1.__dict__)
+    print ("+++ DEBUG +++")
+
     assert app1.TEST_INITED is True
     assert app1.TEST_EXECUTED is False
     assert app1.my_option == "UNSET"
@@ -223,7 +238,7 @@ def test_integration1_deco_loose():
     pprint(app1.__dict__)
     pprint(dir(MyApp1))
     assert app1.TEST_INIT_NEW is True
-    assert app1.TEST_POST_INIT_NEW is True
+    assert app1.TEST_POST_INIT_NEW is False
 
 
 def test_integration2_inheritance():
@@ -366,13 +381,18 @@ def test_deco2_override_false():
 
     # Test all different accesses
     app1 = MyApp()
+    # pprint (MyApp.__dict__)
+    # pprint (MyApp.__mro__)
+    # pprint (app1.__dict__)
+    # print ("YOOO ",app1.TEST_INIT_REGULAR)
+
     assert app1.TEST_INIT_REGULAR is True
     assert app1.demo() == "SUCCESS"
 
     pprint(app1.__dict__)
 
     # Ensure __init__ method never executed
-    assert hasattr(app1, "TEST_INIT_NEW")
+    assert not hasattr(app1, "TEST_INIT_NEW")
 
 
 def test_deco3_override_bad():
