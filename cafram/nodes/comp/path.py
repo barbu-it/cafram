@@ -6,16 +6,13 @@ Path mixins
 ################################################################
 
 import os
-
-
-from ...nodes import Node
-from ... import errors
-from .base import PayloadMixin
-from . import BaseMixin, LoadingOrder
-from ...lib.utils import list_parent_dirs
-
 from pprint import pprint
 
+from ... import errors
+from ...lib.utils import list_parent_dirs
+from ...nodes import Node
+from . import BaseMixin, LoadingOrder
+from .base import PayloadMixin
 
 # class FileReference:
 #     """A FileReference Object

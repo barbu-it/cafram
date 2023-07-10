@@ -7,26 +7,30 @@ Tree mixins
 ################################################################
 
 import inspect
-from typing import MutableSequence, MutableSet, MutableMapping
-
-from pprint import pprint, pformat
-
+from pprint import pformat, pprint
+from typing import MutableMapping, MutableSequence, MutableSet
 
 from ... import errors
-from ...lib.utils import to_json, from_json, to_yaml, from_yaml, read_file, import_module
-
+from ...common import CaframNode
+from ...lib.utils import (
+    from_json,
+    from_yaml,
+    import_module,
+    read_file,
+    to_json,
+    to_yaml,
+)
 from ...nodes import Node  # , NodeBase
+from . import LoadingOrder
+from .base import NodePayload, PayloadMixin
+from .hier import HierChildrenMixin, HierParentMixin
+from .path import FilePathMixin, PathFinderMixin, PathMixin
 
 # from ..decorators import Node
 
-from ...common import CaframNode
-
-from .base import PayloadMixin, NodePayload
-from .hier import HierParentMixin, HierChildrenMixin
-from .path import PathMixin, FilePathMixin, PathFinderMixin
 
 
-from . import LoadingOrder
+
 
 
 # Parent exceptions

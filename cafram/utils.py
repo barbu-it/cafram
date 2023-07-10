@@ -8,12 +8,13 @@ Cafram utils
 
 import logging
 
+import jsonschema
+import sh
+from jsonschema import Draft202012Validator, validators
+
 # from pprint import pprint
 # from pathlib import Path
 
-import jsonschema
-from jsonschema import Draft202012Validator, validators
-import sh
 
 
 # =====================================================================

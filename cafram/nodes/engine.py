@@ -2,15 +2,13 @@
 Provide Node Engine
 """
 
-from pprint import pprint
 import inspect
+from pprint import pprint
 from typing import List, Union
 
-
 from cafram import errors
-from cafram.nodes.ctrl import NodeCtrl
 from cafram.lib.utils import import_module
-
+from cafram.nodes.ctrl import NodeCtrl
 
 NODE_METHODS = [
     "__init__",

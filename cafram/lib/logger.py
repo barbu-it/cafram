@@ -5,11 +5,10 @@ Written by david.ohana@ibm.com
 License: Apache-2.0
 """
 
-import sys
 import logging
 import logging.handlers
 import re
-
+import sys
 
 logger_sfmt = {
     "default": None,

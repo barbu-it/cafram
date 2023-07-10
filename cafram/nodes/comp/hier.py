@@ -8,10 +8,10 @@ import copy
 
 # from ..nodes import Node
 from ...nodes import Node
+from . import BaseMixin
 
 # from .. import errors
 
-from . import BaseMixin
 
 # from .base import PayloadMixin, NodePayload
 

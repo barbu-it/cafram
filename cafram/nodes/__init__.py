@@ -4,13 +4,10 @@ Cafram Default Nodes
 
 from pprint import pprint
 
-
-from cafram.common import CaframNode
-from cafram.nodes.engine import NodeWrapper, NodeMetaclass
-
 from cafram import errors
+from cafram.common import CaframNode
 from cafram.nodes.ctrl import NodeCtrl
-
+from cafram.nodes.engine import NodeMetaclass, NodeWrapper
 
 # Globals
 ################################################################

@@ -2,21 +2,21 @@
 Base mixins
 """
 
+import copy
+import logging
+
 # import types
 import sys
-import logging
-import copy
 import traceback
 from pprint import pprint
 
+from ...common import CaframObj
+
 # from ..nodes import Node
 from ...lib import logger
-
 from ...nodes import Node
-from ...common import CaframObj
 from .. import errors
 from . import BaseMixin, LoadingOrder
-
 
 # log = logging.getLogger(__name__)
 

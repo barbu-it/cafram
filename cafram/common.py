@@ -2,13 +2,11 @@
 Cafram Root Classes
 """
 
-import logging
 import inspect
+import logging
+from pprint import pprint
 
 from python_log_indenter import IndentedLoggerAdapter
-
-
-from pprint import pprint
 
 
 class CaframObj:

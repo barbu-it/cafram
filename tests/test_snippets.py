@@ -2,27 +2,28 @@
 # -*- coding: utf-8 -*-
 
 
+import logging
 import os
-from pprint import pprint  # noqa: F401
-import logging
-
-import pytest
 import traceback
-import logging
-import pytest
+from pprint import pprint  # noqa: F401
 
+import pytest
 
 import cafram.errors as errors
-from cafram.nodes.ctrl import NodeCtrl
-from cafram.nodes import newNode, addMixin
-from cafram.nodes import Node, NodeWrapper
-
+from cafram.nodes import Node, NodeWrapper, addMixin, newNode
 from cafram.nodes.comp import BaseMixin
-from cafram.nodes.comp.base import LoggerMixin, MapAttrMixin
-from cafram.nodes.comp.base import PayloadMixin
-from cafram.nodes.comp.hier import HierMixin, HierParentMixin, HierChildrenMixin
-from cafram.nodes.comp.tree import NodePayload, NodeConf, NodeConfDict, NodeConfList
-from cafram.nodes.comp.tree import ConfMixin, ConfDictMixin, ConfListMixin
+from cafram.nodes.comp.base import LoggerMixin, MapAttrMixin, PayloadMixin
+from cafram.nodes.comp.hier import HierChildrenMixin, HierMixin, HierParentMixin
+from cafram.nodes.comp.tree import (
+    ConfDictMixin,
+    ConfListMixin,
+    ConfMixin,
+    NodeConf,
+    NodeConfDict,
+    NodeConfList,
+    NodePayload,
+)
+from cafram.nodes.ctrl import NodeCtrl
 
 
 def test_app1_post_init():
@@ -486,12 +487,11 @@ def test_mixin_logger1():
 # ---------------------
 
 from cafram.nodes.comp.tree import (
+    ConfDictMixin,
     NodeConf,
     map_node_class,
-    ConfDictMixin,
     map_node_class_full,
 )
-
 
 app_config = {
     "config": {

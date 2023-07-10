@@ -2,18 +2,16 @@
 Base Mixin Class definition
 """
 
-import textwrap
 import inspect
 import json
+import textwrap
 from enum import IntEnum
-
-from pprint import pprint, pformat
+from pprint import pformat, pprint
 
 from ... import errors
+from ...common import CaframCtrl, CaframMixin, CaframObj
 from ...lib.sprint import SPrint
 from ...lib.utils import truncate, update_classattr_from_dict
-from ...common import CaframObj, CaframMixin, CaframCtrl
-
 
 # Helpers
 ################################################################

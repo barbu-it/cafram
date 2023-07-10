@@ -2,31 +2,30 @@
 # -*- coding: utf-8 -*-
 
 
-import os
-from pprint import pprint  # noqa: F401
 import logging
+import os
+import traceback
+from pprint import pprint  # noqa: F401
 
 import pytest
-import traceback
-import logging
-
 
 import cafram.errors as errors
+from cafram.nodes import Node
+from cafram.nodes.comp import BaseMixin
+from cafram.nodes.comp.base import LoggerMixin, MapAttrMixin, PayloadMixin
+from cafram.nodes.comp.hier import HierChildrenMixin, HierMixin, HierParentMixin
+from cafram.nodes.comp.tree import (
+    ConfDictMixin,
+    ConfListMixin,
+    ConfMixin,
+    NodeConf,
+    NodeConfDict,
+    NodeConfList,
+    NodePayload,
+)
+
 #from cafram.tools import NodeConfigLoader, MixinConfigLoader
 from cafram.nodes.ctrl import NodeCtrl
-from cafram.nodes import Node
-
-
-
-
-from cafram.nodes.comp import BaseMixin
-from cafram.nodes.comp.base import LoggerMixin, MapAttrMixin
-from cafram.nodes.comp.base import PayloadMixin
-from cafram.nodes.comp.hier import HierMixin, HierParentMixin, HierChildrenMixin
-from cafram.nodes.comp.tree import NodePayload, NodeConf, NodeConfDict, NodeConfList
-from cafram.nodes.comp.tree import ConfMixin, ConfDictMixin, ConfListMixin
-
-
 
 # from cafram.decorators import newNode, addMixin
 

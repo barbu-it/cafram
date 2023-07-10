@@ -9,17 +9,18 @@ Node Controller Class
 # import types
 import textwrap
 
-# import inspect
-
 # pylint: disable=W0611
-from pprint import pprint, pformat
+from pprint import pformat, pprint
 
 from .. import errors
-from .comp import BaseMixin
 from ..common import CaframCtrl
 from ..lib.sprint import SPrint
-from ..lib.utils import truncate
-from ..lib.utils import import_module
+from ..lib.utils import import_module, truncate
+from .comp import BaseMixin
+
+# import inspect
+
+
 
 # Only relevant for entrypoints
 # logging.basicConfig(level=logging.INFO)

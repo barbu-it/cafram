@@ -1,20 +1,17 @@
 """Utils library
 
 """
-import sys
-import io
-import os
-import json
-import re
 import importlib
-
+import io
+import json
+import os
+import re
+import sys
 from io import StringIO
-
 
 # Support both pyaml and ruamel. pyaml implementation is better here
 # import ruamel.yaml
 import yaml
-
 
 if "ruamel.yaml" in sys.modules:
     # Setup YAML object
