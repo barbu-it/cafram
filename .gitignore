@@ -8,3 +8,7 @@ poetry.lock
 
 devel/*
 wip.py
+
+# Docs
+docs/_*
+docs/apidoc

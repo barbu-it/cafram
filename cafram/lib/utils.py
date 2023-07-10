@@ -140,37 +140,38 @@ def merge_dicts(*dicts):
 def merge_keyed_dicts(dict1, dict2):
     """Given two keyed dictionaries, merge them into a new dict as a shallow copy.
 
-    dict1 = {
-        "key1": {
-            "subkey1": "val1",
-            "subkey2": "val2",
-        },
-        "key2": {
-            "subkey1": "val1",
-            "subkey2": "val2",
-        },
-    }
-    dict2 = {
-        "key2": {
-            "subkey2": "UPDATED",
-        },
-        "key3": {
-            "subkey1": "CREATED",
-        },
-    }
-    out = {
-        "key1": {
-            "subkey1": "val1",
-            "subkey2": "val2",
-        },
-        "key2": {
-            "subkey1": "val1",
-            "subkey2": "UPDATED",
-        },
-        "key3": {
-            "subkey1": "CREATED",
-        },
-    }
+    :Examples:
+        >>> dict1 = {
+                 "key1": {
+                     "subkey1": "val1",
+                     "subkey2": "val2",
+                 },
+                 "key2": {
+                     "subkey1": "val1",
+                     "subkey2": "val2",
+                 },
+             }
+        >>> dict2 = {
+                 "key2": {
+                     "subkey2": "UPDATED",
+                 },
+                 "key3": {
+                     "subkey1": "CREATED",
+                 },
+             }
+        >>> out = {
+                 "key1": {
+                     "subkey1": "val1",
+                     "subkey2": "val2",
+                 },
+                 "key2": {
+                     "subkey1": "val1",
+                     "subkey2": "UPDATED",
+                 },
+                 "key3": {
+                     "subkey1": "CREATED",
+                 },
+             }
 
 
     Compatibility for Python 3.5 and above"""
@@ -197,22 +198,25 @@ def dict_to_fdict(payload, sep="__"):
 def fdict_to_dict(payload, sep="__"):
     """Transform fdict to dict
 
-    payload = {
-        "lvl1__key1": "val1",
-        "lvl1__key2": "val2",
-        "lvl1__lvl2__key1": "val1",
-        "lvl1__lvl2__key2": "val1",
-    }
-    out = {
-        "lvl1: {
-            "key1: "val1",
-            "key2: "val2",
-            "lvl2": {
-                "key1: "val1",
-                "key2: "val2",
+
+    :Examples:
+
+        >>> payload = {
+                "lvl1__key1": "val1",
+                "lvl1__key2": "val2",
+                "lvl1__lvl2__key1": "val1",
+                "lvl1__lvl2__key2": "val1",
             }
-        },
-    }
+        >>> out = {
+                "lvl1: {
+                    "key1: "val1",
+                    "key2: "val2",
+                    "lvl2": {
+                        "key1: "val1",
+                        "key2: "val2",
+                    }
+                },
+            }
     """
 
     ret = {}

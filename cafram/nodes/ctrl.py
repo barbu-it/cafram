@@ -11,6 +11,7 @@ import textwrap
 
 # import inspect
 
+# pylint: disable=W0611
 from pprint import pprint, pformat
 
 from .. import errors
@@ -106,10 +107,10 @@ class NodeCtrl(CaframCtrl):
         self,
         obj,  # Provide reference to object
         obj_mixins=None,  # Provide mixin configurations, should be a dict
-        obj_attr="__node__",  # How the NodeCtrl is accessed from object, default is "_node": obj._node...
+        obj_attr="__node__",  # How the NodeCtrl is accessed from object
         obj_clean=False,  # Remove from object configuration settings
-        obj_prefix_mixin="n_",
-        obj_prefix_alias="a_",
+        # obj_prefix_mixin="n_",
+        # obj_prefix_alias="a_",
         **mixin_kwargs,  # Options forwarded to ALL mixins
     ):
         """Instanciate new NodeCtl instance
@@ -131,7 +132,7 @@ class NodeCtrl(CaframCtrl):
         # Init Node Controller
         self._obj = obj
         self._obj_name = None
-        self._obj_attr = obj_attr  # "__node__" #TODO: Make this variable ?
+        self._obj_attr = obj_attr
         self._obj_mixins = obj_mixins or {}
 
         self._mixin_dict = {}
@@ -178,7 +179,6 @@ class NodeCtrl(CaframCtrl):
 
             # Instanciate mixin and register
             self._log.info(f"Instanciate mixin '{mixin_name}': {mixin_cls.__name__}")
-            # print(f"MIXIN mixin {self} '{mixin_name}': {mixin_cls.__name__} with {mixin_kwargs} ({mixin_conf})")
             mixin_inst = mixin_cls(self, mixin_conf=mixin_conf, **mixin_kwargs)
             self.mixin_register(mixin_inst)
 
@@ -200,13 +200,12 @@ class NodeCtrl(CaframCtrl):
         # Register mixin
         self._log.info(f"Register alias '{name}': {truncate(value)}")
 
-        # TODO: Make this a failure !!!
         if name in self._mixin_aliases:
             msg = (
                 f"Aliase: '{name}' is already defined for: {self._mixin_aliases[name]}"
             )
             print("ERROR: " + msg)
-            # assert name not in self._mixin_aliases, msg
+            assert name not in self._mixin_aliases, msg
         self._mixin_aliases[name] = value
 
     def mixin_register(self, mixin_inst, override=False):
@@ -296,7 +295,7 @@ class NodeCtrl(CaframCtrl):
     # Troubleshooting
     # -------------------
 
-    def dump(self, details=False, doc=False, mixins=True, stdout=True):
+    def dump(self, details=False, mixins=True, stdout=True):
         "Dump the content of a NodeCtrl for troubleshouting purpose"
 
         sprint = SPrint()

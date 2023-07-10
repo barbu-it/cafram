@@ -1,9 +1,15 @@
+"""
+Provide Node Engine
+"""
+
 from pprint import pprint
 import inspect
+from typing import List, Union
 
-from ..lib.utils import import_module
+
+from cafram import errors
 from cafram.nodes.ctrl import NodeCtrl
-import cafram.errors as errors
+from cafram.lib.utils import import_module
 
 
 NODE_METHODS = [
@@ -14,6 +20,7 @@ NODE_METHODS = [
 ]
 
 
+
 # Node Wrapper Class Builder
 ################################################################
 
@@ -21,62 +28,89 @@ NODE_METHODS = [
 # This is a class method
 # @functools.cache
 def node_class_builder(
-    prefix, name=None, bases=None, clsmethods=None, module=None, doc=None, attrs=None
+    prefix, name=None, bases=None, clsmethods: Union[List[str],None] =None, module=None, doc=None, attrs=None
 ):
     """Build a generic node wrapper
 
-    Args:
-        prefix (_type_): _description_
-        name (_type_, optional): _description_. Defaults to None.
-        bases (_type_, optional): _description_. Defaults to None.
-        clsmethods (_type_, optional): _description_. Defaults to None.
-        module (_type_, optional): _description_. Defaults to None.
-        doc (_type_, optional): _description_. Defaults to None.
-        attrs (_type_, optional): _description_. Defaults to None.
+    :param prefix: Name of the Node prefix
+    :type prefix: str
 
-    Raises:
-        errors.BadArguments: _description_
-        errors.CaframAttributeError: _description_
-        errors.CaframException: _description_
-        errors.CaframException: _description_
-        errors.CaframException: _description_
+    :param name: _description_, defaults to None
+    :type name: _type_, optional
 
-    Returns:
-        _type_: A NodeWrapper Class
+    :param bases: _description_, defaults to None
+    :type bases: _type_, optional
+
+    :param clsmethods: List, defaults to None
+    :type clsmethods: Union[List[str],None], optional
+
+    :param module: _description_, defaults to None
+    :type module: _type_, optional
+
+    :param doc: _description_, defaults to None
+    :type doc: _type_, optional
+
+    :param attrs: _description_, defaults to None
+    :type attrs: _type_, optional
+
+    :raises errors.BadArguments: _description_
+    :raises errors.CaframAttributeError: _description_
+    :raises errors.CaframException: _description_
+    :raises errors.CaframException: _description_
+    :raises errors.CaframException: _description_
+
+    :return: _description_
+    :rtype: _type_
 
 
-    Typical usage example:
+    :Explanations:
 
-        class Node(CaframNode, metaclass=NodeMetaclass, node_prefix='__node__', node_override=False):
+
+
+    :Code Example 1:
+
+        >>> class Node(CaframNode, metaclass=NodeMetaclass, 
+            node_prefix='__node__', node_override=False
+            ):
             "My DocString"
             ATTR1 = True
 
-        # TOFIX: This version has not metadata for children classes
-        Node1 = NodeMetaclass("Node", (), {"ATTR1":True, "__doc__":"My DocString"},
+    :Code Example 2:
+
+        Yoloo This version has not metadata for children classes
+
+        >>> Node1 = NodeMetaclass(
+                "Node", (), {"ATTR1":True, "__doc__":"My DocString"},
                 node_override=True,
                 node_prefix='__node__',
                 node_bases=[CaframNode])
 
-        # TOFIX: This version has not metadata for children classes
-        Node2 = node_class_builder("__node__", name="Node", doc="My DocString", bases=[CaframNode])
-            # => node_override=False
+        TOFIX: This version has not metadata *for* **children** classes
+
+        >>> Node2 = node_class_builder("__node__", name="Node", 
+                doc="My DocString", bases=[CaframNode])
+                # => node_override=False
 
         # Expected result:
-        assert Node == Node1
-        assert Node == Node2
+
+        >>> assert Node == Node1
+        >>> assert Node == Node2
 
 
         # And for the subsequent Nodes:
 
         # Ex1:
-        class AppObj():
+
+        >>> class AppObj():
             "Parent class"
 
         # Ex1.a:
-        class MyApp(AppObj, Node):
+
+        >>> class MyApp(AppObj, Node):
             "App class"
 
-    """
+    """    
+
 
     # Test arguments
     attrs = attrs or {}
@@ -112,7 +146,6 @@ def node_class_builder(
 
             # print("CALLL tmp__inherit", cls, obj, name, attrs)
 
-            ret = cls
             dct = attrs or {}
             bases = list(bases or [])
             name = name or obj.__qualname__
@@ -199,7 +232,8 @@ def node_class_builder(
         ########################
 
         @classmethod
-        def tmp__patch__mixin__(cls, obj, conf, key=None):
+        def tmp__patch__mixin__(cls, obj, conf):
+            "Add a mixin configuration to class"
 
             # Fetch mixin class
             assert "mixin" in conf
@@ -294,7 +328,8 @@ def node_class_builder(
                 # if self.__node__:
                 # return self.__node__.mixin_get(name)
 
-                msg = f"Getitem is not available as there is no nodectrl yet, can't look for: {name}"
+                msg = ("Getitem is not available as there is no nodectrl yet,"
+                    f"can't look for: {name}")
                 raise errors.CaframException(msg)
 
         if "__call__" in clsmethods:
@@ -367,7 +402,7 @@ class NodeMetaclass(type):
     node_prefix = "__node__"
 
     def __new__(
-        cls,
+        mcs,
         name,
         bases,
         dct,
@@ -382,7 +417,7 @@ class NodeMetaclass(type):
     ):
 
         name = node_name or name
-        node_prefix = node_prefix or cls.node_prefix
+        node_prefix = node_prefix or mcs.node_prefix
         node_attrs = node_attrs or {}
 
         # Create a root Node if not provided
@@ -396,14 +431,17 @@ class NodeMetaclass(type):
             )
 
         # Generate type arguments
-        ret = node_cls.tmp__inherit(cls, bases=bases, attrs=dct, name=name)
+        ret = node_cls.tmp__inherit(mcs, bases=bases, attrs=dct, name=name, override=node_override)
         if ret:
             name, bases, dct = ret
 
-        # Return a new class
-        return super().__new__(cls, name, bases, dct)
+        if node_doc:
+            dct["__doc__"] = node_doc
 
-    #     #node_prefix = node_prefix or getattr(cls, "_node__attr", None) or NODE_PREFIX
+        # Return a new class
+        return super().__new__(mcs, name, bases, dct)
+
+    #     #node_prefix = node_prefix or getattr(mcs, "_node__attr", None) or NODE_PREFIX
 
     #     # Look for class name atribute in mro
     #     tmp = dct.get("_node__attr", None)
@@ -416,9 +454,9 @@ class NodeMetaclass(type):
     #                 break
 
     #     # Minimal placeholder
-    #     # cls = super().__new__(metacls, name, bases, namespace, **kwargs)
+    #     # mcs = super().__new__(metacls, name, bases, namespace, **kwargs)
     #     # # You must return the generated class
-    #     # return cls
+    #     # return mcs
 
 
 # Decorators
@@ -426,6 +464,7 @@ class NodeMetaclass(type):
 
 
 class NodeWrapper:
+    "Wrap any object"
 
     node_prefix = "__NodeWrapper__"
 
@@ -461,7 +500,7 @@ class NodeWrapper:
             attrs=attrs,
         )
 
-    def newNode(self, override=None, patch=True, **kwargs):  # , *args, **kwargs):
+    def newNode(self, override=None, patch=True):  # , *args, **kwargs):
         """
         Transform a class to a NodeClass WITH LIVE PATCH
 

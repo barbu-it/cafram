@@ -1,10 +1,14 @@
+"""
+Cafram Default Nodes
+"""
+
 from pprint import pprint
 
 
 from cafram.common import CaframNode
 from cafram.nodes.engine import NodeWrapper, NodeMetaclass
 
-import cafram.errors as errors
+from cafram import errors
 from cafram.nodes.ctrl import NodeCtrl
 
 
@@ -36,17 +40,27 @@ class Node(CaframNode, metaclass=NodeMetaclass):
     # class Node(metaclass=NodeMetaclass):
     "Default Cafram Node"
 
-    ATTR1 = True
+    # ATTR1 = True
 
-    def node_method(self):
-        print("Hello node_method")
-        return True
+    # def node_method(self):
+    #     print("Hello node_method")
+    #     return True
 
     # def __init__(self):
     #     print ("NODE INITEDDDDDD")
 
     #     super().__init__()
 
+
+# Equivalent as above !!!
+Node2 = NodeMetaclass(
+    "Node",
+    (),
+    {"ATTR1": True, "__doc__": "Custom doc"},
+    node_bases=[CaframNode],
+    node_override=True,
+    node_doc="Custom doc",
+)
 
 # DECORATORS
 ################################################################
@@ -59,21 +73,14 @@ class Node(CaframNode, metaclass=NodeMetaclass):
 # print ("==============")
 
 
-Node2 = None
+# Node2 = None
 # Node = NodeMetaclass.dyn_class("__nodev2__", name="TOTO", package="TITI")
 # Node = NodeMetaclass.dyn_class("__nodev2__", name="Node2")
 # Node = node_class_builder("__nodev2__", name="Node2", doc="Default Cafram Nodev2", module="faked")
 
 # Node = node_class_builder("__nodev2__", name="Node2", doc="Default Cafram Nodev2", bases=)
 
-Node2 = NodeMetaclass(
-    "Node",
-    (),
-    {"ATTR1": True, "__doc__": "Custom doc"},
-    node_bases=[CaframNode],
-    node_override=True,
-    node_doc="Custom doc",
-)
+
 
 # CaframNode
 # CaframNode

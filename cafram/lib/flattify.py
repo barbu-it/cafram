@@ -58,24 +58,8 @@ def dict_flatten(data):
 def dict_unflatten(key_values):
     """Converts denormalised dict of (string -> string) pairs, where the first string
     is treated as a path into a nested list/dictionary structure
-    {
-        "FOO__1__BAR": "setting-1",
-        "FOO__1__BAZ": "setting-2",
-        "FOO__2__FOO": "setting-3",
-        "FOO__2__BAR": "setting-4",
-        "FIZZ": "setting-5",
-    }
-    to the nested structure that this represents
-    {
-        "FOO": [{
-            "BAR": "setting-1",
-            "BAZ": "setting-2",
-        }, {
-            "FOO": "setting-3",
-            "BAR": "setting-4",
-        }],
-        "FIZZ": "setting-5",
-    }
+
+
     If all the keys for that level parse as integers, then it's treated as a list
     with the actual keys only used for sorting
     This function is recursive, but it would be extremely difficult to hit a stack
@@ -87,6 +71,31 @@ def dict_unflatten(key_values):
     For a copy, see https://opensource.org/licenses/MIT.
 
     Source: https://charemza.name/blog/posts/software-engineering/devops/structured-data-in-environment-variables/
+
+
+    :Examples:
+
+        >>> in = {
+                "FOO__1__BAR": "setting-1",
+                "FOO__1__BAZ": "setting-2",
+                "FOO__2__FOO": "setting-3",
+                "FOO__2__BAR": "setting-4",
+                "FIZZ": "setting-5",
+            }
+        
+        to the nested structure that this represents
+        
+        >>> out = {
+                "FOO": [{
+                    "BAR": "setting-1",
+                    "BAZ": "setting-2",
+                }, {
+                    "FOO": "setting-3",
+                    "BAR": "setting-4",
+                }],
+                "FIZZ": "setting-5",
+            }
+
     """
 
     # Separator is chosen to

@@ -312,44 +312,50 @@ class ConfListMixin(_ConfContainerMixin):
 class ConfDictMixin(_ConfContainerMixin):
     """Conf mixin that manage a unknown serializable dict of values
 
-    Usecase:
-    - For Dicts only
-    - Unknown children of same types: Number of children is unknown, but with similar type.
-    - Homogneous children:
-        For keyed dicts (Ie: dict[$NAME] = {conf1, conf2})
-    - Heterogenous children: AUTO/NATIVE
-        For mixed dicts (Ie: dict("config1": True, "path": "/", value=123) )
-    - Poor children configuration
-        Children processing order can't be modified
+    :Usecases:
 
-    children_config:
-        - False/"NONE": No children at all
-        - None/"AUTO": Create Node children for list and dicts (default). Skip all others!
-        - True/"NATIVE": Create Native children for all items. Accept any type!
-        - Node based class (cls/str): Apply a Node based class on the item, via payload arg.
+        - For Dicts only
+        - Unknown children of same types: Number of children is unknown, but with similar type.
+        - Homogneous children:
+            - For keyed dicts (Ie: dict[$NAME] = {conf1, conf2})
+        - Heterogenous children: AUTO/NATIVE
+            - For mixed dicts (Ie: dict("config1": True, "path": "/", value=123) )
+        - Poor children configuration
+            - Children processing order can't be modified
 
-        New (Future settings example):
-        - none                  : No children
-        - containers_only       : Create children for list and dicts (default)
-        - leaf_only             : Create children for anything but list and dicts
-        - all                   : Create children for all
-        - cls_name (str)        : Create children from class cls()
-        - cls(Node)             : Create children from class cls()
-        - func(str)             : Custom function that execute object method
-        - func(dictconf)        : Custom function that accept item info and return a value
+    :Explanations:
+
+        children_config:
+            - False/"NONE": No children at all
+            - None/"AUTO": Create Node children for list and dicts (default). Skip all others!
+            - True/"NATIVE": Create Native children for all items. Accept any type!
+            - Node based class (cls/str): Apply a Node based class on the item, via payload arg.
+
+            New (Future settings example):
+            - none                  : No children
+            - containers_only       : Create children for list and dicts (default)
+            - leaf_only             : Create children for anything but list and dicts
+            - all                   : Create children for all
+            - cls_name (str)        : Create children from class cls()
+            - cls(Node)             : Create children from class cls()
+            - func(str)             : Custom function that execute object method
+            - func(dictconf)        : Custom function that accept item info and return a value
 
 
-        # To statically configure the func method:
-        @newNode()
-        @addMixin("DictConfMixin", "conf",
+    :Examples: 
+
+        To statically configure the func method:
+
+        >>> @newNode()
+        >>> @addMixin("DictConfMixin", "conf",
             # children = lambda (dict): return Node()
             # children = "self._node_mixin__conf_children"
             )
-        class MyClass():
-
-            @staticmethod
-            def _node_mixin__conf_children(dictconf):
-                return Node()
+        >>> class MyClass():
+        >>> 
+        >>> @staticmethod
+        >>>    def _node_mixin__conf_children(dictconf):
+        >>>        return Node()
     """
 
     default = {}
@@ -543,42 +549,55 @@ class ConfDictMixin(_ConfContainerMixin):
 class ConfOrderedMixin(ConfDictMixin):
     """Conf mixin that manage a serializable and ordered dict of values
 
+    :raises ExpectedListOrDict: _description_
 
-    Usecase:
-    - For Dicts only
-    - Known children of different types: All children are explicitely defined
-    - To represent complex objects that have to process things in a certain order
-        Ie: Your top app will want to read top level concept and deep done to smaller components,
-        later componants may depends on top level items.
-    - Advanced children configuration
-        Children processing order can be defined in 2 ways/format
+    :return: ConfOrderedMixin instance
+    :rtype: ConfOrderedMixin
+
+    :Explanations:
+
+    :Usecases:
+
+        * For Dicts only
+        * Known children of different types: All children are explicitely defined
+        * To represent complex objects that have to process things in a certain order
+            * Ie: Your top app will want to read top level concept and deep done to smaller components,
+            * later componants may depends on top level items.
+        * Advanced children configuration
+            * Children processing order can be defined in 2 ways/format
 
 
-    # Format 1
-    children = [
-        {
-            "key": "KEY2",
-            "cls": Node,
-        },
-        {
-            "key": "KEY1",
-            "cls": Node,
-        },
-    ]
+    :Examples: 
 
-    # Format 2
-    children = {
-        "KEY2": {
-            "cls": Node,
-            "order": 20,
-        },
-        "KEY1": {
-            "cls": Node,
-            "order": 50,
-        },
-    }
+        Code Format as list of dicts
 
-    """
+        >>> children = [
+            {
+                "key": "KEY2",
+                "cls": Node,
+            },
+            {
+                "key": "KEY1",
+                "cls": Node,
+            },
+        ]
+
+        Code Format as dict
+
+        >>> children = {
+            "KEY2": {
+                "cls": Node,
+                "order": 20,
+            },
+            "KEY1": {
+                "cls": Node,
+                "order": 50,
+            },
+        }
+
+    """    
+
+
 
     default = {}
     # _index_enable = False
