@@ -468,11 +468,13 @@ from cafram.mixins.base import LoggerMixin
 def test_mixin_logger1():
     "Test that show how to use the logger"
 
+
     @newNode()
     @addMixin("cafram.mixins.base:LoggerMixin")
-    class MyApp1:
+    class MyApp1():
         def __post_init__(self, *args, **kwargs):
-            self.log.debug("DEBUG_Messages: INIT")
+            #self.log.debug("DEBUG_Messages: INIT")
+            print("DEBUG_Messages: INIT")
 
         def demo(self):
             self.log.debug("DEBUG_Messages")
@@ -480,8 +482,19 @@ def test_mixin_logger1():
             self.log.warning("WARNING_Messages")
             self.log.error("ERROR_Messages")
 
+
+    print ("DEBUUUGG 1")
+    pprint (MyApp1.__dict__)
+
+ 
     app = MyApp1()
+
+    print ("DEBUUUGG 2")
+    pprint (app.__dict__)
+    pprint (app.__node__.__dict__)
+
     app.demo()
+
     pprint(app.__node__.__dict__)
     pprint(LoggerMixin.__dict__)
     assert hasattr(app, LoggerMixin.mixin_alias__log)

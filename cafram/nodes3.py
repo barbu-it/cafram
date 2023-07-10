@@ -119,41 +119,12 @@ def node_class_builder(
 
         # __node__params__ = {}
         # __node__params__ = {}
-        __node__mixins__ = {}
+        #__node__mixins__ = {}
 
         # __node__attrs__ =  clsmethods
         # __node__prefix__ =  prefix
 
-        # This should not be hardcoded !!!
-        @classmethod
-        def tmp__patch__(cls, obj, override=True):
-            "Patch a class to become a node"
 
-            # Quit patching if 
-            if cls in obj.__mro__:
-                print(f"Skipping Wrapping Node {obj} with {cls}")
-                return obj
-
-
-            print(f"Wrapping Node {obj} with {cls} (Override={override})")
-
-            node_attrs = getattr(_NodeSkeleton, f"{prefix}_attrs__")
-            for method_name in node_attrs:
-                print("IMPORT METHOD", method_name)
-
-                if override is False:
-                    if hasattr(obj, method_name):
-                        tot = getattr(obj, method_name)
-                        print("Skip method patch", method_name, tot)
-                        continue
-
-                method = getattr(cls, method_name)
-                setattr(obj, method_name, method)
-
-            setattr(obj, f"{prefix}_attrs__", node_attrs)
-            setattr(obj, f"{prefix}_prefix__", prefix)
-
-            return obj
 
 
         @classmethod
@@ -162,7 +133,7 @@ def node_class_builder(
 
             # Assert obj is a class
 
-            print("CALLL tmp__inherit", cls, obj, name, attrs)
+            # print("CALLL tmp__inherit", cls, obj, name, attrs)
 
             ret = cls
             dct = attrs or {}
@@ -207,18 +178,108 @@ def node_class_builder(
             return None
 
 
+        # This should not be hardcoded !!!
+        @classmethod
+        def tmp__patch__(cls, obj, override=True):
+            "Patch a class to become a node"
+
+
+            # Build parameters
+            # ------------------------
+            # Build NodeCtrl Config
+            nodectrl_conf = getattr(obj, f"{prefix}_params__", {})
+            mixin_confs = getattr(obj, f"{prefix}_mixins__", {})
+
+            #mixin_confs2 = getattr(obj, f"{prefix}_mixins2__", [])
+            nodectrl_conf["obj_mixins"] = mixin_confs
+            setattr(obj, f"{prefix}_params__", nodectrl_conf)
+            print ("SET ATTR", obj, f"{prefix}_params__", nodectrl_conf)
+
+
+
+            # Patch object if not patched
+            # ------------------------
+            if cls in obj.__mro__:
+                print(f"Skipping Wrapping Node {obj} with {cls}")
+                return obj
+
+            print(f"Wrapping Node {obj} with {cls} (Override={override})")
+
+            node_attrs = getattr(_NodeSkeleton, f"{prefix}_attrs__")
+            for method_name in node_attrs:
+
+                if override is False:
+                    if hasattr(obj, method_name):
+                        tot = getattr(obj, method_name)
+                        print("Skip method patch", method_name, tot)
+                        continue
+
+                print("IMPORT METHOD", method_name)
+                method = getattr(cls, method_name)
+                setattr(obj, method_name, method)
+
+            setattr(obj, f"{prefix}_attrs__", node_attrs)
+            setattr(obj, f"{prefix}_prefix__", prefix)
+
+            return obj
+
+
+########################
+
+        @classmethod
+        def tmp__patch__mixin__(cls, obj, conf, key=None):
+
+
+            # Fetch mixin class
+            assert "mixin" in conf
+
+            mixin = conf["mixin"]
+            if isinstance(mixin, str):
+                mixin_cls = import_module(mixin)
+            else:
+                mixin_cls = mixin
+
+            mixin_key = conf.get("mixin_key", mixin_cls.mixin_key)
+            if mixin_key is True:
+                mixin_key = mixin_cls.mixin_key
+
+            assert isinstance(mixin_key , str)
+
+            mixin_confs = getattr(obj, f"{prefix}_mixins__", {})
+            mixin_confs2 = getattr(obj, f"{prefix}_mixins2__", [])
+
+
+
+            mixin_confs[mixin_key] = conf
+            mixin_confs2.append(conf)
+
+            setattr(obj, f"{prefix}_mixins__", mixin_confs)
+            #setattr(cls, f"{prefix}_mixins2__", mixin_confs2)
+
+            return obj
+
+
+########################
+
+
+
 
 
         if "__init__" in clsmethods:
 
             def __init__(self, *args, **kwargs):
 
-                print("RUN INIT", args, kwargs)
+                # print("RUN INIT", args, kwargs)
 
                 __node__params__ = {}
                 # __node__params__.update(self.__node__params__)
                 __node__params__.update(getattr(self, f"{prefix}_params__", {}))
                 __node__params__.update(kwargs)
+
+                print ("INIT NODECTRL WITH PARAMS", __node__params__)
+                print (self, self.__class__)
+                pprint (self.__dict__)
+                pprint (self.__class__.__dict__)
 
                 tmp = NodeCtrl(
                     self,
@@ -296,8 +357,8 @@ def node_class_builder(
     clsmethods.extend(
         [
             prefix,
-            f"{prefix}_prefix__",
-            f"{prefix}_params__",
+            # f"{prefix}_prefix__",
+            # f"{prefix}_params__",
         ]
     )
 
@@ -422,7 +483,7 @@ class NodeWrapper:
         self.node_prefix = prefix or NODE_PREFIX
         name = name or "NodeDeco"
 
-        print("PREFIX", prefix)
+        # print("PREFIX", prefix)
 
         self._override = override if isinstance(override, bool) else True
         attrs = attrs or {}
@@ -440,7 +501,7 @@ class NodeWrapper:
             attrs=attrs,
         )
 
-    def newNode(self, override=None, **kwargs):  # , *args, **kwargs):
+    def newNode(self, override=None, patch=True, **kwargs):  # , *args, **kwargs):
         """
         Transform a class to a NodeClass WITH LIVE PATCH
 
@@ -455,16 +516,16 @@ class NodeWrapper:
 
         def _decorate(cls):
 
-            patch = True
-
-            print("==== DECORATOR CLS INFO", cls)
-            print("== Type", type(cls))
-            print("== Name", cls.__name__)
-            print("== QUALNAME", cls.__qualname__)
-            print("== MODULE", cls.__module__)
-            print("== DICT", cls.__dict__)
+            # print("==== DECORATOR CLS INFO", cls)
+            # print("== Type", type(cls))
+            # print("== Name", cls.__name__)
+            # print("== QUALNAME", cls.__qualname__)
+            # print("== MODULE", cls.__module__)
+            # print("== DICT", cls.__dict__)
 
             ret = cls
+            # print ("BEFORE METHODS", cls)
+            # pprint (ret.__dict__)
 
             if patch:
                 ret = base_cls.tmp__patch__(ret, override=override)
@@ -473,6 +534,10 @@ class NodeWrapper:
                 if ret:
                     name, bases, dct = ret
                 ret = type(name, bases, dct)
+
+
+            # print ("AFTER METHODS", cls)
+            # pprint (ret.__dict__)
 
             return ret 
                 
@@ -520,41 +585,98 @@ class NodeWrapper:
     def addMixin(self, mixin, mixin_key=None, mixin_conf=None, **kwargs):
         "Add features/mixins to class"
 
-        # Fetch mixin class
-        if isinstance(mixin, str):
-            # mixin_name = mixin
-            mixin_cls = import_module(mixin)
-        else:
-            # mixin_name = mixin.__name__
-            mixin_cls = mixin
+        # # Fetch mixin class
+        # if isinstance(mixin, str):
+        #     # mixin_name = mixin
+        #     mixin_cls = import_module(mixin)
+        # else:
+        #     # mixin_name = mixin.__name__
+        #     mixin_cls = mixin
 
         # Get mixin config
-        mixin_key = mixin_key or mixin_cls.mixin_key
         mixin_conf = mixin_conf or kwargs
 
         # Validate data
         assert isinstance(mixin_conf, dict)
-        assert isinstance(mixin_key, str)
+        #assert isinstance(mixin_key, str)
 
         mixin_def = dict(mixin_conf)
-        mixin_def.update({"mixin": mixin_cls, "mixin_key": mixin_key})
+        mixin_def.update({"mixin": mixin})
+        if mixin_key is not None:
+            mixin_def.update({"mixin_key": mixin_key})
+        
+        base_cls = self._base_node_cls
 
         def _decorate(cls):
 
-            # Ensure idempotency
-            if not hasattr(cls, "__node__mixins__"):
-                cls.__node__mixins__ = {}
 
-            # print ("ASSIGN MIXIN", cls, type(cls))
-            assert (
-                not mixin_key in cls.__node__mixins__
-            ), f"Already assigned key: {mixin_key}"
+            cls = base_cls.tmp__patch__mixin__(cls, mixin_def)
 
-            cls.__node__mixins__[mixin_key] = mixin_def
+            # print ("AFTER ADD MIXIN", cls)
+            # pprint (cls.__dict__)
+
+            # # Ensure idempotency
+            # if not hasattr(cls, "__node__mixins__"):
+            #     cls.__node__mixins__ = {}
+
+            # # print ("ASSIGN MIXIN", cls, type(cls))
+            # assert (
+            #     not mixin_key in cls.__node__mixins__
+            # ), f"Already assigned key: {mixin_key}"
+
+            # cls.__node__mixins__[mixin_key] = mixin_def
 
             return cls
 
         return _decorate
+
+
+
+    # def addMixin_V111(self, mixin, mixin_key=None, mixin_conf=None, **kwargs):
+    #     "Add features/mixins to class"
+
+    #     # Fetch mixin class
+    #     if isinstance(mixin, str):
+    #         # mixin_name = mixin
+    #         mixin_cls = import_module(mixin)
+    #     else:
+    #         # mixin_name = mixin.__name__
+    #         mixin_cls = mixin
+
+    #     # Get mixin config
+    #     mixin_key = mixin_key or mixin_cls.mixin_key
+    #     mixin_conf = mixin_conf or kwargs
+
+    #     # Validate data
+    #     assert isinstance(mixin_conf, dict)
+    #     assert isinstance(mixin_key, str)
+
+    #     mixin_def = dict(mixin_conf)
+    #     mixin_def.update({"mixin": mixin_cls, "mixin_key": mixin_key})
+
+    #     def _decorate(cls):
+
+    #         base_cls = self._base_node_cls
+
+
+    #         base_cls.tmp__patch__mixin__(cls, conf, key=None)
+
+    #         # Ensure idempotency
+    #         if not hasattr(cls, "__node__mixins__"):
+    #             cls.__node__mixins__ = {}
+
+    #         # print ("ASSIGN MIXIN", cls, type(cls))
+    #         assert (
+    #             not mixin_key in cls.__node__mixins__
+    #         ), f"Already assigned key: {mixin_key}"
+
+    #         cls.__node__mixins__[mixin_key] = mixin_def
+
+    #         return cls
+
+    #     return _decorate
+
+
 
 
 # Common default instance

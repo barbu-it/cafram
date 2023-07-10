@@ -269,7 +269,7 @@ class NodePayload(Node):
     "Payload Node"
 
     # _node_conf = [{"mixin": PayloadMixin}]
-    __node__mixins__ = [{"mixin": PayloadMixin}]
+    __node___mixins__ = [{"mixin": PayloadMixin}]
 
 
 # Utils Mixins

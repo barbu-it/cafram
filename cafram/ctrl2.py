@@ -7,7 +7,6 @@ Node Controller Class
 ################################################################
 
 # import types
-import importlib
 import textwrap
 
 # import inspect
@@ -19,6 +18,7 @@ from .mixins import BaseMixin
 from .common import CaframCtrl
 from .lib.sprint import SPrint
 from .lib.utils import truncate
+from .lib.utils import import_module
 
 # Only relevant for entrypoints
 # logging.basicConfig(level=logging.INFO)
@@ -52,9 +52,9 @@ def get_mixin_loading_order(payload, logger=None):
         mixin_ref = mixin_conf.get("mixin")
         if isinstance(mixin_ref, str):
             try:
-                mixin_cls = importlib.import_module(mixin_ref)
+                mixin_cls = import_module(mixin_ref)
             except ModuleNotFoundError as err:
-                msg = f"Impossible to add mixin: {mixin_ref} from: {mixin_conf}"
+                msg = f"Impossible to add mixin: {mixin_ref} from: {mixin_conf} ({err})"
                 raise errors.CaframException(msg) from err
         else:
             mixin_cls = mixin_ref
@@ -161,7 +161,8 @@ class NodeCtrl(CaframCtrl):
         # ---------------------
         # print ("MIXIN", self._obj_mixins, mixin_kwargs)
         self._load_mixins(self._obj_mixins, mixin_kwargs)
-        self._log.debug(f"NodeCtrl {self} initialization is over: {obj_mixins}")
+        self._log.debug(f"NodeCtrl {self} initialization is over: {self._obj_mixins}")
+        #print(f"NodeCtrl {self} initialization is over: {self._obj_mixins}")
 
     def _load_mixins(self, mixin_confs, mixin_kwargs):
         "Load mixins from requested configuration"
