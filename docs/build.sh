@@ -3,8 +3,8 @@
 
 # Generate autodoc
 rm -rf apidoc/*
-sphinx-apidoc -f -o apidoc ../cafram/
-rm apidoc/modules.rst
+sphinx-apidoc -d 4 -e -f -o apidoc ../cafram/
+#rm apidoc/modules.rst
 
 # Build doc
 echo "Build Documentation ..."
