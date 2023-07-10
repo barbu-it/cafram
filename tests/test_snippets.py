@@ -17,12 +17,12 @@ from cafram.nodes.ctrl import NodeCtrl
 from cafram.nodes import newNode, addMixin
 from cafram.nodes import Node, NodeWrapper
 
-from cafram.mixins import BaseMixin
-from cafram.mixins.base import LoggerMixin, MapAttrMixin
-from cafram.mixins.base import PayloadMixin
-from cafram.mixins.hier import HierMixin, HierParentMixin, HierChildrenMixin
-from cafram.mixins.tree import NodePayload, NodeConf, NodeConfDict, NodeConfList
-from cafram.mixins.tree import ConfMixin, ConfDictMixin, ConfListMixin
+from cafram.nodes.comp import BaseMixin
+from cafram.nodes.comp.base import LoggerMixin, MapAttrMixin
+from cafram.nodes.comp.base import PayloadMixin
+from cafram.nodes.comp.hier import HierMixin, HierParentMixin, HierChildrenMixin
+from cafram.nodes.comp.tree import NodePayload, NodeConf, NodeConfDict, NodeConfList
+from cafram.nodes.comp.tree import ConfMixin, ConfDictMixin, ConfListMixin
 
 
 def test_app1_post_init():
@@ -446,14 +446,14 @@ def test_deco4_inherit():
 # Logger
 # ---------------------
 
-from cafram.mixins.base import LoggerMixin
+from cafram.nodes.comp.base import LoggerMixin
 
 
 def test_mixin_logger1():
     "Test that show how to use the logger"
 
     @newNode()
-    @addMixin("cafram.mixins.base:LoggerMixin")
+    @addMixin("cafram.nodes.comp.base:LoggerMixin")
     class MyApp1:
         def __post_init__(self, *args, **kwargs):
             # self.log.debug("DEBUG_Messages: INIT")
@@ -485,7 +485,7 @@ def test_mixin_logger1():
 # Config
 # ---------------------
 
-from cafram.mixins.tree import (
+from cafram.nodes.comp.tree import (
     NodeConf,
     map_node_class,
     ConfDictMixin,
@@ -527,7 +527,7 @@ def test_mixin_confdict1_children_true():
 
     # Example Class
     @newNode()
-    @addMixin("cafram.mixins.tree:ConfDictMixin", children=True)  # "titi",
+    @addMixin("cafram.nodes.comp.tree:ConfDictMixin", children=True)  # "titi",
     class MyApp:
         "This is my main app"
 
@@ -578,7 +578,7 @@ def test_mixin_confdict2_children_false():
 
     # Example Class
     @newNode()
-    @addMixin("cafram.mixins.tree:ConfDictMixin", children=False)  # "titi",
+    @addMixin("cafram.nodes.comp.tree:ConfDictMixin", children=False)  # "titi",
     class MyApp:
         "This is my main app"
 
@@ -606,7 +606,7 @@ def test_mixin_confdict3_children_none():
 
     # Example Class
     @newNode()
-    @addMixin("cafram.mixins.tree:ConfDictMixin", children=None)  # "titi",
+    @addMixin("cafram.nodes.comp.tree:ConfDictMixin", children=None)  # "titi",
     class MyApp:
         "This is my main app"
 
@@ -634,7 +634,7 @@ def test_mixin_confdict4_children_nodeconf_cls():
 
     # Example Class
     @newNode()
-    @addMixin("cafram.mixins.tree:ConfDictMixin", children=NodeConf)  # "titi",
+    @addMixin("cafram.nodes.comp.tree:ConfDictMixin", children=NodeConf)  # "titi",
     class MyApp:
         "This is my main app"
 
@@ -663,8 +663,8 @@ def test_mixin_confdict5_children_nodeconf_str():
     # Example Class
     @newNode()
     @addMixin(
-        "cafram.mixins.tree:ConfDictMixin",  # "titi",
-        children="cafram.mixins.tree:NodeConf",
+        "cafram.nodes.comp.tree:ConfDictMixin",  # "titi",
+        children="cafram.nodes.comp.tree:NodeConf",
     )
     class MyApp:
         "This is my main app"
@@ -709,7 +709,7 @@ def test_mixin_confdict5_children_nodeconf_str():
 
 
 #     @newNode()
-#     @addMixin("cafram.mixins.tree:ConfMixin", # "titi",
+#     @addMixin("cafram.nodes.comp.tree:ConfMixin", # "titi",
 #         #children=False
 #     )
 #     class ItemConf():
@@ -722,7 +722,7 @@ def test_mixin_confdict5_children_nodeconf_str():
 
 #     # Example Class
 #     @newNode()
-#     @addMixin("cafram.mixins.tree:ConfDictMixin", # "titi",
+#     @addMixin("cafram.nodes.comp.tree:ConfDictMixin", # "titi",
 #         children=ItemConf
 #     )
 

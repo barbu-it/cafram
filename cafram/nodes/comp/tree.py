@@ -12,14 +12,14 @@ from typing import MutableSequence, MutableSet, MutableMapping
 from pprint import pprint, pformat
 
 
-from .. import errors
-from ..lib.utils import to_json, from_json, to_yaml, from_yaml, read_file, import_module
+from ... import errors
+from ...lib.utils import to_json, from_json, to_yaml, from_yaml, read_file, import_module
 
-from ..nodes import Node  # , NodeBase
+from ...nodes import Node  # , NodeBase
 
 # from ..decorators import Node
 
-from ..common import CaframNode
+from ...common import CaframNode
 
 from .base import PayloadMixin, NodePayload
 from .hier import HierParentMixin, HierChildrenMixin

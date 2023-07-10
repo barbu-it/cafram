@@ -8,11 +8,11 @@ Path mixins
 import os
 
 
-from ..nodes import Node
-from .. import errors
+from ...nodes import Node
+from ... import errors
 from .base import PayloadMixin
 from . import BaseMixin, LoadingOrder
-from ..lib.utils import list_parent_dirs
+from ...lib.utils import list_parent_dirs
 
 from pprint import pprint
 

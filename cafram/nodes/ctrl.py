@@ -15,7 +15,7 @@ import textwrap
 from pprint import pprint, pformat
 
 from .. import errors
-from ..mixins import BaseMixin
+from .comp import BaseMixin
 from ..common import CaframCtrl
 from ..lib.sprint import SPrint
 from ..lib.utils import truncate

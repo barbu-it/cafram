@@ -9,10 +9,10 @@ from enum import IntEnum
 
 from pprint import pprint, pformat
 
-from .. import errors
-from ..lib.sprint import SPrint
-from ..lib.utils import truncate, update_classattr_from_dict
-from ..common import CaframObj, CaframMixin, CaframCtrl
+from ... import errors
+from ...lib.sprint import SPrint
+from ...lib.utils import truncate, update_classattr_from_dict
+from ...common import CaframObj, CaframMixin, CaframCtrl
 
 
 # Helpers

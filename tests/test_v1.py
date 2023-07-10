@@ -17,12 +17,12 @@ from cafram.nodes import Node
 from cafram.nodes.ctrl import NodeCtrl
 from cafram.nodes.engine import node_class_builder, NodeMetaclass, NodeWrapper
 
-from cafram.mixins import BaseMixin
-from cafram.mixins.base import LoggerMixin, MapAttrMixin
-from cafram.mixins.base import PayloadMixin
-from cafram.mixins.hier import HierMixin, HierParentMixin, HierChildrenMixin
-from cafram.mixins.tree import NodePayload, NodeConf, NodeConfDict, NodeConfList
-from cafram.mixins.tree import ConfMixin, ConfDictMixin, ConfListMixin
+from cafram.nodes.comp import BaseMixin
+from cafram.nodes.comp.base import LoggerMixin, MapAttrMixin
+from cafram.nodes.comp.base import PayloadMixin
+from cafram.nodes.comp.hier import HierMixin, HierParentMixin, HierChildrenMixin
+from cafram.nodes.comp.tree import NodePayload, NodeConf, NodeConfDict, NodeConfList
+from cafram.nodes.comp.tree import ConfMixin, ConfDictMixin, ConfListMixin
 
 
 # ConfigLoader
