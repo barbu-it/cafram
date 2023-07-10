@@ -15,7 +15,7 @@ from pprint import pprint, pformat
 from .. import errors
 from ..lib.utils import to_json, from_json, to_yaml, from_yaml, read_file, import_module
 
-from ..nodes3 import Node  # , NodeBase
+from ..nodes import Node  # , NodeBase
 
 # from ..decorators import Node
 

@@ -1,5 +1,3 @@
-
-
 from pprint import pprint
 import inspect
 
@@ -8,14 +6,12 @@ from cafram.nodes.ctrl import NodeCtrl
 import cafram.errors as errors
 
 
-
 NODE_METHODS = [
     "__init__",
     "__getattr__",
     "__getitem__",
     "__call__",
 ]
-
 
 
 # Node Wrapper Class Builder
@@ -525,5 +521,3 @@ class NodeWrapper:
             return cls
 
         return _decorate
-
-

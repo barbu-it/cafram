@@ -5,54 +5,33 @@
 import os
 from pprint import pprint  # noqa: F401
 import logging
+import inspect
 
-import pytest
 import traceback
-import logging
-from pprint import pprint
 import pytest
 
 
 import cafram.errors as errors
+from cafram.nodes import Node
+from cafram.tools import NodeConfigLoader, MixinConfigLoader
+from cafram.nodes.ctrl import NodeCtrl
+from cafram.nodes.engine import node_class_builder, NodeMetaclass, NodeWrapper
 
 from cafram.mixins import BaseMixin
 from cafram.mixins.base import LoggerMixin, MapAttrMixin
-
-# from cafram.mixins.tree import PayloadMixin, DictConfMixin, ListConfMixin, SimpleConfMixin #, HierMixin
-
-
-# from cafram.mixins.tree import  _ContainerMixin
-
-from cafram.nodes3 import Node
 from cafram.mixins.base import PayloadMixin
 from cafram.mixins.hier import HierMixin, HierParentMixin, HierChildrenMixin
 from cafram.mixins.tree import NodePayload, NodeConf, NodeConfDict, NodeConfList
 from cafram.mixins.tree import ConfMixin, ConfDictMixin, ConfListMixin
 
 
-# from cafram.decorators import newNode, addMixin
-
 # ConfigLoader
 # ------------------------
-
-
-from cafram.tools import NodeConfigLoader, MixinConfigLoader
-from cafram.mixins import BaseMixin
-#from cafram.ctrl2 import NodeCtrl
-from cafram.nodes.ctrl import NodeCtrl
-#from cafram.nodes2 import Node as OldNode
-import inspect
 
 
 # ===================================================
 # Dynamic Class Creator
 # ===================================================
-
-#from cafram.nodes3 import node_class_builder, NodeMetaclass, NodeWrapper
-
-from cafram.nodes.engine import node_class_builder, NodeMetaclass, NodeWrapper
-
-
 
 
 def test_clsbuilder_func_basic():
@@ -337,7 +316,6 @@ def test_clsbuilder_decorator_base():
 
 # WIPPP MIGRATION TO v2
 # from cafram.nodes2 import Node
-from cafram.nodes3 import Node
 
 
 def test_configloader_nodectrl():

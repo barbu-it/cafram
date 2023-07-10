@@ -9,37 +9,20 @@ import logging
 import pytest
 import traceback
 import logging
-from pprint import pprint
 import pytest
 
 
 import cafram.errors as errors
-#from cafram.ctrl2 import NodeCtrl
 from cafram.nodes.ctrl import NodeCtrl
+from cafram.nodes import newNode, addMixin
+from cafram.nodes import Node, NodeWrapper
 
 from cafram.mixins import BaseMixin
 from cafram.mixins.base import LoggerMixin, MapAttrMixin
-
-# from cafram.mixins.tree import PayloadMixin, DictConfMixin, ListConfMixin, SimpleConfMixin #, HierMixin
-
-
-# from cafram.mixins.tree import  _ContainerMixin
-
-#from cafram.nodes2 import Node, Node
 from cafram.mixins.base import PayloadMixin
 from cafram.mixins.hier import HierMixin, HierParentMixin, HierChildrenMixin
 from cafram.mixins.tree import NodePayload, NodeConf, NodeConfDict, NodeConfList
 from cafram.mixins.tree import ConfMixin, ConfDictMixin, ConfListMixin
-
-
-# from cafram.decorators import newNode, addMixin
-#from cafram.decorators import newNode, addMixin
-from cafram.nodes3 import newNode, addMixin
-
-
-# WIPPP MIGRATION TO v2
-# from cafram.nodes2 import Node
-from cafram.nodes3 import Node, NodeWrapper
 
 
 def test_app1_post_init():
