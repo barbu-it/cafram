@@ -8,10 +8,11 @@ import textwrap
 from enum import IntEnum
 from pprint import pformat, pprint
 
-from ... import errors
 from ...common import CaframCtrl, CaframMixin, CaframObj
 from ...lib.sprint import SPrint
 from ...lib.utils import truncate, update_classattr_from_dict
+from ... import errors
+
 
 # Helpers
 ################################################################
@@ -128,27 +129,20 @@ class BaseMixin(CaframMixin):
         mixin_conf = mixin_conf or {}
         param_conf = update_classattr_from_dict(self, kwargs, prefix="mixin_param__")
 
-
-        # print("MIXIN INIT: ", self)
-        # pprint(
-        #     {
-        #         "mixin_conf": mixin_conf,
-        #         "param_conf": param_conf,
-        #     }
-        # )
-
         # Update mixin with gathered configs
-        self._update_attrs_conf(mixin_conf, creates=False)
+        # self._update_attrs_conf(mixin_conf, creates=False) # TODO: What to do of unparsed items ???
+        self._update_attrs_conf(mixin_conf, creates=None)
         self._update_attrs_conf(param_conf, creates=True)
 
         # Assign aliases
         self.mixin_conf = mixin_conf
         self._mixin_alias_map = self._list_aliases()
 
-
-
     def _update_attrs_conf(self, mixin_conf, creates=False):
-        "Update object attributes from a dict. Fail if key does not already exists when create=False"
+        """Update object attributes from a dict. Fail if key does not already exists when create=False
+
+        If creates is None, then it skip all not already created attributes.
+        """
 
         for key, value in mixin_conf.items():
 
@@ -156,27 +150,76 @@ class BaseMixin(CaframMixin):
 
             if not creates:
                 if not hasattr(self, key):
+                    if creates is None:
+                        continue
                     assert False, f"Unknown config option '{key}={value}' for {self}"
 
             setattr(self, key, value)
 
     def _prepare_conf(self, value):
-        "List args/kwargs parameters"
+        "Transform some specific parameters"
 
         # Check for bound methods
-        if callable(value) and hasattr(value, "__self__"):
-            cls = value.__self__.__class__
+        # if callable(value) and hasattr(value, "__self__"):
+        # if callable(value):
 
-            # If not a CaframMixin class, add mixin as second param
-            # pylint: disable=cell-var-from-loop
-            if not issubclass(cls, CaframMixin):
-                _func = value
+        # Rewrap/rewrite callables !
+        if inspect.isfunction(value):
 
-                def wrapper(*args, **kwargs):
-                    return _func(self, *args, **kwargs)
+            MODE = "rebind"
+            MODE = "wrap"
 
-                self._log.debug(f"Overriden method is now available '{key}': {value}")
-                value = wrapper
+            if MODE == "rebind":
+
+                # Rebound method if linked to anything
+                if hasattr(value, "__get__"):
+                    # print ("Remap function to method", value)
+                    value = value.__get__(self)
+                    # assert False, value
+
+            else:
+                # Wrap method for NodeCtrl view
+                if hasattr(value, "__get__"):
+                    _func = value
+                    # print ("Rewrap function to mixin", value)
+
+                    def _wrapper(*args, **kwargs):
+                        # return _func(self._obj, self, *args, **kwargs)
+
+                        try:
+                            return _func(self._obj, self, *args, **kwargs)
+                        except TypeError as err:
+                            # print (err)
+                            msg = f"{err}, Please ensure {_func} have the folowing signature: def {_func.__name__}(self, mixin, *args, **kwargs)"
+
+                            raise errors.BadArguments(msg) from err
+                            assert False
+
+                    # try:
+
+                    #     def _wrapper(*args, **kwargs):
+                    #         return _func(self._obj, self, *args, **kwargs)
+
+                    # except TypeError as err:
+                    #     print (err)
+                    #     print (f"Please ensure {_func} have the folowing signature: def {_func.__name__}(self, mixin, *args, *kwargs)")
+                    #     assert False
+
+                    # DEPRECATED: self._log.debug(f"Overriden method is now available '{key}': {value}")
+                    value = _wrapper
+
+                # # If not a CaframMixin class, add mixin as second param
+                # # pylint: disable=cell-var-from-loop
+                # if not issubclass(cls, CaframMixin):
+                #     _func = value
+
+                #     def wrapper(*args, **kwargs):
+                #         return _func(self, *args, **kwargs)
+
+                #     # DEPRECATED: self._log.debug(f"Overriden method is now available '{key}': {value}")
+                #     value = wrapper
+
+            # assert False, "WIP"
 
         return value
 
@@ -316,8 +359,9 @@ class BaseMixin(CaframMixin):
                 try:
                     sign = inspect.signature(val)
 
-                except:
+                except Exception as err:
                     other[key] = val
+                    assert False, f"Please fix this wide exception: {err}"
                     continue
                 if type(val).__name__ not in ["method"]:
                     other[key] = val

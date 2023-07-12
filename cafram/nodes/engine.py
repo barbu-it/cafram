@@ -7,8 +7,8 @@ from pprint import pprint
 from typing import List, Union
 
 from cafram import errors
-from cafram.lib.utils import import_module
-from cafram.nodes.ctrl import NodeCtrl
+from cafram.lib.utils import import_module, merge_keyed_dicts, merge_dicts
+from cafram.nodes.ctrl import NodeCtrl, get_mixin_loading_order
 
 NODE_METHODS = [
     "__init__",
@@ -18,15 +18,72 @@ NODE_METHODS = [
 ]
 
 
-
 # Node Wrapper Class Builder
 ################################################################
+
+
+def _obj_filter_attrs_by(
+    obj, prefix=None, suffix=None, strip=True, rtrim="_", level_max=0, level_split="__"
+):
+    "Filter all class attributes starting/ending with and return a dict with their value"
+
+    ret = {}
+    for attr in dir(obj):
+
+        # Skip unmatching names
+        if prefix and not attr.startswith(prefix):
+            # print ("IGNORE prefix", prefix, attr)
+            continue
+        if suffix and not attr.startswith(suffix):
+            # print ("IGNORE sufix", suffix, attr)
+            continue
+
+        # Remove prefix and suffix
+        name = attr
+        if strip:
+            if prefix:
+                name = attr[len(prefix) :]
+            if suffix:
+                name = attr[: len(suffix)]
+
+        # Remove extra end chars
+        if rtrim:
+            name = name.rstrip(rtrim)
+
+        if level_max:
+            parts = name.split(level_split, level_max)
+
+            target = ret
+            for part in parts[:-1]:
+                if not part in target:
+                    target[part] = {}
+                target = target[part]
+            # print ("PROCESS part", prefix, attr, name)
+            target[parts[-1]] = getattr(obj, attr)
+
+        else:
+
+            # print ("PROCESS flat", prefix, attr, name)
+            # If value is None, then replace
+            if name:
+                assert (
+                    name not in ret
+                ), f"Duplicate key: {attr}/{name} for object: {obj}"
+                ret[name] = getattr(obj, attr)
+
+    return ret
 
 
 # This is a class method
 # @functools.cache
 def node_class_builder(
-    prefix, name=None, bases=None, clsmethods: Union[List[str],None] =None, module=None, doc=None, attrs=None
+    prefix,
+    name=None,
+    bases=None,
+    clsmethods: Union[List[str], None] = None,
+    module=None,
+    doc=None,
+    attrs=None,
 ):
     """Build a generic node wrapper
 
@@ -67,7 +124,7 @@ def node_class_builder(
 
     :Code Example 1:
 
-        >>> class Node(CaframNode, metaclass=NodeMetaclass, 
+        >>> class Node(CaframNode, metaclass=NodeMetaclass,
             node_prefix='__node__', node_override=False
             ):
             "My DocString"
@@ -85,7 +142,7 @@ def node_class_builder(
 
         TOFIX: This version has not metadata *for* **children** classes
 
-        >>> Node2 = node_class_builder("__node__", name="Node", 
+        >>> Node2 = node_class_builder("__node__", name="Node",
                 doc="My DocString", bases=[CaframNode])
                 # => node_override=False
 
@@ -107,8 +164,7 @@ def node_class_builder(
         >>> class MyApp(AppObj, Node):
             "App class"
 
-    """    
-
+    """
 
     # Test arguments
     attrs = attrs or {}
@@ -118,31 +174,133 @@ def node_class_builder(
         bases = tuple(bases)
 
     assert isinstance(bases, tuple), f"Got: {bases} (type={type(bases)})"
-    # print(
-    #     f"Build new _NodeSkeleton: name={name}, prefix='{prefix}', bases={bases}, methods:",
-    #     clsmethods,
-    # )
 
     class _NodeSkeleton(*bases):
         "Dynamic Node Class"
 
-        # def DYN_NODE_ALWAYS(self):
-        #     print("ALWAYS HERE !")
+        if "__init__" in clsmethods:
 
-        # __node__params__ = {}
-        # __node__params__ = {}
-        # __node__mixins__ = {}
+            def __init__(self, *args, **kwargs):
 
-        # __node__attrs__ =  clsmethods
-        # __node__prefix__ =  prefix
+                # print("RUN INIT", args, kwargs)
+
+                ### NEW V2
+
+                # 1. From inheritable attributes
+                param_cls_prefix = _obj_filter_attrs_by(self, prefix=f"{prefix}_param_")
+                mixin_cls_prefix = _obj_filter_attrs_by(
+                    self, prefix=f"{prefix}_mixin__", level_max=1
+                )
+                mixin_cls_prefix = get_mixin_loading_order(mixin_cls_prefix)
+                assert isinstance(mixin_cls_prefix, dict)
+                mixin_cls_prefix = merge_keyed_dicts(
+                    mixin_cls_prefix, param_cls_prefix.get("obj_mixins", {})
+                )
+
+                # 2. From decorator attributes
+                param_cls_attrs = getattr(self, f"{prefix}_params__", {})
+                mixin_cls_attrs = getattr(self, f"{prefix}_mixins__", {})
+                mixin_cls_attrs = get_mixin_loading_order(mixin_cls_attrs)
+                assert isinstance(mixin_cls_attrs, dict)
+                # V1: mixin_cls_attrs = merge_keyed_dicts(mixin_cls_attrs, param_cls_attrs.get("obj_mixins", {}))
+                # V2: Make params obj_conf as default instead of override like in attrs
+                mixin_cls_attrs = merge_keyed_dicts(
+                    param_cls_attrs.get("obj_mixins", {}), mixin_cls_attrs
+                )
+
+                # 3. From kwargs
+                param_kwargs = kwargs  # {key: val for key, val in kwargs.items() if key.startswith("obj_")}
+                mixin_kwargs = kwargs.get("obj_mixins", None)
+                mixin_kwargs = get_mixin_loading_order(mixin_kwargs)
+
+                # 4. Build final configuration
+                node_params2 = merge_dicts(
+                    param_cls_prefix, param_cls_attrs, param_kwargs
+                )
+                mixin_conf2 = merge_keyed_dicts(
+                    mixin_cls_prefix, mixin_cls_attrs, mixin_kwargs
+                )
+                node_params2["obj_mixins"] = mixin_conf2
+
+                tmp = NodeCtrl(
+                    self,
+                    obj_attr=prefix,
+                    **node_params2,
+                    # Contains:
+                    #  obj_conf: {}
+                    #  obj_attr: "__node__"
+                    #  obj_prefix
+                    #  obj_prefix_hooks
+                    #  obj_prefix_class_params
+                    #  obj_prefix
+                )
+                setattr(self, prefix, tmp)
+
+                # Ensure __post__init__
+                if hasattr(self, "__post_init__"):
+                    try:
+                        self.__post_init__(*args, **kwargs)
+                    except TypeError as err:
+
+                        fn_details = inspect.getfullargspec(self.__post_init__)
+                        msg = f"{err}. Current {self}.__post_init__ function specs: {fn_details}"
+                        if not fn_details.varargs or not fn_details.varkw:
+                            msg = f"Missing *args or **kwargs in __post_init__ method of {self}"
+
+                        raise errors.BadArguments(msg)
+
+        if "__getattr__" in clsmethods:
+
+            def __getattr__(self, name):
+                """Dunder to foward all unknown attributes to the NodeCtrl instance"""
+
+                if prefix in self.__dict__:
+                    return getattr(self, prefix).mixin_get(name)
+
+                msg = f"Getattr '{name}' is not available for '{self}' as there is no nodectrl yet"
+                raise errors.CaframAttributeError(msg)
+
+        if "__getitem__" in clsmethods:
+
+            def __getitem__(self, name):
+                "Handle dict notation"
+
+                if hasattr(self, prefix):
+                    return getattr(self, prefix).mixin_get(name)
+
+                msg = (
+                    "Getitem is not available as there is no nodectrl yet,"
+                    f"can't look for: {name}"
+                )
+                raise errors.CaframException(msg)
+
+        if "__call__" in clsmethods:
+
+            def __call__(self, *args):
+                "Return node or mixin/alias"
+
+                if hasattr(self, prefix):
+                    count = len(args)
+                    if count == 0:
+                        return getattr(self, prefix).mixin_get(name)
+                    if count == 1:
+                        return getattr(self, prefix).mixin_get(args[0])
+
+                    msg = "Only 1 argument is allowed"
+                    raise errors.CaframException(msg)
+
+                msg = "Call is not available as there is no nodectrl yet"
+                raise errors.CaframException(msg)
+
+        ########################
 
         @classmethod
-        def tmp__inherit(cls, obj, name=None, bases=None, override=True, attrs=None):
+        def node_inherit(cls, obj, name=None, bases=None, override=True, attrs=None):
             "Create a new class from any class and make the node as it's ancestors"
 
             # Assert obj is a class
 
-            # print("CALLL tmp__inherit", cls, obj, name, attrs)
+            # print("CALLL node_inherit", cls, obj, name, attrs)
 
             dct = attrs or {}
             bases = list(bases or [])
@@ -187,19 +345,8 @@ def node_class_builder(
 
         # This should not be hardcoded !!!
         @classmethod
-        def tmp__patch__(cls, obj, override=True):
+        def node_patch_params(cls, obj, override=True):
             "Patch a class to become a node"
-
-            # Build parameters
-            # ------------------------
-            # Build NodeCtrl Config
-            nodectrl_conf = getattr(obj, f"{prefix}_params__", {})
-            mixin_confs = getattr(obj, f"{prefix}_mixins__", {})
-
-            # mixin_confs2 = getattr(obj, f"{prefix}_mixins2__", [])
-            nodectrl_conf["obj_mixins"] = mixin_confs
-            setattr(obj, f"{prefix}_params__", nodectrl_conf)
-            #print("SET ATTR", obj, f"{prefix}_params__", nodectrl_conf)
 
             # Patch object if not patched
             # ------------------------
@@ -207,7 +354,7 @@ def node_class_builder(
                 print(f"Skipping Wrapping Node {obj} with {cls}")
                 return obj
 
-            #print(f"Wrapping Node {obj} with {cls} (Override={override})")
+            # print(f"Wrapping Node {obj} with {cls} (Override={override})")
 
             node_attrs = getattr(_NodeSkeleton, f"{prefix}_attrs__")
             for method_name in node_attrs:
@@ -218,8 +365,11 @@ def node_class_builder(
                         print("Skip method patch", method_name, tot)
                         continue
 
-                #print("IMPORT METHOD", method_name)
-                method = getattr(cls, method_name)
+                try:
+                    method = getattr(cls, method_name)
+                except AttributeError:
+                    method = getattr(_NodeSkeleton, method_name)
+
                 setattr(obj, method_name, method)
 
             setattr(obj, f"{prefix}_attrs__", node_attrs)
@@ -227,10 +377,8 @@ def node_class_builder(
 
             return obj
 
-        ########################
-
         @classmethod
-        def tmp__patch__mixin__(cls, obj, conf):
+        def node_patch_mixin(cls, obj, conf):
             "Add a mixin configuration to class"
 
             # Fetch mixin class
@@ -249,120 +397,29 @@ def node_class_builder(
             assert isinstance(mixin_key, str)
 
             mixin_confs = getattr(obj, f"{prefix}_mixins__", {})
-            mixin_confs2 = getattr(obj, f"{prefix}_mixins2__", [])
+            # mixin_confs2 = getattr(obj, f"{prefix}_mixins2__", [])
 
             mixin_confs[mixin_key] = conf
-            mixin_confs2.append(conf)
+            # mixin_confs2.append(conf)
 
             setattr(obj, f"{prefix}_mixins__", mixin_confs)
             # setattr(cls, f"{prefix}_mixins2__", mixin_confs2)
 
             return obj
 
-        ########################
-
-        if "__init__" in clsmethods:
-
-            def __init__(self, *args, **kwargs):
-
-                # print("RUN INIT", args, kwargs)
-
-                __node__params__ = {}
-                # __node__params__.update(self.__node__params__)
-                __node__params__.update(getattr(self, f"{prefix}_params__", {}))
-                __node__params__.update(kwargs)
-
-                # print("INIT NODECTRL WITH PARAMS", __node__params__)
-                # print(self, self.__class__)
-                # pprint(self.__dict__)
-                # pprint(self.__class__.__dict__)
-
-                tmp = NodeCtrl(
-                    self,
-                    obj_attr=prefix,
-                    **__node__params__,
-                    # Contains:
-                    #  obj_conf: {}
-                    #  obj_attr: "__node__"
-                    #  obj_prefix
-                    #  obj_prefix_hooks
-                    #  obj_prefix_class_params
-                    #  obj_prefix
-                )
-                setattr(self, prefix, tmp)
-
-                # Ensure __post__init__
-                if hasattr(self, "__post_init__"):
-                    # pprint(inspect.getargspec(self.__post_init__))
-                    try:
-                        self.__post_init__(*args, **kwargs)
-                    except TypeError as err:
-
-                        fn_details = inspect.getfullargspec(self.__post_init__)
-                        msg = f"{err}. Current {self}.__post_init__ function specs: {fn_details}"
-                        if not fn_details.varargs or not fn_details.varkw:
-                            msg = f"Missing *args or **kwargs in __post_init__ method of {self}"
-
-                        raise errors.BadArguments(msg)
-
-        if "__getattr__" in clsmethods:
-
-            def __getattr__(self, name):
-                """Dunder to foward all unknown attributes to the NodeCtrl instance"""
-
-                if prefix in self.__dict__:
-                    return getattr(self, prefix).mixin_get(name)
-
-                msg = f"Getattr '{name}' is not available for '{self}' as there is no nodectrl yet"
-                raise errors.CaframAttributeError(msg)
-
-        if "__getitem__" in clsmethods:
-
-            def __getitem__(self, name):
-                "Handle dict notation"
-
-                if hasattr(self, prefix):
-                    return getattr(self, prefix).mixin_get(name)
-                # if self.__node__:
-                # return self.__node__.mixin_get(name)
-
-                msg = ("Getitem is not available as there is no nodectrl yet,"
-                    f"can't look for: {name}")
-                raise errors.CaframException(msg)
-
-        if "__call__" in clsmethods:
-
-            def __call__(self, *args):
-                "Return node or mixin/alias"
-
-                if hasattr(self, prefix):
-                    # if self.__node__:
-                    count = len(args)
-                    if count == 0:
-                        # return self.__node__
-                        return getattr(self, prefix).mixin_get(name)
-                    if count == 1:
-                        # return self.__node__.mixin_get(args[0])
-                        return getattr(self, prefix).mixin_get(args[0])
-
-                    msg = "Only 1 argument is allowed"
-                    raise errors.CaframException(msg)
-
-                msg = "Call is not available as there is no nodectrl yet"
-                raise errors.CaframException(msg)
+            ########################
 
     clsmethods.extend(
         [
             prefix,
-            # f"{prefix}_prefix__",
-            # f"{prefix}_params__",
+            "node_patch_params",
+            "node_patch_mixin",
         ]
     )
 
     for key, val in attrs.items():
+
         setattr(_NodeSkeleton, key, val)
-        # _NodeSkeleton.__node__attrs__.append(key)
-        # getattr(_NodeSkeleton, f"{prefix}_attrs__").append(key)
         clsmethods.append(key)
 
     # Prepare __node__ attribute
@@ -370,7 +427,6 @@ def node_class_builder(
     setattr(_NodeSkeleton, f"{prefix}_prefix__", prefix)
     setattr(_NodeSkeleton, f"{prefix}_params__", {})
     setattr(_NodeSkeleton, f"{prefix}_attrs__", clsmethods)
-    # setattr(_NodeSkeleton, f"{prefix}_attrs__", list(_NodeSkeleton.__dict__.keys()))
 
     # Prepare Class
     if name:
@@ -380,9 +436,6 @@ def node_class_builder(
         setattr(_NodeSkeleton, "__module__", module)
     if doc:
         setattr(_NodeSkeleton, "__doc__", doc)
-
-    # setattr(_NodeSkeleton, "__metaclass__", NodeMetaclass)
-    # print ("TOFIX METADATA INHERITANCE")
 
     return _NodeSkeleton
 
@@ -429,7 +482,9 @@ class NodeMetaclass(type):
             )
 
         # Generate type arguments
-        ret = node_cls.tmp__inherit(mcs, bases=bases, attrs=dct, name=name, override=node_override)
+        ret = node_cls.node_inherit(
+            mcs, bases=bases, attrs=dct, name=name, override=node_override
+        )
         if ret:
             name, bases, dct = ret
 
@@ -438,23 +493,6 @@ class NodeMetaclass(type):
 
         # Return a new class
         return super().__new__(mcs, name, bases, dct)
-
-    #     #node_prefix = node_prefix or getattr(mcs, "_node__attr", None) or NODE_PREFIX
-
-    #     # Look for class name atribute in mro
-    #     tmp = dct.get("_node__attr", None)
-    #     inherited = False
-    #     if not tmp:
-    #         for base in bases:
-    #             tmp = getattr(base, "_node__attr", None)
-    #             if tmp:
-    #                 inherited = True
-    #                 break
-
-    #     # Minimal placeholder
-    #     # mcs = super().__new__(metacls, name, bases, namespace, **kwargs)
-    #     # # You must return the generated class
-    #     # return mcs
 
 
 # Decorators
@@ -512,7 +550,7 @@ class NodeWrapper:
 
         def _decorate(cls):
 
-            # print("==== DECORATOR CLS INFO", cls)
+            # print("==== DECORATOR CLS INFO", cls, patch)
             # print("== Type", type(cls))
             # print("== Name", cls.__name__)
             # print("== QUALNAME", cls.__qualname__)
@@ -521,9 +559,9 @@ class NodeWrapper:
 
             ret = cls
             if patch:
-                ret = base_cls.tmp__patch__(ret, override=override)
+                ret = base_cls.node_patch_params(ret, override=override)
             else:
-                ret = base_cls.tmp__inherit(
+                ret = base_cls.node_inherit(
                     cls, name=cls.__qualname__, override=override
                 )
                 if ret:
@@ -553,7 +591,7 @@ class NodeWrapper:
 
         def _decorate(cls):
 
-            cls = base_cls.tmp__patch__mixin__(cls, mixin_def)
+            cls = base_cls.node_patch_mixin(cls, mixin_def)
 
             return cls
 

@@ -7,20 +7,21 @@ import json
 import os
 import re
 import sys
-from io import StringIO
+import logging
+import inspect
 
 # Support both pyaml and ruamel. pyaml implementation is better here
 # import ruamel.yaml
 import yaml
 
-if "ruamel.yaml" in sys.modules:
-    # Setup YAML object
-    yaml = ruamel.yaml.YAML()
-    yaml.version = (1, 1)
-    yaml.default_flow_style = False
-    # yaml.indent(mapping=3, sequence=2, offset=0)
-    yaml.allow_duplicate_keys = True
-    yaml.explicit_start = True
+# if "ruamel.yaml" in sys.modules:
+#     # Setup YAML object
+#     yaml = ruamel.yaml.YAML()
+#     yaml.version = (1, 1)
+#     yaml.default_flow_style = False
+#     # yaml.indent(mapping=3, sequence=2, offset=0)
+#     yaml.allow_duplicate_keys = True
+#     yaml.explicit_start = True
 
 
 # =====================================================================
@@ -36,7 +37,11 @@ if "ruamel.yaml" in sys.modules:
 from pprint import pprint
 
 
-def update_classattr_from_dict(obj, kwargs, prefix="mixin_param__"):
+log = logging.getLogger(__name__)
+
+
+# TODO: TO be renamed: remap_classattr_from_kwargs
+def update_classattr_from_dict(obj, kwargs, prefix="mixin_param__", bound_methods=True):
 
     """List args/kwargs parameters
 
@@ -50,26 +55,26 @@ def update_classattr_from_dict(obj, kwargs, prefix="mixin_param__"):
 
     ret = {}
     reduced = [item for item in dir(obj) if item.startswith(prefix)]
-    #pprint(reduced)
+    # pprint(reduced)
     for attr in reduced:
 
         attr_name = attr.replace(prefix, "")
-        if attr_name:
-            attr_match = getattr(obj, attr, None) or attr_name
+        if not attr_name:
+            continue
 
-            if isinstance(attr_match, str):
-                #print("YOOOO", attr_name, attr_match)
+        attr_match = getattr(obj, attr, None) or attr_name
+        if not isinstance(attr_match, str):
+            continue
 
-                if True:
-                    # V1 is the good one
-                    if attr_match and attr_match in kwargs:
-                        attr_value2 = kwargs[attr_match]
-                        ret[attr_name] = attr_value2
-                else:
-                    # V2 - broken
-                    if attr_name and attr_name in kwargs:
-                        attr_value2 = kwargs[attr_name]
-                        ret[attr_match] = attr_value2
+        if attr_match and attr_match in kwargs:
+            attr_value2 = kwargs[attr_match]
+
+            assert attr_value2 != "preparse", f"{attr_value2}"
+
+            if callable(attr_value2):
+                assert False, "MATCH"
+                attr_value2 = attr_value2.__get__(obj)
+            ret[attr_name] = attr_value2
 
     return ret
 
@@ -134,7 +139,7 @@ def merge_dicts(*dicts):
     return ret
 
 
-def merge_keyed_dicts(dict1, dict2):
+def merge_keyed_dicts(*dicts, skip_invalid=False):
     """Given two keyed dictionaries, merge them into a new dict as a shallow copy.
 
     :Examples:
@@ -174,22 +179,39 @@ def merge_keyed_dicts(dict1, dict2):
     Compatibility for Python 3.5 and above"""
     # Source: https://stackoverflow.com/a/26853961/2352890
 
-    result = dict1.copy()
-    for key, val in dict2.items():
+    assert len(dicts) > 1
 
-        if not key in result:
-            result[key] = {}
+    ret = dicts[0].copy()
 
-        assert isinstance(val, dict)
-        assert isinstance(result[key], dict)
+    if not isinstance(ret, dict):
+        if not skip_invalid:
+            assert isinstance(ret, dict), f"Expected a dict, got {type(ret)}: {ret}"
 
-        result[key].update(val)
-    return result
+    for data in dicts[1:]:
+
+        if not isinstance(data, dict):
+            if not skip_invalid:
+                assert isinstance(
+                    data, dict
+                ), f"Expected a dict, got {type(data)}: {data}"
+            continue
+
+        for key, val in data.items():
+
+            if not key in ret:
+                ret[key] = {}
+
+            assert isinstance(val, dict)
+            assert isinstance(ret[key], dict)
+
+            ret[key].update(val)
+
+    return ret
 
 
 def dict_to_fdict(payload, sep="__"):
     """Transform dict to fdict"""
-    assert False, "Not implemented yet"
+    assert False, f"Not implemented yet: {payload}, {sep}"
 
 
 def fdict_to_dict(payload, sep="__"):
@@ -308,28 +330,28 @@ def to_bool(string):
     return string.lower() in ["true", "1", "t", "y", "yes"]
 
 
-if "ruamel.yaml" in sys.modules:
+# if "ruamel.yaml" in sys.modules:
 
-    # TODO: add tests
-    def from_yaml(string):
-        "Transform YAML string to python dict"
-        return yaml.load(string)
+#     # TODO: add tests
+#     def from_yaml(string):
+#         "Transform YAML string to python dict"
+#         return yaml.load(string)
 
-    # TODO: add tests
-    def to_yaml(obj, headers=False):
-        "Transform obj to YAML"
-        options = {}
-        string_stream = StringIO()
+#     # TODO: add tests
+#     def to_yaml(obj, headers=False):
+#         "Transform obj to YAML"
+#         options = {}
+#         string_stream = StringIO()
 
-        if isinstance(obj, str):
-            obj = json.loads(obj)
+#         if isinstance(obj, str):
+#             obj = json.loads(obj)
 
-        yaml.dump(obj, string_stream, **options)
-        output_str = string_stream.getvalue()
-        string_stream.close()
-        if not headers:
-            output_str = output_str.split("\n", 2)[2]
-        return output_str
+#         yaml.dump(obj, string_stream, **options)
+#         output_str = string_stream.getvalue()
+#         string_stream.close()
+#         if not headers:
+#             output_str = output_str.split("\n", 2)[2]
+#         return output_str
 
 
 if "yaml" in sys.modules:

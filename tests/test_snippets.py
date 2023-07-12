@@ -18,10 +18,10 @@ from cafram.nodes.comp.tree import (
     ConfDictMixin,
     ConfListMixin,
     ConfMixin,
-    NodeConf,
-    NodeConfDict,
-    NodeConfList,
-    NodePayload,
+    # NodeConf,
+    # NodeConfDict,
+    # NodeConfList,
+    # NodePayload,
 )
 from cafram.nodes.ctrl import NodeCtrl
 
@@ -59,6 +59,8 @@ def test_app1_post_init():
             print(f"I'm '{self}' and my attribute 'my_option' is: {self.my_option}")
 
             self.TEST_EXECUTED = True
+
+    pprint(MyApp)
 
     # Test all different accesses
     app1 = MyApp()
@@ -488,9 +490,9 @@ def test_mixin_logger1():
 
 from cafram.nodes.comp.tree import (
     ConfDictMixin,
-    NodeConf,
-    map_node_class,
-    map_node_class_full,
+    # NodeConf,
+    # map_node_class,
+    # map_node_class_full,
 )
 
 app_config = {
@@ -540,6 +542,10 @@ def test_mixin_confdict1_children_true():
 
     # Launch with config in init
     app = MyApp(payload=app_config)
+
+    print("YOOO")
+    pprint(app.__class__.__mro__)
+    pprint(app.__node__.__dict__)
     # Test for aliases
     for attr in ["config", "repos", "value", "conf"]:
         assert hasattr(app, attr)
@@ -634,7 +640,8 @@ def test_mixin_confdict4_children_nodeconf_cls():
 
     # Example Class
     @newNode()
-    @addMixin("cafram.nodes.comp.tree:ConfDictMixin", children=NodeConf)  # "titi",
+    # @addMixin("cafram.nodes.comp.tree:ConfDictMixin", children=NodeConf)  # "titi",
+    @addMixin("cafram.nodes.comp.tree:ConfDictMixin", children=ConfMixin)  # "titi",
     class MyApp:
         "This is my main app"
 
@@ -642,6 +649,7 @@ def test_mixin_confdict4_children_nodeconf_cls():
 
             self.log.warning("WARNING_Messages")
 
+    pprint(MyApp.__dict__)
     # Launch with config in init
     app = MyApp(payload=app_config)
 
@@ -664,7 +672,7 @@ def test_mixin_confdict5_children_nodeconf_str():
     @newNode()
     @addMixin(
         "cafram.nodes.comp.tree:ConfDictMixin",  # "titi",
-        children="cafram.nodes.comp.tree:NodeConf",
+        children="cafram.nodes.comp.tree:ConfMixin",
     )
     class MyApp:
         "This is my main app"

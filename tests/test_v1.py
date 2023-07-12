@@ -19,13 +19,13 @@ from cafram.nodes.comp.tree import (
     ConfDictMixin,
     ConfListMixin,
     ConfMixin,
-    NodeConf,
-    NodeConfDict,
-    NodeConfList,
-    NodePayload,
+    # NodeConf,
+    # NodeConfDict,
+    # NodeConfList,
+    # NodePayload,
 )
 
-#from cafram.tools import NodeConfigLoader, MixinConfigLoader
+# from cafram.tools import NodeConfigLoader, MixinConfigLoader
 from cafram.nodes.ctrl import NodeCtrl
 from cafram.nodes.engine import NodeMetaclass, NodeWrapper, node_class_builder
 
@@ -310,10 +310,6 @@ def test_clsbuilder_decorator_base():
     # print ("TYOOO", DynCls.__qualname__)
     # assert DynCls.__qualname__ == f"{prefix}.Node"
     # assert DynCls.__module__ == __name__
-
-
-
-
 
 
 # # ===================================================

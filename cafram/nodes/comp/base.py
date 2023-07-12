@@ -5,15 +5,14 @@ Base mixins
 import copy
 import logging
 
-# import types
-import sys
+
 import traceback
 from pprint import pprint
 
 from ...common import CaframObj
 
 # from ..nodes import Node
-from ...lib import logger
+# from ...lib import logger
 from ...nodes import Node
 from .. import errors
 from . import BaseMixin, LoadingOrder
@@ -305,7 +304,6 @@ class LoggerMixin(BaseMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
 
         # Init logger if not provided in params
         self.set_logger(logger=self._logger)

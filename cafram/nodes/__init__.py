@@ -78,7 +78,6 @@ Node2 = NodeMetaclass(
 # Node = node_class_builder("__nodev2__", name="Node2", doc="Default Cafram Nodev2", bases=)
 
 
-
 # CaframNode
 # CaframNode
 

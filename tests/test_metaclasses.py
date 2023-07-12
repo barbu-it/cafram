@@ -18,14 +18,100 @@ from cafram.nodes.comp.tree import (
     ConfDictMixin,
     ConfListMixin,
     ConfMixin,
-    NodeConf,
-    NodeConfDict,
-    NodeConfList,
-    NodePayload,
+    # NodeConf,
+    # NodeConfDict,
+    # NodeConfList,
+    # NodePayload,
 )
 
-#from cafram.tools import NodeConfigLoader, MixinConfigLoader
+# from cafram.tools import NodeConfigLoader, MixinConfigLoader
 from cafram.nodes.ctrl import NodeCtrl
+
+
+# ConfigLoader
+# ------------------------
+
+
+def test_node_config_parser():
+    class MyApp(Node):
+
+        # 1. Inheritable attributes
+        # =========================
+
+        # Simple inherited param config
+        __node___param_opt_inherit__ = True
+
+        # Simple inherited mixin OVERRIDE config
+        __node___param_obj_mixins__ = {
+            "log": {
+                "mixin_key": "Blihh",
+                # "mixin": "Blihh",
+                "mixin_many": "YEAH",
+                "override": "ATTR DICT MIXIN",
+            }
+        }
+
+        # Simple inherited mixin config
+        __node___mixin__log__mixin__ = LoggerMixin
+        __node___mixin__log__mixin_key__ = "logger"
+        __node___mixin__log__mixin_one__ = "YEAH"
+        __node___mixin__log__override = "SINGLE ATTR"
+
+        # 2. Decorator attributes
+        # =========================
+        __node___params__ = {
+            "param1": "Yeahhh",
+            "obj_mixins": {
+                "mixin1": {
+                    "mixin": ConfListMixin,
+                    "override": "params",
+                    "params": "params",
+                },
+                # "mixin2": {
+                #     "mixin": ConfDictMixin
+                # },
+            },
+        }
+        __node___mixins__ = {
+            "mixin1": {
+                "mixin": ConfMixin,
+                "override": "deco",
+                "mixins": "mixins",
+            },
+            # "mixin3": {
+            #     "mixin": ConfListMixin
+            # },
+        }
+
+    # TODO: TEst with kwargs !!!
+
+    app = MyApp()
+
+    pprint(app.__node__.__dict__)
+
+    expected_config = {
+        "_obj_mixins": {
+            "log": {
+                "mixin": LoggerMixin,
+                "mixin_key": "Blihh",
+                "mixin_many": "YEAH",
+                "mixin_one": "YEAH",
+                "mixin_order": 30,
+                "override": "ATTR DICT MIXIN",
+            },
+            "mixin1": {
+                "mixin": ConfMixin,
+                "mixin_key": "mixin1",
+                "mixin_order": 50,
+                "mixins": "mixins",
+                "override": "deco",
+                "params": "params",
+            },
+        },
+    }
+
+    assert expected_config.get("_obj_mixins") == app.__node__._obj_mixins
+
 
 # from cafram.decorators import newNode, addMixin
 

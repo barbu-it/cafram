@@ -5,6 +5,7 @@ Tree mixins
 # Imports
 ################################################################
 import copy
+from pprint import pprint
 
 # from ..nodes import Node
 from ...nodes import Node
@@ -30,37 +31,49 @@ class HierParentMixin(HierMixinGroup):
     _parent = None
     mixin_param___parent = "parent"
 
-    def get_parent(self, ctrl=True):
+    def get_parent(self, target=None):
         "Return direct parent"
 
-        if self._parent:
-            if ctrl:
-                return self._parent.node_ctrl
-            return self._parent
-        return None
+        target = target or "node"
+        ret = getattr(self, "_parent", None)
 
-    # def get_parents2(self, select=None, level=-1, value=None):
-    #     "Return first parent that match criteria"
-    #     assert False, "TODO: Make tests"
-    #     value = value or HierParentMixin
-    #     pass
+        if target == "mixin":
+            return ret
 
-    def get_parent_by_cls(self, cls):
+        if target == "ctrl":
+            return ret.get_ctrl()
+
+        if target == "node":
+            return ret.get_obj()
+
+        assert False, f"Unknown target: {target}, please choose one of: node,ctrl,mixin"
+
+    def get_parent_by_cls(self, cls, target=None, first=True):
         "Return the closest parent having a given class"
 
-        for parent in self.get_parents():
-            # if type(parent.get_obj()) == cls:
-            if isinstance(parent.get_obj(), cls):
-                return parent
+        target = target or "node"
 
-        return None
+        ret = []
+        for parent in self.get_parents(target=target):
 
-    def get_parents(self, ctrl=True, level=-1):
+            if isinstance(parent, cls):
+                if first:
+                    return parent
+
+                ret.append(parent)
+
+        if first:
+            return None
+        return ret
+
+    def get_parents(self, target=None, level=-1):
         "Return all parents"
 
+        target = target or "node"
         parents = []
 
-        parent = self.get_parent(ctrl=False)
+        # Find parents
+        parent = self.get_parent(target="mixin")
         while level != 0:
 
             if parent:
@@ -68,29 +81,27 @@ class HierParentMixin(HierMixinGroup):
 
             # Prepare next iteration
             if isinstance(parent, HierParentMixin):
-                parent = parent.get_parent(ctrl=False)
+                parent = parent.get_parent(target="mixin")
             else:
                 break
             level -= 1
 
-        # Return values
-        if ctrl:
-            ret = []
-            for parent in parents:
+        # Process output
+        if target == "mixin":
+            return parents
 
-                ctrl = None
-                if hasattr(parent, "node_ctrl"):
-                    ctrl = parent.node_ctrl
+        if target == "ctrl":
+            return [parent.get_ctrl() for parent in parents]
 
-                ret.append(ctrl)
-            return ret
+        if target == "node":
+            return [parent.get_obj() for parent in parents]
 
-        return parents
+        assert False, f"Unknown target: {target}, please choose one of: node,ctrl,mixin"
 
     def get_child_level(self):
         "Return the node deepness from root node"
         # assert False, "TODO: Make tests"
-        parents = self.get_parents(ctrl=False, level=-1)
+        parents = self.get_parents(target="mixin", level=-1)
         return len(parents)
 
 

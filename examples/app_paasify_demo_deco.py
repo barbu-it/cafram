@@ -1,26 +1,24 @@
 import os
 import traceback
 import logging
+import copy
 from pprint import pprint
 
 
-
-
-
-from cafram.mixins.base import LoggerMixin
-from cafram.mixins.tree import (
+from cafram.nodes.comp.base import LoggerMixin
+from cafram.nodes.comp.tree import (
     ConfDictMixin,
     ConfListMixin,
-    NodeConfDict,
-    NodeConfList,
+    # NodeConfDict,
+    # NodeConfList,
     ConfMixin,
     ConfPathMixin,
     ConfOrderedMixin,
 )
-from cafram.mixins.hier import HierChildrenMixin, HierParentMixin
-from cafram.mixins.path import PathMixin
+from cafram.nodes.comp.hier import HierChildrenMixin, HierParentMixin
+from cafram.nodes.comp.path import PathMixin
 
-from cafram.nodes2 import Node
+from cafram.nodes import Node, newNode, addMixin
 
 from cafram.utils import get_logger
 
@@ -72,12 +70,22 @@ class BaseAppNode(BaseApp):
     "BaseAppNode"
 
 
-class BaseAppNodeDict(BaseAppNode, NodeConfDict):
-    "BaseAppNodeDict"
+# class RandomClass():
+#     "blip"
+
+# pprint (Node.__dict__)
+# pprint (Node.name)
+
+# pprint (RandomClass.__dict__)
+# pprint (RandomClass.name)
+# assert False, "sdfsdhjf"
+
+# class BaseAppNodeDict(BaseAppNode, NodeConfDict):
+#     "BaseAppNodeDict"
 
 
-class BaseAppNodeList(BaseAppNode, NodeConfList):
-    "BaseAppNodeList"
+# class BaseAppNodeList(BaseAppNode, NodeConfList):
+#     "BaseAppNodeList"
 
 
 # App definitions
@@ -93,9 +101,8 @@ class ConfigKV(BaseAppNode):
     # _node__conf__mixin = ConfDictMixin
 
     _node_debug = False
-    
 
-    _node_conf = {
+    __node___mixins__ = {
         # "logger": {
         #     "mixin": LoggerMixin,
         # },
@@ -114,15 +121,12 @@ class ConfigKV(BaseAppNode):
 
 class ConfigVars(BaseAppNode):
 
-    _node_conf = {
+    __node___mixins__ = {
         # "logger": {
         #     "mixin": LoggerMixin,
         #     "log_sformat": "struct",
         # },
-        "_conf": {
-            "mixin": ConfListMixin, 
-            "children": ConfigKV
-        },
+        "_conf": {"mixin": ConfDictMixin, "children": ConfigKV},
     }
 
     def _node___conf__preparse(self, mixin, payload):
@@ -152,7 +156,7 @@ class TagList(BaseAppNode):
     # _node__logger__mixin = LoggerMixin
     # _node__conf__mixin = ConfDictMixin
 
-    _node_conf = {
+    __node___mixins__ = {
         "conf": {
             "mixin": ConfListMixin,
         },
@@ -168,7 +172,7 @@ class TagList(BaseAppNode):
 
 class AppConfig(BaseAppNode):
 
-    _node_conf = {
+    __node___mixins__ = {
         # "logger": {
         #     "mixin": LoggerMixin,
         #     "log_sformat": "struct",
@@ -198,41 +202,81 @@ class AppConfig(BaseAppNode):
 
 
 class AppSource(BaseAppNode):
+    @staticmethod
+    def test_toto(payload):
+        print("SUCCES OVERRIDE", payload)
 
-    _node_conf = {
-        # "logger": {
-        #     "mixin": LoggerMixin,
-        # },
+    # @classmethod
+    #    def __node__conf__preparse(mixin, payload): # MODE=rebind
+    def __node__conf__preparse(self, mixin, payload):  # MODE=wrap
+
+        # print ("YEEEEEHHH", mixin, payload)
+        # assert False,
+        # old_val = copy.copy(payload)
+
+        if isinstance(payload, str):
+            npayload = {
+                "name": payload,
+            }
+            # self.log.debug(f"Tranform source payload: {payload} => {npayload}")
+            payload = npayload
+
+        payload["remote"] = payload.get("remote", f"./{payload['name']}")
+
+        assert "name" in payload, payload
+        assert "remote" in payload, payload
+
+        # if old_val != payload:
+        #     print ("CAHNGE PAYLAOD")
+        #     pprint (old_val)
+        #     pprint (payload)
+        #     # assert False, "IT WORKS"
+
+        return payload
+
+    # def __node__conf__transform(self, mixin, payload):
+
+    #     assert "name" in payload, f"GOT: {payload}"
+
+    #     return payload
+
+    __node___mixins__ = {
+        "logger": {
+            "mixin": LoggerMixin,
+        },
         "conf": {
             "mixin": ConfDictMixin,
-            # "children": ConfigKV,
+            # "mixin": ConfDictMixin,
+            "children": ConfigKV,
+            # "preparse": test_toto,
+            "preparse": __node__conf__preparse,  # TODO: Allow direct inheritance now
+            #   "transform": __node__conf__transform, # TODO: Allow direct inheritance now
         },
     }
 
-    _node__conf__default = {
-        "name": None,
+    __node__conf__default = {
+        "name": "BUG HERE",
         "remote": None,
         "ref": "",
     }
 
-    def _node__conf__preparse(self, mixin, payload):
+    def __post_init__(self, *args, **kwargs):
 
-        if isinstance(payload, str):
-            npayload = {
-                "remote": payload,
-            }
-            self.log.debug(f"Tranform source payload: {payload} => {npayload}")
-            payload = npayload
-        return payload
-
-    def _init(self, *args, **kwargs):
+        print("SELF", self, self.name)
+        pprint(self.__node__.__dict__)
+        pprint(self.__class__.__dict__)
 
         self.log.info(f"New source: {self['name']}->{self['remote']}")
 
 
 class AppSources(BaseAppNode):
 
-    _node_conf = {
+    __node___mixins__ = {
+        "logger": {
+            "mixin_key": "logger",
+            "mixin": LoggerMixin,
+            # "log_sformat": "struct",
+        },
         "conf": {
             "mixin": ConfListMixin,
             "children": AppSource,
@@ -258,8 +302,36 @@ class AppSources(BaseAppNode):
 
     def get_by_name(self, name):
 
+        print("STARTLOOP")
+
         for source in self.conf.get_children():
-            if source["name"] == name:
+
+            # print ("vvvvvvvvvvvvvvv STARTLOOP")
+            # pprint (source)
+            # pprint (source.conf.value)
+            # pprint (source.__node__.__dict__)
+            # pprint (source.name)
+            # pprint (source.__node__._mixin_aliases["name"].value)
+            # pprint (source.remote)
+            # pprint (source.__node__._mixin_aliases["remote"].value)
+            # print ("^^^^^^^^^^^^^^^ STARTLOOP")
+
+            # pprint(dir(source))
+            # pprint (source.name)
+            # pprint (source.__class__.__mro__)
+            # pprint (source.remote)
+
+            # for cls in source.__class__.__mro__:
+            #     if hasattr(cls, "name"):
+            #         print ("MATCH CLS OK", cls, getattr(cls, "name"))
+            #     else:
+            #         print ("MATCH CLS KO", cls)
+
+            # assert source.name.value, "FIX BUG HERE"
+
+            # print ("CHECKK", source.name.value ,"==", name)
+
+            if source.name.value == name:
                 return source
 
         self.log.error(f"No sources matching name: {name}")
@@ -272,7 +344,7 @@ class AppSources(BaseAppNode):
 
 class ConfigPath(BaseAppNode):
 
-    _node_conf = {
+    __node___mixins__ = {
         # "logger": {
         #     "mixin": LoggerMixin,
         # },
@@ -320,9 +392,33 @@ class ConfigPath(BaseAppNode):
 class AppStack(BaseAppNode):
 
     # _node_logger_prefix = False
-    #_node_logger_impersonate = False
+    # _node_logger_impersonate = False
 
-    _node_conf = {
+    # @classmethod
+    def _node__conf__preparse(self, mixin, payload):  # MODE=wrap
+
+        # def __node__conf__preparse(payload):
+
+        # print ("PREPARSE PAYLOAD", payload)
+
+        if isinstance(payload, str):
+            npayload = {
+                "name": payload,
+            }
+            # self.log.debug(f"Tranform app payload: {payload} => {npayload}")
+            payload = npayload
+        return payload
+
+    def _node__conf__transform(self, mixin, payload):
+
+        assert payload["name"], f"Got: {payload}"
+
+        payload["dir"] = payload.get("dir") or payload["name"]
+
+        # pprint (payload)
+        return payload
+
+    __node___mixins__ = {
         # "logger": {
         #     "mixin": LoggerMixin,
         # },
@@ -332,8 +428,8 @@ class AppStack(BaseAppNode):
             "children": {
                 "name": ConfigKV,
                 # "dir": ConfigPath ,
-                # "app": ConfigKV ,
-                # "source": ConfigKV ,
+                "app": ConfigKV,
+                "source": ConfigKV,
                 # "vars": ConfigVars,
                 # "tags": TagList,
                 # "tags_prefix": TagList,
@@ -345,15 +441,17 @@ class AppStack(BaseAppNode):
                 "vars": {},
                 "source": "default",
             },
+            "preparse": _node__conf__preparse,
+            "transform": _node__conf__transform,
         },
     }
 
-    _node__conf__default = {
-        "name": None,
-        "app": None,
-        "vars": {},
-        "source": "default",
-    }
+    # __node__conf__default = {
+    #     "name": None,
+    #     "app": None,
+    #     "vars": {},
+    #     "source": "default",
+    # }
 
     def _init(self, *args, **kwargs):
         self.log.debug(f"Stack initialization complete! {self['name']}")
@@ -372,34 +470,60 @@ class AppStack(BaseAppNode):
 
         # print ("STACK PATH", self.path.get_path())
 
-    def _node__conf__preparse(self, mixin, payload):
-
-        # print ("PREPARSE PAYLOAD", payload)
-
-        if isinstance(payload, str):
-            npayload = {
-                "name": payload,
-            }
-            self.log.debug(f"Tranform app payload: {payload} => {npayload}")
-            payload = npayload
-        return payload
-
-    def _node__conf__transform(self, mixin, payload):
-
-        assert payload["name"]
-
-        payload["dir"] = payload.get("dir") or payload["name"]
-
-        # pprint (payload)
-        return payload
-
     # @property
     def name123(self):
         return self["name"]
 
     def get_source(self):
-        source_name = self.source
-        src = self.app.sources.get_by_name(source_name)
+
+        # print("DEBUG")
+        # pprint (self)
+        # pprint (self.__dict__)
+        # pprint (self.__class__)
+        # pprint (self.__class__.__mro__)
+        # pprint (self.__class__.__dict__)
+        # pprint (self.__node__.__dict__)
+
+        # #source_name = getattr(self, "source", "default")
+
+        # print ("MIXIN STATE")
+        # pprint (self.__node__._mixin_dict["conf"].__dict__)
+        # print ("MIXIN CLASS")
+        # pprint (dir(self.__node__._mixin_dict["conf"].__class__))
+
+        # print ("=== Parents")
+        # pprint (self.conf.get_parent(target="mixin"))
+        # pprint (self.conf.get_parent(target="ctrl"))
+        # pprint (self.conf.get_parent(target="node"))
+
+        # print ("=== Parents")
+        # pprint (self.conf.get_parents(target="mixin"))
+        # pprint (self.conf.get_parents(target="ctrl"))
+        # pprint (self.conf.get_parents(target="node"))
+        # #pprint ([ x.__class__ for x in self.conf.get_parents()])
+
+        source_name = self.source.value
+
+        app = self.conf.get_parent_by_cls(MyApp)
+        # print ("SEARCH SOURCE: ", source_name, source_name.value)
+        # assert False
+        # print( app)
+
+        # print("PARENT SOURCES")
+        # pprint (app.sources.__node__.__dict__)
+        # pprint (app.sources.__node__._mixin_dict["conf"].__dict__)
+        # print("PARENT SOURCES OVER")
+        # assert False, source_name
+
+        src = app.sources.get_by_name(source_name)
+
+        if not src:
+            tutu = app.sources.conf.get_children()
+            valid = [item.name.value for item in tutu]
+            raise Exception(
+                f"No sources matching name: {source_name}, valid sources: {valid}"
+            )
+        assert src, source_name
         return src
 
 
@@ -407,7 +531,7 @@ class AppStacks(BaseAppNode):
 
     # VALID LOGGING TESTSSSSSSSS !!!!
 
-    #_node_logger_impersonate = True
+    # _node_logger_impersonate = True
     # _node_logger_level = logging.DEBUG
 
     # _node_logger_level = logging.INFO
@@ -418,14 +542,13 @@ class AppStacks(BaseAppNode):
     # #_node__conf__mixin_logger_impersonate = False
     # _node__conf__mixin_logger_level = logging.INFO
 
+    # _node_debug = False
+    # _node_logger_level = logging.CRITICAL
 
-    _node_debug = False
-    _node_logger_level = logging.CRITICAL
-
-    _node_conf = {
+    __node___mixins__ = {
         "conf": {
             "mixin": ConfListMixin,
-            "mixin_logger_impersonate": False,   # BROKEN ?
+            "mixin_logger_impersonate": False,  # BROKEN ?
             "mixin_logger_level": logging.INFO,
             "children": AppStack,
         },
@@ -437,7 +560,7 @@ class AppStacks(BaseAppNode):
         _log.info("YOOOOOOOOOOOOO! MODULE")
         self.log.info("YOOOOOOOOOOOOO! INSTANCE")
 
-        #pprint (self._node.conf.__dict__)
+        # pprint (self._node.conf.__dict__)
 
     def list(self):
         return self.conf.value
@@ -457,11 +580,77 @@ class AppStacks(BaseAppNode):
 
 class MyApp(BaseAppNode):
 
-    _node_conf = [
+    # # 0. TLDR syntax
+    # # =========================
+
+    # # Like inherited
+    # __node__ _param_ <KEY> =
+    # __node__ _param_ obj_mixins = {}/[]
+    # __node__ _mixin__ <KEY>__<CONF> =
+
+    # # Like decorator
+    # __node__ _params__ = {}
+    # __node__ _params__ = {
+    #                   obj_mixins = {}/[]
+    #                   }
+    # __node__ _mixins__ = {}/[]
+
+    # # Like kwargs in __init__
+    # (obj_<key> = , obj_mixins = {}/[])
+
+    # # 1. Inheritable attributes
+    # # =========================
+
+    # # Simple inherited param config
+    # __node___param_opt_inherit__ = True
+
+    # # Simple inherited mixin OVERRIDE config
+    # __node___param_obj_mixins__ = {
+    #     "log": {
+    #         "mixin_key": "Blihh",
+    #         #"mixin": "Blihh",
+    #         "mixin_many": "YEAH",
+    #     }
+    # }
+
+    # # Simple inherited mixin config
+    # __node___mixin__log__mixin__ = LoggerMixin
+    # __node___mixin__log__mixin_key__ = "logger"
+    # __node___mixin__log__mixin_one__ = "YEAH"
+
+    # # 2. Decorator attributes
+    # # =========================
+    # __node___params__ = {
+    #     "param1": "Yeahhh",
+
+    #     "obj_mixins": {
+    #         "mixin1": {
+    #             "mixin": "MixinClsOverride"
+    #         },
+    #         "mixin2": {
+    #             "mixin": "MixinCls"
+    #         },
+    #     },
+    # }
+    # __node___mixins__ = {
+    #     "mixin1": {
+    #         "mixin": "MixinCls"
+    #     },
+    #     "mixin3": {
+    #         "mixin": "MixinCls3"
+    #     },
+    # }
+
+    # 3. Via init kwargs
+    # =========================
+    # MyClass(obj_<KEY>=<VALUE>, obj_mixins=dict())
+
+    # __node____obj_mixins__ = [
+    __node___mixins__ = [
         # {
         #     "mixin_key": "logger",
         #     "mixin": LoggerMixin,
-        #     "log_sformat": "struct",
+        #     #"log_sformat": "struct",
         # },
         {
             "mixin_key": "path",
@@ -477,13 +666,13 @@ class MyApp(BaseAppNode):
                     "cls": AppConfig,
                 },
                 {
+                    "key": "sources",
+                    "cls": AppSources,
+                },
+                {
                     "key": "stacks",
                     "cls": AppStacks,
                 },
-                # {
-                #     "key": "sources",
-                #     "cls": AppSources,
-                # },
             ],
         },
     ]
@@ -591,6 +780,8 @@ def test1():
     ret = app.config.namespace.value
     pprint(ret)
 
+    # assert False, "WIPPP OOKKKKK"
+
 
 def test2():
 
@@ -598,15 +789,27 @@ def test2():
 
     for stack in app.stacks.conf.get_children():
 
+        # print (f"\n\nSTACK: {stack}")
+        # pprint (stack.__class__.__mro__)
+        # pprint (stack.__dict__)
+        # pprint ([x for x in dir(stack) if not x.startswith("__")])
+
+        # pprint (stack.__node__.__dict__)
+
+        # src = stack.get_source()
+        # pprint (src)
+
+        # break
+
         src = stack.get_source()
         if src:
             print(f"Get stack source '{stack['name']}': {src['name']} => {src.remote}")
         else:
             print(f"No stack source '{stack['name']}'")
 
-        print("---")
-        print(stack.conf.to_yaml())
-        print("...")
+        # print("---")
+        # print(stack.conf.to_yaml())
+        # print("...")
 
 
 def test3_paths():
@@ -652,6 +855,14 @@ def test5_wrapper(**kwargs):
     app = MyApp(payload=app_config, **kwargs)
 
 
+test1()
+
+test2()
+# test3_paths()
+# test4_infos()
+# test5_wrapper()
+
+
 from cafram.lib.logger import app_logger
 
 
@@ -677,7 +888,7 @@ def call_cli():
     log.warning("This is the internal logger")
     test5_wrapper(**kwargs)
     log.warning("CLI loading OK")
-    pprint (log.__dict__)
+    pprint(log.__dict__)
 
 
 # def call_cli():
@@ -714,7 +925,7 @@ def call_cli():
 #     log.warning("CLI loading OK")
 
 
-call_cli()
+# call_cli()
 
 
 # This is only required on the CLI interface

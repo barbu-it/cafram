@@ -82,9 +82,9 @@ def dict_unflatten(key_values):
                 "FOO__2__BAR": "setting-4",
                 "FIZZ": "setting-5",
             }
-        
+
         to the nested structure that this represents
-        
+
         >>> out = {
                 "FOO": [{
                     "BAR": "setting-1",

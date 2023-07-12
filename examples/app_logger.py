@@ -2,8 +2,8 @@ import logging
 from pprint import pprint
 import traceback
 
-from cafram.mixins.base import LoggerMixin
-from cafram.nodes2 import Node
+from cafram.nodes.comp.base import LoggerMixin
+from cafram.nodes import Node
 
 
 # Only relevant for entrypoints, configure root logger, get log of
@@ -18,13 +18,15 @@ log.setLevel("INFO")
 
 class MyApp(Node):
 
-    _node_conf = [
-        {
-            "mixin": LoggerMixin,
-            # "log_level": "ERROR",
-            # "log_sformat": "struct",
+    __node___params__ = {
+        "obj_mixins": {
+            "logger": {
+                "mixin": LoggerMixin,
+                # "log_level": "ERROR",
+                # "log_sformat": "struct",
+            }
         }
-    ]
+    }
 
     def _init(self):
 
@@ -63,6 +65,9 @@ class MyApp(Node):
 
 # Instanciate app
 app = MyApp()
+
+print("YEAHHH")
+pprint(app.__node__.__dict__)
 app.test_logging()
 
 

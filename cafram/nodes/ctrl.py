@@ -21,13 +21,13 @@ from .comp import BaseMixin
 # import inspect
 
 
-
 # Only relevant for entrypoints
 # logging.basicConfig(level=logging.INFO)
 
 # log = logging.getLogger(__name__)
 # log = logging.getLogger("cafram2")
 
+logger = None
 
 # functions
 ################################################################
@@ -36,51 +36,66 @@ from .comp import BaseMixin
 # Create a parsable mixin configurations
 
 
+def _prepare_mixin_conf(mixin_conf, mixin_name=None, mixin_order=None):
+
+    assert isinstance(mixin_conf, dict), mixin_conf
+
+    # Retrieve mixin class
+    mixin_ref = mixin_conf.get("mixin")
+    if isinstance(mixin_ref, str):
+        try:
+            mixin_cls = import_module(mixin_ref)
+        except ModuleNotFoundError as err:
+            msg = f"Impossible to add mixin: {mixin_ref} from: {mixin_conf} ({err})"
+            raise errors.CaframException(msg) from err
+    else:
+        mixin_cls = mixin_ref
+
+    # Sanity checks
+    if not mixin_cls:
+        # Because as classes may define some default parameters for classes
+        if logger:
+            logger.info(f"Skip unloaded module: {mixin_name}")
+        return None, None
+
+    assert issubclass(
+        mixin_cls, BaseMixin
+    ), f"Mixin class {mixin_cls} is not an instance of 'BaseMixin', got: {mixin_cls}"
+
+    mixin_name = mixin_name or mixin_cls.mixin_key
+    assert isinstance(mixin_name, str)
+    loading_attr = "mixin_order"
+    mixin_order = mixin_order or int(
+        mixin_conf.get(loading_attr, getattr(mixin_cls, loading_attr))
+    )
+
+    final = dict(mixin_conf)
+    final["mixin"] = mixin_cls
+    final["mixin_order"] = mixin_order
+    final["mixin_key"] = mixin_name
+    # final["key"] = mixin_name  # TEMPORARY
+
+    return mixin_name, final
+
+
 def get_mixin_loading_order(payload, logger=None):
     "Instanciate all mixins"
 
-    assert isinstance(payload, dict), f"Got: {payload}"
-
     mixin_classes = {}
 
-    for mixin_name, mixin_conf in payload.items():
+    if isinstance(payload, dict):
+        for mixin_name, mixin_conf in payload.items():
+            name, conf = _prepare_mixin_conf(mixin_conf, mixin_name)
+            mixin_classes[name] = conf
 
-        assert isinstance(mixin_conf, dict), mixin_conf
-
-        # Retrieve mixin class
-        mixin_ref = mixin_conf.get("mixin")
-        if isinstance(mixin_ref, str):
-            try:
-                mixin_cls = import_module(mixin_ref)
-            except ModuleNotFoundError as err:
-                msg = f"Impossible to add mixin: {mixin_ref} from: {mixin_conf} ({err})"
-                raise errors.CaframException(msg) from err
-        else:
-            mixin_cls = mixin_ref
-
-        # Sanity checks
-        if not mixin_cls:
-            # Because as classes may define some default parameters for classes
-            if logger:
-                logger.info(f"Skip unloaded module: {mixin_name}")
-            continue
-            # assert mixin_cls, f"Expected a Mixin class, not: {mixin_cls}"
-
-        assert issubclass(
-            mixin_cls, BaseMixin
-        ), f"Mixin class {mixin_cls} is not an instance of 'BaseMixin', got: {mixin_cls}"
-
-        loading_attr = "mixin_order"
-        loading_order = int(
-            mixin_conf.get(loading_attr, getattr(mixin_cls, loading_attr))
-        )
-
-        final = dict(mixin_conf)
-        final["mixin"] = mixin_cls
-        final["mixin_order"] = loading_order
-        final["mixin_key"] = mixin_name
-        # final["key"] = mixin_name  # TEMPORARY
-        mixin_classes[mixin_name] = final
+    elif isinstance(payload, list):
+        for index, mixin_conf in enumerate(payload):
+            name, conf = _prepare_mixin_conf(mixin_conf, mixin_order=index)
+            mixin_classes[name] = conf
+    elif not payload:
+        mixin_classes = {}
+    else:
+        assert False, "CONFIG BUG"
 
     return mixin_classes
 
@@ -127,10 +142,8 @@ class NodeCtrl(CaframCtrl):
 
         """
 
-
         # Respect OOP
         super().__init__(debug=None, impersonate=None, log_level=None)
-
 
         # Init Node Controller
         self._obj = obj
@@ -150,8 +163,8 @@ class NodeCtrl(CaframCtrl):
 
         # Autoclean config?
         if obj_clean:
-            delattr(self._obj, "__node__mixins__")
-            delattr(self._obj, "__node__params__")
+            delattr(self._obj, f"{self._obj_attr}_mixins__")
+            delattr(self._obj, f"{self._obj_attr}_params__")
 
         # Auto-Attach itself to parent, only works if a derived class of cafram actually :/
         if obj_attr:
@@ -185,7 +198,6 @@ class NodeCtrl(CaframCtrl):
             mixin_inst = mixin_cls(self, mixin_conf=mixin_conf, **mixin_kwargs)
             self.mixin_register(mixin_inst)
 
-
         #####################################################
 
     # Mixins and alias registration
@@ -209,7 +221,16 @@ class NodeCtrl(CaframCtrl):
                 f"Aliase: '{name}' is already defined for: {self._mixin_aliases[name]}"
             )
             print("ERROR: " + msg)
+            print("TOFIX: Currently loaded mixins/aliases:")
+            tmp = {
+                "__node__": {
+                    "_mixin_dict": self._mixin_dict,
+                    "_mixin_aliases": self._mixin_aliases,
+                }
+            }
+            pprint(tmp)
             assert name not in self._mixin_aliases, msg
+
         self._mixin_aliases[name] = value
 
     def mixin_register(self, mixin_inst, override=False):
@@ -263,8 +284,6 @@ class NodeCtrl(CaframCtrl):
 
     def mixin_get(self, name):
         "Get mixin instance"
-
-        # return getattr(self, name)
 
         # Execute hooks
         for hook in self._mixin_hooks.get("__getattr__", []):

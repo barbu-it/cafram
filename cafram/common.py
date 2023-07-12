@@ -13,12 +13,12 @@ class CaframObj:
     "An empty root class to determine a cafram object or not"
 
     # Name part
-    name = None
+    # name = None
+    __cafram_name__ = None
 
     def get_name(self):
         "Retrieve node Name"
-        # TODO: Bug here, something wrong on the name ...
-        return self.name or self.__class__.__name__
+        return self.__cafram_name__ or self.__class__.__name__
 
     def get_prefix(self):
         "Return name prefix"
