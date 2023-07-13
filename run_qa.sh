@@ -1,6 +1,9 @@
 #!/bin/bash
+# Run QA tests
+set -eu
 
-black .
-pytest --cov=cafram  --cov-branch --cov-report term-missing -vv tests
-pylint  -f colorized  cafram
+./fix_qa.sh check
 
+pylint -f colorized cafram
+
+echo "INFO: All QA tests passed (pylint+black)"
