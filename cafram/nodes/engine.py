@@ -7,7 +7,7 @@ from pprint import pprint
 from typing import List, Union
 
 from cafram import errors
-from cafram.lib.utils import import_module, merge_keyed_dicts, merge_dicts
+from cafram.lib.utils import import_module, merge_dicts, merge_keyed_dicts
 from cafram.nodes.ctrl import NodeCtrl, get_mixin_loading_order
 
 NODE_METHODS = [
@@ -50,26 +50,30 @@ def _obj_filter_attrs_by(
         if rtrim:
             name = name.rstrip(rtrim)
 
-        if level_max:
-            parts = name.split(level_split, level_max)
+        if name:
 
-            target = ret
-            for part in parts[:-1]:
-                if not part in target:
-                    target[part] = {}
-                target = target[part]
-            # print ("PROCESS part", prefix, attr, name)
-            target[parts[-1]] = getattr(obj, attr)
+            if level_max:
+                parts = name.split(level_split, level_max)
 
-        else:
+                target = ret
+                for part in parts[:-1]:
+                    if not part in target:
+                        target[part] = {}
+                    target = target[part]
+                # print ("PROCESS part", prefix, attr, name)
+                target[parts[-1]] = getattr(obj, attr)
 
-            # print ("PROCESS flat", prefix, attr, name)
-            # If value is None, then replace
-            if name:
+            else:
+
+                # print ("PROCESS flat", prefix, attr, name)
+                # If value is None, then replace
                 assert (
                     name not in ret
                 ), f"Duplicate key: {attr}/{name} for object: {obj}"
                 ret[name] = getattr(obj, attr)
+
+    if None in ret:
+        assert "BUG", ret
 
     return ret
 
@@ -192,6 +196,7 @@ def node_class_builder(
                     self, prefix=f"{prefix}_mixin__", level_max=1
                 )
                 mixin_cls_prefix = get_mixin_loading_order(mixin_cls_prefix)
+
                 assert isinstance(mixin_cls_prefix, dict)
                 mixin_cls_prefix = merge_keyed_dicts(
                     mixin_cls_prefix, param_cls_prefix.get("obj_mixins", {})
@@ -202,7 +207,7 @@ def node_class_builder(
                 mixin_cls_attrs = getattr(self, f"{prefix}_mixins__", {})
                 mixin_cls_attrs = get_mixin_loading_order(mixin_cls_attrs)
                 assert isinstance(mixin_cls_attrs, dict)
-                # V1: mixin_cls_attrs = merge_keyed_dicts(mixin_cls_attrs, param_cls_attrs.get("obj_mixins", {}))
+                # mixin_cls_attrs = merge_keyed_dicts(mixin_cls_attrs, param_cls_attrs.get("obj_mixins", {}))
                 # V2: Make params obj_conf as default instead of override like in attrs
                 mixin_cls_attrs = merge_keyed_dicts(
                     param_cls_attrs.get("obj_mixins", {}), mixin_cls_attrs
@@ -221,6 +226,8 @@ def node_class_builder(
                     mixin_cls_prefix, mixin_cls_attrs, mixin_kwargs
                 )
                 node_params2["obj_mixins"] = mixin_conf2
+
+                pprint([mixin_cls_prefix, mixin_cls_attrs, mixin_kwargs])
 
                 tmp = NodeCtrl(
                     self,

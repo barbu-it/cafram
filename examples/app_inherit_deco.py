@@ -2,8 +2,6 @@
 import logging
 from pprint import pprint
 
-# from cafram.decorators import newNode, addMixin
-
 # from cafram.nodes.comp.base import LoggerMixin, IdentMixin
 # from cafram.nodes.comp.tree import (
 #     ConfDictMixin,
@@ -12,7 +10,9 @@ from pprint import pprint
 #     NodeConfList,
 #     ConfOrderedMixin,
 # )
-from cafram.nodes import newNode, addMixin
+from cafram.nodes import addMixin, newNode
+
+# from cafram.decorators import newNode, addMixin
 
 
 app_config = {

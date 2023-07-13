@@ -2,13 +2,18 @@
 
 """
 import importlib
+import inspect
 import io
 import json
+import logging
 import os
 import re
 import sys
-import logging
-import inspect
+
+# =====================================================================
+# Class attribute helpers functions
+# =====================================================================
+from pprint import pprint
 
 # Support both pyaml and ruamel. pyaml implementation is better here
 # import ruamel.yaml
@@ -29,12 +34,6 @@ import yaml
 # =====================================================================
 
 # Sort hthings here ...
-
-
-# =====================================================================
-# Class attribute helpers functions
-# =====================================================================
-from pprint import pprint
 
 
 log = logging.getLogger(__name__)

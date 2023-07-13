@@ -1,10 +1,9 @@
 import logging
-from pprint import pprint
 import traceback
+from pprint import pprint
 
-from cafram.nodes.comp.base import LoggerMixin
 from cafram.nodes import Node
-
+from cafram.nodes.comp.base import LoggerMixin
 
 # Only relevant for entrypoints, configure root logger, get log of
 # all sublibraries because it configure root logger

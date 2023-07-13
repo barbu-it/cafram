@@ -14,14 +14,10 @@ from cafram.nodes import Node, NodeWrapper, addMixin, newNode
 from cafram.nodes.comp import BaseMixin
 from cafram.nodes.comp.base import LoggerMixin, MapAttrMixin, PayloadMixin
 from cafram.nodes.comp.hier import HierChildrenMixin, HierMixin, HierParentMixin
-from cafram.nodes.comp.tree import (
+from cafram.nodes.comp.tree import (  # NodeConf,; NodeConfDict,; NodeConfList,; NodePayload,
     ConfDictMixin,
     ConfListMixin,
     ConfMixin,
-    # NodeConf,
-    # NodeConfDict,
-    # NodeConfList,
-    # NodePayload,
 )
 from cafram.nodes.ctrl import NodeCtrl
 
@@ -488,11 +484,8 @@ def test_mixin_logger1():
 # Config
 # ---------------------
 
-from cafram.nodes.comp.tree import (
+from cafram.nodes.comp.tree import (  # NodeConf,; map_node_class,; map_node_class_full,
     ConfDictMixin,
-    # NodeConf,
-    # map_node_class,
-    # map_node_class_full,
 )
 
 app_config = {

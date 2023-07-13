@@ -20,7 +20,7 @@ from ...lib.utils import (
     to_json,
     to_yaml,
 )
-from . import LoadingOrder, BaseMixin
+from . import BaseMixin, LoadingOrder
 from .base import PayloadMixin
 from .hier import HierChildrenMixin, HierParentMixin
 from .path import FilePathMixin, PathFinderMixin, PathMixin

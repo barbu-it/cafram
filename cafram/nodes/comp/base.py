@@ -4,8 +4,6 @@ Base mixins
 
 import copy
 import logging
-
-
 import traceback
 from pprint import pprint
 

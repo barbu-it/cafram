@@ -14,19 +14,14 @@ from cafram.nodes import Node
 from cafram.nodes.comp import BaseMixin
 from cafram.nodes.comp.base import LoggerMixin, MapAttrMixin, PayloadMixin
 from cafram.nodes.comp.hier import HierChildrenMixin, HierMixin, HierParentMixin
-from cafram.nodes.comp.tree import (
+from cafram.nodes.comp.tree import (  # NodeConf,; NodeConfDict,; NodeConfList,; NodePayload,
     ConfDictMixin,
     ConfListMixin,
     ConfMixin,
-    # NodeConf,
-    # NodeConfDict,
-    # NodeConfList,
-    # NodePayload,
 )
 
 # from cafram.tools import NodeConfigLoader, MixinConfigLoader
 from cafram.nodes.ctrl import NodeCtrl
-
 
 # ConfigLoader
 # ------------------------
@@ -109,8 +104,9 @@ def test_node_config_parser():
             },
         },
     }
+    pprint(app.__node__._obj_mixins)
 
-    assert expected_config.get("_obj_mixins") == app.__node__._obj_mixins
+    assert expected_config["_obj_mixins"] == app.__node__._obj_mixins
 
 
 # from cafram.decorators import newNode, addMixin

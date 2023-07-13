@@ -1,27 +1,21 @@
+import copy
+import logging
 import os
 import traceback
-import logging
-import copy
 from pprint import pprint
 
-
+from cafram.nodes import Node, addMixin, newNode
 from cafram.nodes.comp.base import LoggerMixin
-from cafram.nodes.comp.tree import (
-    ConfDictMixin,
-    ConfListMixin,
-    # NodeConfDict,
-    # NodeConfList,
-    ConfMixin,
-    ConfPathMixin,
-    ConfOrderedMixin,
-)
 from cafram.nodes.comp.hier import HierChildrenMixin, HierParentMixin
 from cafram.nodes.comp.path import PathMixin
-
-from cafram.nodes import Node, newNode, addMixin
-
+from cafram.nodes.comp.tree import (  # NodeConfDict,; NodeConfList,
+    ConfDictMixin,
+    ConfListMixin,
+    ConfMixin,
+    ConfOrderedMixin,
+    ConfPathMixin,
+)
 from cafram.utils import get_logger
-
 
 __name__ = "mySuperApp"
 
@@ -30,8 +24,9 @@ _log = logging.getLogger(__name__)
 # _log.setLevel(logging.DEBUG)
 
 
-# Nodes helpers
-################################################################
+# ====================================
+# App Base Classes
+# ====================================
 
 # class FakeLogger():
 
@@ -52,11 +47,12 @@ _log = logging.getLogger(__name__)
 class BaseApp(Node):
     "BaseApp"
 
-    # _node__conf__
     _node_debug = False
 
-    _node__logger__mixin = LoggerMixin
-    _node__logger__mixin_key = "log"
+    # __getattr__ = Node.__getattr__
+
+    # _node__logger__mixin = LoggerMixin
+    # _node__logger__mixin_key = "log"
     # _node__logger__log_level = "DEBUG"
     # _node__logger__log_colors = False
     # _node__logger__log_sformat = "time"
@@ -64,6 +60,9 @@ class BaseApp(Node):
 
     # log = FakeLogger()
     # log = _log
+
+    __node___mixin__logger__mixin__ = LoggerMixin
+    # __node___mixin__logger__mixin_key__ = "logger"
 
 
 class BaseAppNode(BaseApp):
@@ -88,12 +87,9 @@ class BaseAppNode(BaseApp):
 #     "BaseAppNodeList"
 
 
-# App definitions
-################################################################
-
-
-# Config Elements
-# ----------------------------------
+# ====================================
+# App Generic Configs Components
+# ====================================
 
 
 class ConfigKV(BaseAppNode):
@@ -111,10 +107,10 @@ class ConfigKV(BaseAppNode):
         },
     }
 
-    def _init(self, *args, **kwargs):
+    def __post_init__(self, *args, **kwargs):
 
-        # pprint (self)
-        # pprint (self.__dict__)
+        pprint(self)
+        pprint(self.__node__.__dict__)
 
         self.log.info(f"KV config: {self.conf.index}={self.conf.value}")
 
@@ -148,8 +144,58 @@ class ConfigVars(BaseAppNode):
         return payload
 
 
-# Tag Management
-# ----------------------------------
+class ConfigPath(BaseAppNode):
+
+    __node___mixins__ = {
+        # "logger": {
+        #     "mixin": LoggerMixin,
+        # },
+        "hier": {
+            "mixin": HierParentMixin,
+            # "_param_raw": "payload"
+            # "root": "CWD",
+            # "path": "self.name"
+        },
+        "path": {
+            "mixin": ConfPathMixin,
+            "_param_raw": "payload",
+            # "root": "CWD",
+            # "path": "self.name"
+            "parent_path": "project_path",
+        },
+    }
+
+    def __post_init__(self, *args, **kwargs):
+
+        self.app = self.hier.get_parent_by_cls(MyApp)
+
+        # Set Path from project path
+        root_path = self.app.path.get_path()
+        self.path.set_root_path(root_path)
+
+        self.log.info(f"Config PATH: {self.path.raw}={self.path.get_path()}")
+        print("RAW Path:", self.path.raw)
+        print("Path Auto:", self.path.get_path())
+        print("Abs Path:", self.path.get_abs())
+        print("Rel Path:", self.path.get_rel())
+        print("")
+
+    def _node__path__preparse(self, mixin, payload):
+
+        if not isinstance(payload, str):
+            payload = "UNSET"
+
+        return payload
+
+    # Node Configuration
+    # -------------------------
+    # Class Configuration
+    # -------------------------
+
+
+# ====================================
+# App Specific Configs Elements
+# ====================================
 
 
 class TagList(BaseAppNode):
@@ -162,12 +208,8 @@ class TagList(BaseAppNode):
         },
     }
 
-    def _init(self, *args, **kwargs):
+    def __post_init__(self, *args, **kwargs):
         self.log.debug(f"Tag config: {self.conf.index}={self.conf.value}")
-
-
-# Config
-# ----------------------------------
 
 
 class AppConfig(BaseAppNode):
@@ -197,21 +239,39 @@ class AppConfig(BaseAppNode):
     # }
 
 
-# Sources
-# ----------------------------------
+# ====================================
+# App Sources
+# ====================================
 
 
 class AppSource(BaseAppNode):
-    @staticmethod
-    def test_toto(payload):
-        print("SUCCES OVERRIDE", payload)
 
-    # @classmethod
-    #    def __node__conf__preparse(mixin, payload): # MODE=rebind
-    def __node__conf__preparse(self, mixin, payload):  # MODE=wrap
+    # Node Configuration
+    # -------------------------
 
-        # print ("YEEEEEHHH", mixin, payload)
-        # assert False,
+    __node___mixins__ = {
+        "logger": {
+            "mixin": LoggerMixin,
+        },
+        "conf": {
+            "mixin": ConfDictMixin,
+            # "mixin": ConfDictMixin,
+            "children": ConfigKV,
+            # "preparse": test_toto,
+            # "preparse": __node__conf__preparse,  # TODO: Allow direct inheritance now
+            #   "transform": __node__conf__transform, # TODO: Allow direct inheritance now
+        },
+    }
+
+    __node__conf__default = {
+        "name": "BUG HERE",
+        "remote": None,
+        "ref": "",
+    }
+
+    def __node___mixin__conf__preparse__(self, mixin, payload):  # MODE=wrap
+        # print ("YEEEEEHHH", self, mixin, payload)
+        # assert False, "OKKK VALIDATED"
         # old_val = copy.copy(payload)
 
         if isinstance(payload, str):
@@ -234,31 +294,8 @@ class AppSource(BaseAppNode):
 
         return payload
 
-    # def __node__conf__transform(self, mixin, payload):
-
-    #     assert "name" in payload, f"GOT: {payload}"
-
-    #     return payload
-
-    __node___mixins__ = {
-        "logger": {
-            "mixin": LoggerMixin,
-        },
-        "conf": {
-            "mixin": ConfDictMixin,
-            # "mixin": ConfDictMixin,
-            "children": ConfigKV,
-            # "preparse": test_toto,
-            "preparse": __node__conf__preparse,  # TODO: Allow direct inheritance now
-            #   "transform": __node__conf__transform, # TODO: Allow direct inheritance now
-        },
-    }
-
-    __node__conf__default = {
-        "name": "BUG HERE",
-        "remote": None,
-        "ref": "",
-    }
+    # Class Configuration
+    # -------------------------
 
     def __post_init__(self, *args, **kwargs):
 
@@ -267,6 +304,10 @@ class AppSource(BaseAppNode):
         pprint(self.__class__.__dict__)
 
         self.log.info(f"New source: {self['name']}->{self['remote']}")
+
+    @staticmethod
+    def test_toto(payload):
+        print("SUCCES OVERRIDE", payload)
 
 
 class AppSources(BaseAppNode):
@@ -283,8 +324,8 @@ class AppSources(BaseAppNode):
         },
     }
 
-    def list(self):
-        return self.conf.value
+    # def list(self):
+    #     return self.conf.value
 
     def names(self):
 
@@ -338,85 +379,26 @@ class AppSources(BaseAppNode):
         return None
 
 
-# Stack management
-# ----------------------------------
+# ====================================
+# App Stacks
+# ====================================
 
 
-class ConfigPath(BaseAppNode):
+def _test_preparse(mixin, payload):  # MODE=wrap
 
-    __node___mixins__ = {
-        # "logger": {
-        #     "mixin": LoggerMixin,
-        # },
-        "hier": {
-            "mixin": HierParentMixin,
-            # "_param_raw": "payload"
-            # "root": "CWD",
-            # "path": "self.name"
-        },
-        "path": {
-            "mixin": ConfPathMixin,
-            "_param_raw": "payload",
-            # "root": "CWD",
-            # "path": "self.name"
-            "parent_path": "project_path",
-        },
-    }
-
-    def _init(self, *args, **kwargs):
-
-        self.app = self.hier.get_parent_by_cls(MyApp)
-
-        # Set Path from project path
-        root_path = self.app.path.get_path()
-        self.path.set_root_path(root_path)
-
-        self.log.info(f"Config PATH: {self.path.raw}={self.path.get_path()}")
-        print("RAW Path:", self.path.raw)
-        print("Path Auto:", self.path.get_path())
-        print("Abs Path:", self.path.get_abs())
-        print("Rel Path:", self.path.get_rel())
-        print("")
-
-    def _node__path__preparse(self, mixin, payload):
-
-        if not isinstance(payload, str):
-            payload = "UNSET"
-
-        return payload
-
-
-#######$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+    if isinstance(payload, str):
+        npayload = {
+            "name": payload,
+        }
+        # self.log.debug(f"Tranform app payload: {payload} => {npayload}")
+        payload = npayload
+    return payload
 
 
 class AppStack(BaseAppNode):
 
-    # _node_logger_prefix = False
-    # _node_logger_impersonate = False
-
-    # @classmethod
-    def _node__conf__preparse(self, mixin, payload):  # MODE=wrap
-
-        # def __node__conf__preparse(payload):
-
-        # print ("PREPARSE PAYLOAD", payload)
-
-        if isinstance(payload, str):
-            npayload = {
-                "name": payload,
-            }
-            # self.log.debug(f"Tranform app payload: {payload} => {npayload}")
-            payload = npayload
-        return payload
-
-    def _node__conf__transform(self, mixin, payload):
-
-        assert payload["name"], f"Got: {payload}"
-
-        payload["dir"] = payload.get("dir") or payload["name"]
-
-        # pprint (payload)
-        return payload
+    # Node Configuration
+    # -------------------------
 
     __node___mixins__ = {
         # "logger": {
@@ -441,8 +423,8 @@ class AppStack(BaseAppNode):
                 "vars": {},
                 "source": "default",
             },
-            "preparse": _node__conf__preparse,
-            "transform": _node__conf__transform,
+            "preparse": _test_preparse,
+            # "transform" overrided by: __node___mixin__conf__transform__
         },
     }
 
@@ -453,7 +435,26 @@ class AppStack(BaseAppNode):
     #     "source": "default",
     # }
 
-    def _init(self, *args, **kwargs):
+    # def __node___mixin__conf__preparse__(self, mixin, payload):  # MODE=wrap
+    #     if isinstance(payload, str):
+    #         npayload = {
+    #             "name": payload,
+    #         }
+    #         # self.log.debug(f"Tranform app payload: {payload} => {npayload}")
+    #         payload = npayload
+    #     return payload
+
+    def __node___mixin__conf__transform__(self, mixin, payload):  # MODE=wrap
+        assert payload["name"], f"Got: {payload}"
+
+        payload["dir"] = payload.get("dir") or payload["name"]
+
+        return payload
+
+    # Class Configuration
+    # -------------------------
+
+    def __post_init__(self, *args, **kwargs):
         self.log.debug(f"Stack initialization complete! {self['name']}")
 
         self.app = self.conf.get_parent_by_cls(MyApp)
@@ -529,21 +530,8 @@ class AppStack(BaseAppNode):
 
 class AppStacks(BaseAppNode):
 
-    # VALID LOGGING TESTSSSSSSSS !!!!
-
-    # _node_logger_impersonate = True
-    # _node_logger_level = logging.DEBUG
-
-    # _node_logger_level = logging.INFO
-
-    # AKA IMPERSONATE
-    # _node__conf__mixin_logger_impersonate = "custom_logger"
-    # _node__conf__mixin_logger_impersonate = True
-    # #_node__conf__mixin_logger_impersonate = False
-    # _node__conf__mixin_logger_level = logging.INFO
-
-    # _node_debug = False
-    # _node_logger_level = logging.CRITICAL
+    # Node Configuration
+    # -------------------------
 
     __node___mixins__ = {
         "conf": {
@@ -554,7 +542,10 @@ class AppStacks(BaseAppNode):
         },
     }
 
-    def _init(self, *args, **kwargs):
+    # Class Configuration
+    # -------------------------
+
+    def __post_init__(self, *args, **kwargs):
         # print("App initialization complete!", self.log.name, self.log.level)
 
         _log.info("YOOOOOOOOOOOOO! MODULE")
@@ -574,8 +565,9 @@ class AppStacks(BaseAppNode):
         return [repo["name"] for repo in self.conf.value]
 
 
+# ====================================
 # Main App
-# ----------------------------------
+# ====================================
 
 
 class MyApp(BaseAppNode):
@@ -645,7 +637,9 @@ class MyApp(BaseAppNode):
     # =========================
     # MyClass(obj_<KEY>=<VALUE>, obj_mixins=dict())
 
-    # __node____obj_mixins__ = [
+    # Node Configuration
+    # -------------------------
+
     __node___mixins__ = [
         # {
         #     "mixin_key": "logger",
@@ -677,7 +671,10 @@ class MyApp(BaseAppNode):
         },
     ]
 
-    def _init(self, *args, **kwargs):
+    # Class Configuration
+    # -------------------------
+
+    def __post_init__(self, *args, **kwargs):
         # print("App initialization complete!", self.log.name, self.log.level)
 
         _log.error("App initialization complete! MODULE")
@@ -814,7 +811,7 @@ def test2():
 
 def test3_paths():
 
-    log.setLevel("WARNING")
+    # log.setLevel("WARNING")
 
     for path in [".", os.getcwd()]:
         path += "/TOTOTOTO/"
@@ -825,7 +822,9 @@ def test3_paths():
         # pprint (app._node.__dict__)
 
         for stack in app.stacks.conf.get_children():
+
             print(f"Stack: {stack['name'].value}")
+            pprint(stack.__node__.__dict__)
             path_node = stack["dir"]
             path = path_node.path.get_path()
             print(f"  => Path: {path}")

@@ -36,66 +36,82 @@ logger = None
 # Create a parsable mixin configurations
 
 
-def _prepare_mixin_conf(mixin_conf, mixin_name=None, mixin_order=None):
+def _prepare_mixin_conf(mixin_conf, mixin_name=None, mixin_order=None, strict=False):
 
     assert isinstance(mixin_conf, dict), mixin_conf
 
     # Retrieve mixin class
     mixin_ref = mixin_conf.get("mixin")
+    # print ("MIXIN_CLS", mixin_name, mixin_ref)
+    mixin_cls = None
     if isinstance(mixin_ref, str):
         try:
             mixin_cls = import_module(mixin_ref)
         except ModuleNotFoundError as err:
             msg = f"Impossible to add mixin: {mixin_ref} from: {mixin_conf} ({err})"
             raise errors.CaframException(msg) from err
-    else:
+    elif mixin_ref:
         mixin_cls = mixin_ref
 
-    # Sanity checks
-    if not mixin_cls:
-        # Because as classes may define some default parameters for classes
-        if logger:
-            logger.info(f"Skip unloaded module: {mixin_name}")
-        return None, None
+    # Class data extraction
+    mixin_key_ = None
+    mixin_order_ = None
 
-    assert issubclass(
-        mixin_cls, BaseMixin
-    ), f"Mixin class {mixin_cls} is not an instance of 'BaseMixin', got: {mixin_cls}"
+    if mixin_cls:
+        assert issubclass(
+            mixin_cls, BaseMixin
+        ), f"Mixin class {mixin_cls} is not an instance of 'BaseMixin', got: {mixin_cls}"
 
-    mixin_name = mixin_name or mixin_cls.mixin_key
-    assert isinstance(mixin_name, str)
-    loading_attr = "mixin_order"
-    mixin_order = mixin_order or int(
-        mixin_conf.get(loading_attr, getattr(mixin_cls, loading_attr))
-    )
+        mixin_key_ = mixin_cls.mixin_key
+        mixin_order_ = mixin_cls.mixin_order
+    else:
+        if strict:
+            # Because as classes may define some default parameters for classes
+            if logger:
+                logger.info(f"Skip unloaded module: {mixin_name}")
+            return None, None
 
+    # Checks
+    mixin_name = mixin_name or mixin_conf.get("mixin_key", mixin_key_)
+    assert isinstance(mixin_name, str), f"Got: {mixin_name}"
+    mixin_order = mixin_order or mixin_conf.get("mixin_order", mixin_order_)
+
+    # Final configuration
     final = dict(mixin_conf)
-    final["mixin"] = mixin_cls
-    final["mixin_order"] = mixin_order
+    if mixin_cls:
+        final["mixin"] = mixin_cls
+    if mixin_order is not None:
+        final["mixin_order"] = int(mixin_order)
     final["mixin_key"] = mixin_name
-    # final["key"] = mixin_name  # TEMPORARY
 
     return mixin_name, final
 
 
-def get_mixin_loading_order(payload, logger=None):
+def get_mixin_loading_order(payload, logger=None, strict=False):
     "Instanciate all mixins"
 
     mixin_classes = {}
 
     if isinstance(payload, dict):
         for mixin_name, mixin_conf in payload.items():
-            name, conf = _prepare_mixin_conf(mixin_conf, mixin_name)
+            name, conf = _prepare_mixin_conf(mixin_conf, mixin_name, strict=strict)
             mixin_classes[name] = conf
 
     elif isinstance(payload, list):
         for index, mixin_conf in enumerate(payload):
-            name, conf = _prepare_mixin_conf(mixin_conf, mixin_order=index)
+            name, conf = _prepare_mixin_conf(
+                mixin_conf, mixin_order=index, strict=strict
+            )
             mixin_classes[name] = conf
     elif not payload:
         mixin_classes = {}
     else:
         assert False, "CONFIG BUG"
+
+    # Sanity Checks
+    if None in mixin_classes:
+        pprint(mixin_classes)
+        assert False, f"BUG, found None Key: {payload}"
 
     return mixin_classes
 
@@ -173,7 +189,8 @@ class NodeCtrl(CaframCtrl):
 
         # Init Ctrl
         # ---------------------
-        # print ("MIXIN", self._obj_mixins, mixin_kwargs)
+        # print ("MIXIN CONF", self._obj, mixin_kwargs)
+        # pprint(self._obj_mixins)
         self._load_mixins(self._obj_mixins, mixin_kwargs)
         self._log.debug(f"NodeCtrl {self} initialization is over: {self._obj_mixins}")
         # print(f"NodeCtrl {self} initialization is over: {self._obj_mixins}")
@@ -181,7 +198,9 @@ class NodeCtrl(CaframCtrl):
     def _load_mixins(self, mixin_confs, mixin_kwargs):
         "Load mixins from requested configuration"
 
-        mixin_classes = get_mixin_loading_order(mixin_confs, logger=self._log)
+        mixin_classes = get_mixin_loading_order(
+            mixin_confs, logger=self._log, strict=True
+        )
         load_order = sorted(
             mixin_classes, key=lambda key: mixin_classes[key]["mixin_order"]
         )

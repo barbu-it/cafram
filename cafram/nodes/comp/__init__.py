@@ -8,11 +8,10 @@ import textwrap
 from enum import IntEnum
 from pprint import pformat, pprint
 
+from ... import errors
 from ...common import CaframCtrl, CaframMixin, CaframObj
 from ...lib.sprint import SPrint
 from ...lib.utils import truncate, update_classattr_from_dict
-from ... import errors
-
 
 # Helpers
 ################################################################
@@ -163,8 +162,14 @@ class BaseMixin(CaframMixin):
         # if callable(value) and hasattr(value, "__self__"):
         # if callable(value):
 
+        # print ("PREPARSE VALUE", value, inspect.isfunction(value), hasattr(value, "__self__"))
+
         # Rewrap/rewrite callables !
-        if inspect.isfunction(value):
+        # Look for functions or bound methods
+        if inspect.isfunction(value) or (
+            callable(value) and hasattr(value, "__self__")
+        ):
+            # print ("PREPARSE FUNC ", value)
 
             MODE = "rebind"
             MODE = "wrap"
@@ -181,13 +186,12 @@ class BaseMixin(CaframMixin):
                 # Wrap method for NodeCtrl view
                 if hasattr(value, "__get__"):
                     _func = value
-                    # print ("Rewrap function to mixin", value)
+                    print("Rewrap function to mixin", value)
 
                     def _wrapper(*args, **kwargs):
-                        # return _func(self._obj, self, *args, **kwargs)
 
                         try:
-                            return _func(self._obj, self, *args, **kwargs)
+                            return _func(self, *args, **kwargs)
                         except TypeError as err:
                             # print (err)
                             msg = f"{err}, Please ensure {_func} have the folowing signature: def {_func.__name__}(self, mixin, *args, **kwargs)"
@@ -195,18 +199,12 @@ class BaseMixin(CaframMixin):
                             raise errors.BadArguments(msg) from err
                             assert False
 
-                    # try:
-
-                    #     def _wrapper(*args, **kwargs):
-                    #         return _func(self._obj, self, *args, **kwargs)
-
-                    # except TypeError as err:
-                    #     print (err)
-                    #     print (f"Please ensure {_func} have the folowing signature: def {_func.__name__}(self, mixin, *args, *kwargs)")
-                    #     assert False
-
-                    # DEPRECATED: self._log.debug(f"Overriden method is now available '{key}': {value}")
                     value = _wrapper
+
+                # else:
+                #     print ("DO NOT CHANGE FUNCTION", value)
+                #     # DEPRECATED: self._log.debug(f"Overriden method is now available '{key}': {value}")
+                #     # value = _wrapper
 
                 # # If not a CaframMixin class, add mixin as second param
                 # # pylint: disable=cell-var-from-loop
@@ -220,6 +218,8 @@ class BaseMixin(CaframMixin):
                 #     value = wrapper
 
             # assert False, "WIP"
+        # elif inspect.isfunction(value):
+        #     assert False, value
 
         return value
 
