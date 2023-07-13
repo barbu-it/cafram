@@ -5,6 +5,7 @@ Cafram Root Classes
 import inspect
 import logging
 from pprint import pprint
+from typing import Optional, Union
 
 from python_log_indenter import IndentedLoggerAdapter
 
@@ -56,7 +57,7 @@ class CaframInternalsGroup(CaframObj):
     # _obj_logger_impersonate = False
 
     # Prefix of the impersonated object, string or None to be ignored
-    _obj_logger_impersonate_prefix = None
+    _obj_logger_impersonate_prefix: Optional[str] = None
 
     # Class attr
     _obj = None

@@ -4,7 +4,7 @@ Provide Node Engine
 
 import inspect
 from pprint import pprint
-from typing import List, Union
+from typing import List, Optional, Union
 
 from cafram import errors
 from cafram.lib.utils import import_module, merge_dicts, merge_keyed_dicts
@@ -84,7 +84,7 @@ def node_class_builder(
     prefix,
     name=None,
     bases=None,
-    clsmethods: Union[List[str], None] = None,
+    clsmethods=None,
     module=None,
     doc=None,
     attrs=None,
@@ -173,7 +173,7 @@ def node_class_builder(
     # Test arguments
     attrs = attrs or {}
     clsmethods = list(clsmethods or NODE_METHODS)
-    bases = bases or tuple([])  # Example: (CaframNode, Fake)
+    bases = bases or []  # Example: (CaframNode, Fake)
     if not isinstance(bases, tuple):
         bases = tuple(bases)
 

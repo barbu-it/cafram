@@ -5,6 +5,9 @@ Written by david.ohana@ibm.com
 License: Apache-2.0
 """
 
+# TODO: Fix Mypy
+# mypy: ignore-errors
+
 import logging
 import logging.handlers
 import re

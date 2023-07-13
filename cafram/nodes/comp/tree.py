@@ -365,7 +365,7 @@ class ConfDictMixin(_ConfContainerMixin):
     """
 
     default = {}
-    _children = {}
+    _children: dict = {}
 
     def set_default(self, payload):
         "Update defaults"

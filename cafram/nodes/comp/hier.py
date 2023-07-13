@@ -6,6 +6,7 @@ Tree mixins
 ################################################################
 import copy
 from pprint import pprint
+from typing import Any, Dict, List, Optional, Union
 
 # from ..nodes import Node
 from ...nodes import Node
@@ -112,13 +113,13 @@ class HierChildrenMixin(HierMixinGroup):
     # -----------------
 
     # This hold the children configuration
-    children = {}
+    # children = {}
 
     # In which param to look the children conf
     mixin_param___children = "children"
 
     # This hold the internal children state
-    _children = []
+    _children: Any = []
 
     def __init__(self, *args, **kwargs):
 

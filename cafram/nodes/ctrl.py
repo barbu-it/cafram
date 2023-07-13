@@ -11,6 +11,7 @@ import textwrap
 
 # pylint: disable=W0611
 from pprint import pformat, pprint
+from typing import Any, Dict, List, Optional, Union
 
 from .. import errors
 from ..common import CaframCtrl
@@ -133,7 +134,7 @@ class NodeCtrl(CaframCtrl):
     _obj_attr = "__node__"
 
     # Configuration of object
-    _obj_conf = {}
+    _obj_conf: Dict = {}
 
     def __init__(
         self,

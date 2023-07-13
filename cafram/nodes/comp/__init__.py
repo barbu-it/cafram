@@ -7,6 +7,7 @@ import json
 import textwrap
 from enum import IntEnum
 from pprint import pformat, pprint
+from typing import List, Optional, Union
 
 from ... import errors
 from ...common import CaframCtrl, CaframMixin, CaframObj
@@ -72,7 +73,7 @@ class BaseMixin(CaframMixin):
     mixin = None
     # key = None
     mixin_order = LoadingOrder.NORMAL
-    mixin_key = None
+    mixin_key: Optional[str] = None
     mixin_aliases = True
     _mixin_alias_map = None
 

@@ -26,9 +26,9 @@ class MissingMixin(CaframException):
     """Raised a mixin does not exists"""
 
 
-# pylint: disable=W0622
-class AttributeError(CaframException, AttributeError):
-    """Raised as AttributeError"""
+# # pylint: disable=W0622
+# class AttributeError(CaframException, AttributeError):
+#     """Raised as AttributeError"""
 
 
 class DictExpected(CaframException):

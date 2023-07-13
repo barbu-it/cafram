@@ -6,6 +6,7 @@ import copy
 import logging
 import traceback
 from pprint import pprint
+from typing import Any, Dict, List, Optional, Union
 
 from ...common import CaframObj
 
@@ -114,12 +115,12 @@ class PayloadMixin(BaseMixin):
 
     mixin_key = "payload"
 
-    _payload = None
+    _payload: Any = None
     mixin_param___payload = "payload"
 
     mixin_alias__value = "value"
 
-    default = None
+    default: Any = None
     payload_schema = False
 
     # pylint: disable=line-too-long
