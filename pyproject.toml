@@ -15,16 +15,23 @@ sh = "^1.14.3"
 python-log-indenter = "^0.9"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.0.0"
-pytest-clarity = "^1.0.1"
 black = "^22.8.0"
 behave = "^1.2.6"
 pylint = "^2.15.3"
+isort = "^5.12.0"
+
+# Pytest
+pytest = "^7.0.0"
+pytest-clarity = "^1.0.1"
+pytest-notification = "^0.2.0"
 pytest-regressions = "^2.4.1"
 pytest-watcher = "^0.2.6"
 pytest-cov = "^3.0.0"
-isort = "^5.12.0"
-pytest-notification = "^0.2.0"
+
+# MyPy
+mypy = "^1.4.1"
+types-pyyaml = "^6.0.12.10"
+types-jsonschema = "^4.17.0.9"
 
 
 [tool.poetry.group.doc.dependencies]
