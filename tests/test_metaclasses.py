@@ -41,15 +41,15 @@ def test_node_config_parser():
             "log": {
                 "mixin_key": "Blihh",
                 # "mixin": "Blihh",
-                "mixin_many": "YEAH",
-                "override": "ATTR DICT MIXIN",
+                # "mixin_many": "YEAH",
+                # "override": "ATTR DICT MIXIN",
             }
         }
 
         # Simple inherited mixin config
         __node___mixin__log__mixin__ = LoggerMixin
         __node___mixin__log__mixin_key__ = "logger"
-        __node___mixin__log__mixin_one__ = "YEAH"
+        # __node___mixin__log__mixin_one__ = "YEAH"
         __node___mixin__log__override = "SINGLE ATTR"
 
         # 2. Decorator attributes
@@ -59,8 +59,8 @@ def test_node_config_parser():
             "obj_mixins": {
                 "mixin1": {
                     "mixin": ConfListMixin,
-                    "override": "params",
-                    "params": "params",
+                    # "override": "params",
+                    # "params": "params",
                 },
                 # "mixin2": {
                 #     "mixin": ConfDictMixin
@@ -70,8 +70,8 @@ def test_node_config_parser():
         __node___mixins__ = {
             "mixin1": {
                 "mixin": ConfMixin,
-                "override": "deco",
-                "mixins": "mixins",
+                # "override": "deco",
+                # "mixins": "mixins",
             },
             # "mixin3": {
             #     "mixin": ConfListMixin
@@ -84,26 +84,40 @@ def test_node_config_parser():
 
     pprint(app.__node__.__dict__)
 
-    expected_config = {
+    expected_config_V1 = {
         "_obj_mixins": {
             "log": {
                 "mixin": LoggerMixin,
                 "mixin_key": "Blihh",
-                "mixin_many": "YEAH",
-                "mixin_one": "YEAH",
+                # "mixin_many": "YEAH",
+                # "mixin_one": "YEAH",
                 "mixin_order": 30,
-                "override": "ATTR DICT MIXIN",
+                # "override": "ATTR DICT MIXIN",
             },
             "mixin1": {
                 "mixin": ConfMixin,
                 "mixin_key": "mixin1",
                 "mixin_order": 50,
                 "mixins": "mixins",
-                "override": "deco",
-                "params": "params",
+                # "override": "deco",
+                # "params": "params",
             },
         },
     }
+
+    expected_config = {
+        "_obj_mixins": 
+            {
+                'log': {'mixin': LoggerMixin,
+                    'mixin_key': 'Blihh',
+                    'mixin_order': 30},
+                'mixin1': {'mixin': ConfMixin,
+                    'mixin_key': 'mixin1',
+                    'mixin_order': 50}
+            }
+        
+    }
+
     pprint(app.__node__._obj_mixins)
 
     assert expected_config["_obj_mixins"] == app.__node__._obj_mixins

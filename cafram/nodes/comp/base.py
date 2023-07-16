@@ -13,7 +13,8 @@ from ...common import CaframObj
 # from ..nodes import Node
 # from ...lib import logger
 from ...nodes import Node
-from .. import errors
+from ... import errors
+from ..ctrl import AliasReference
 from . import BaseMixin, LoadingOrder
 
 # log = logging.getLogger(__name__)
@@ -189,7 +190,12 @@ class PayloadMixin(BaseMixin):
         #     ""
         # }
 
-        self._register_alias("value", self.get_value())
+        # self._register_alias("value", self.get_value())
+
+        self._register_alias("value", 
+                    AliasReference(self, attr="_value", 
+                    desc=f"{self.mixin_key}._value", updatable=True),
+                    )
 
     # def _register_alias(self):
     #     if self.value_alias:
@@ -214,15 +220,26 @@ class PayloadMixin(BaseMixin):
         "Get a value"
         return self._value
 
-    def set_value(self, value):
+    def set_value(self, value, process=True):
         "Set a value"
 
-        conf = self.preparse(value)
-        conf = self.set_default(conf)
-        conf = self.validate(conf)
-        conf = self.transform(conf)
-        self._value = conf
+        if process is True:
+            value = self.process_value(value)
+
+        self._value = value
         return self._value
+
+
+    # TODO: This should be a hook, nah ?
+    def process_value(self, value):
+        "Process value before being saved"
+
+        value = self.preparse(value)
+        value = self.set_default(value)
+        value = self.validate(value)
+        value = self.transform(value)
+        return value
+
 
     # def __repr__(self):
 

@@ -39,44 +39,6 @@ import yaml
 log = logging.getLogger(__name__)
 
 
-# TODO: TO be renamed: remap_classattr_from_kwargs
-def update_classattr_from_dict(obj, kwargs, prefix="mixin_param__", bound_methods=True):
-
-    """List args/kwargs parameters
-
-    Scan a given object `obj`, find all its attributes starting with `prefix`,
-    and update all matched attributes from kwargs
-    """
-
-    # Params, left part is constant !
-    # mixin_param__<SOURCE> = <EXPECTED_NAME>
-    assert isinstance(kwargs, dict)
-
-    ret = {}
-    reduced = [item for item in dir(obj) if item.startswith(prefix)]
-    # pprint(reduced)
-    for attr in reduced:
-
-        attr_name = attr.replace(prefix, "")
-        if not attr_name:
-            continue
-
-        attr_match = getattr(obj, attr, None) or attr_name
-        if not isinstance(attr_match, str):
-            continue
-
-        if attr_match and attr_match in kwargs:
-            attr_value2 = kwargs[attr_match]
-
-            assert attr_value2 != "preparse", f"{attr_value2}"
-
-            if callable(attr_value2):
-                assert False, "MATCH"
-                attr_value2 = attr_value2.__get__(obj)
-            ret[attr_name] = attr_value2
-
-    return ret
-
 
 # =====================================================================
 # String utils
@@ -137,7 +99,6 @@ def merge_dicts(*dicts):
 
     return ret
 
-
 def merge_keyed_dicts(*dicts, skip_invalid=False):
     """Given two keyed dictionaries, merge them into a new dict as a shallow copy.
 
@@ -178,10 +139,77 @@ def merge_keyed_dicts(*dicts, skip_invalid=False):
     Compatibility for Python 3.5 and above"""
     # Source: https://stackoverflow.com/a/26853961/2352890
 
+    assert len(dicts) > 0
+
+    ret = {}
+    
+    for data in dicts:
+
+        if not isinstance(data, dict):
+            if not skip_invalid:
+                assert isinstance(
+                    data, dict
+                ), f"Expected a dict, got {type(data)}: {data}"
+            continue
+
+        for key, val in data.items():
+
+            if not key in ret:
+                ret[key] = {}
+            val = val or {}
+
+            assert isinstance(val, dict), f"Got: {key}={val}"
+            assert isinstance(ret[key], dict), f"Got: {key}={ret[key]}"
+
+            ret[key].update(val)
+
+    return ret
+
+def merge_keyed_dicts_OLD(*dicts, skip_invalid=False):
+    """Given two keyed dictionaries, merge them into a new dict as a shallow copy.
+
+    :Examples:
+        >>> dict1 = {
+                 "key1": {
+                     "subkey1": "val1",
+                     "subkey2": "val2",
+                 },
+                 "key2": {
+                     "subkey1": "val1",
+                     "subkey2": "val2",
+                 },
+             }
+        >>> dict2 = {
+                 "key2": {
+                     "subkey2": "UPDATED",
+                 },
+                 "key3": {
+                     "subkey1": "CREATED",
+                 },
+             }
+        >>> out = {
+                 "key1": {
+                     "subkey1": "val1",
+                     "subkey2": "val2",
+                 },
+                 "key2": {
+                     "subkey1": "val1",
+                     "subkey2": "UPDATED",
+                 },
+                 "key3": {
+                     "subkey1": "CREATED",
+                 },
+             }
+
+
+    Compatibility for Python 3.5 and above"""
+    # Source: https://stackoverflow.com/a/26853961/2352890
+
+    assert False
     assert len(dicts) > 1
 
     ret = dicts[0].copy()
-
+    
     if not isinstance(ret, dict):
         if not skip_invalid:
             assert isinstance(ret, dict), f"Expected a dict, got {type(ret)}: {ret}"
@@ -199,9 +227,10 @@ def merge_keyed_dicts(*dicts, skip_invalid=False):
 
             if not key in ret:
                 ret[key] = {}
+            val = val or {}
 
-            assert isinstance(val, dict)
-            assert isinstance(ret[key], dict)
+            assert isinstance(val, dict), f"Got: {key}={val}"
+            assert isinstance(ret[key], dict), f"Got: {key}={ret[key]}"
 
             ret[key].update(val)
 

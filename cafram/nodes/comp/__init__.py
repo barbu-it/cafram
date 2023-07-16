@@ -12,38 +12,91 @@ from typing import List, Optional, Union
 from ... import errors
 from ...common import CaframCtrl, CaframMixin, CaframObj
 from ...lib.sprint import SPrint
-from ...lib.utils import truncate, update_classattr_from_dict
+from ...lib.utils import truncate
 
 # Helpers
 ################################################################
 
-# def _list_parameters_from_argsV2(self, obj, kwargs, prefix="mixin_param__"):
 
-# def update_classattr_from_dict(obj, kwargs, prefix="mixin_param__"):
-#     """List args/kwargs parameters
+# TODO: TO be renamed: remap_classattr_from_kwargs
+def update_classattr_from_dict(obj, kwargs, conf=None, prefix="mixin_param__", bound_methods=True):
 
-#     Loop over each key/value of kwargs,
+    """List args/kwargs parameters
 
-#     Scan a given object `obj`, find all its attributes starting with `prefix`,
-#     and update all matched attributes from kwargs
-#     """
+    Scan a given object `obj`, find all its attributes starting with `prefix`,
+    and update all matched attributes from kwargs
+    """
 
-#     # Params, left part is constant !
-#     # mixin_param__<SOURCE> = <EXPECTED_NAME>
+    assert False, "DEPRECATED"
 
-#     ret = {}
-#     for key, val in kwargs.items():
+    # Params, left part is constant !
+    # mixin_param__<SOURCE> = <EXPECTED_NAME>
+    assert isinstance(kwargs, dict)
+    conf = conf or {}
 
-#         attr_name = f"{prefix}{key}"
-#         print ("YOOOO", hasattr(obj, attr_name), key, attr_name)
-#         if not hasattr(obj, attr_name):
-#             continue
+    reduced = [item for item in dir(obj) if item.startswith(prefix)]
+    # pprint(reduced)
+    reduced2 = {}
+    for attr in reduced:
 
-#         # Fetch new name from config
-#         new_name = getattr(obj, attr_name)
-#         ret[new_name] = val
+        attr_name = attr.replace(prefix, "")
+        if not attr_name:
+            continue
 
-#     return ret
+        attr_match = getattr(obj, attr, None) or attr_name
+        if not isinstance(attr_match, str):
+            # print ("Skipped for param:", obj,  attr, attr_match)
+            continue
+
+        reduced2[attr_name] = attr_match
+
+    reduced_conf2 = {key.replace(prefix, ''): val for key, val in conf.items() if key.startswith(prefix)}
+    #reduced_conf2 = {val: key.replace(prefix, '') for key, val in conf.items() if key.startswith(prefix)}
+    reduced2.update(reduced_conf2)
+
+    ret = {}
+    for attr_name, attr_match in reduced2.items():
+
+        if attr_match and attr_match in kwargs:
+            attr_value2 = kwargs[attr_match]
+
+            assert attr_value2 != "preparse", f"{attr_value2}"
+
+            if callable(attr_value2):
+                assert False, "MATCH"
+                attr_value2 = attr_value2.__get__(obj)
+            # print ("Look for param:", obj,  attr, attr_value2)
+
+            ret[attr_name] = attr_value2
+
+    # print ("PARSDE CONF")
+    # pprint(kwargs)
+    # pprint(conf)
+    # print ("---")
+    # pprint(reduced2)
+    # pprint(ret)
+
+    return ret
+
+
+
+def build_init_params(mixin_conf, prefix):
+    "Build param list"
+    assert False, "DEPRECATED"
+
+    ret = {}
+    for key, param in mixin_conf.items():
+
+        if not key.startswith(prefix):
+            continue
+
+        target = key.replace(prefix, "")
+        if not target:
+            continue
+
+        ret[target] = param
+            
+    return ret
 
 
 # Base mixins
@@ -125,36 +178,125 @@ class BaseMixin(CaframMixin):
         # Call generic init for cafram objects
         super().__init__(node_ctrl)
 
+
         # Fetch mixin params and __init__ kwargs
         mixin_conf = mixin_conf or {}
-        param_conf = update_classattr_from_dict(self, kwargs, prefix="mixin_param__")
 
-        # Update mixin with gathered configs
-        # self._update_attrs_conf(mixin_conf, creates=False) # TODO: What to do of unparsed items ???
-        self._update_attrs_conf(mixin_conf, creates=None)
-        self._update_attrs_conf(param_conf, creates=True)
+
+        # Update local conf
+        creates = False
+        for key, val in mixin_conf.items():
+            if not creates:
+                if not hasattr(self, key):
+                    if creates is None:
+                        continue
+
+                    print("\n\n\n\nDUMP FAILURE", self)
+                    pprint (self.__class__.__mro__)
+                    pprint (mixin_conf)
+                    pprint (kwargs)
+                    pprint (self.__dict__)
+                    pprint (self.__class__.__dict__)
+                    assert False, f"Unknown config option '{key}={val}' for {self}"
+            setattr(self, key, val)
+
+        # Build remap config and assign kwargs to attr
+        remap_conf = self.build_remap("mixin_param__")
+        self.remap_kwargs(remap_conf, kwargs)
+
 
         # Assign aliases
         self.mixin_conf = mixin_conf
         self._mixin_alias_map = self._list_aliases()
 
-    def _update_attrs_conf(self, mixin_conf, creates=False):
-        """Update object attributes from a dict. Fail if key does not already exists when create=False
+        self.received_kwargs = kwargs
 
-        If creates is None, then it skip all not already created attributes.
-        """
+        # print ("\n\n================= NEW MIXIN", self)
+        # pprint (self.__dict__)
+        # print ("=" * 6 + "v" * 10)
 
-        for key, value in mixin_conf.items():
 
-            value = self._prepare_conf(value)
 
-            if not creates:
-                if not hasattr(self, key):
-                    if creates is None:
-                        continue
-                    assert False, f"Unknown config option '{key}={value}' for {self}"
+    def build_remap(self, prefix):
+        "Build param list"
 
-            setattr(self, key, value)
+        ret = {}
+        for key in dir(self):
+
+            if not key.startswith(prefix):
+                continue
+
+            target = key.replace(prefix, "")
+            if not target:
+                continue
+
+            param = getattr(self, key)
+            ret[target] = param
+                
+        return ret
+
+
+    def remap_kwargs(self, remap, kwargs):
+
+        # pprint (self.__dict__)
+        for attr_name, param_name in remap.items():
+            
+            if not param_name in kwargs:
+                continue
+
+            param_value = kwargs[param_name]
+
+            # print ("Get PARAM from kwargs", self, f"{param_name}={param_value} (->{attr_name})")
+            setattr(self, attr_name, param_value)
+        #pprint (self.__dict__)
+
+
+    # def _update_attrs_conf_v2(self, kwargs, remap=None, creates=False):
+    #     """Update object attributes from a dict. Fail if key does not already exists when create=False
+
+    #     If creates is None, then it skip all not already created attributes.
+    #     """
+    #     assert False, "DEPRECATED"
+
+    #     remap = remap or {}
+
+    #     for attr_name, param_name in remap.items():
+
+    #         if not creates:
+    #             if not hasattr(self, attr_name):
+    #                 if creates is None:
+    #                     continue
+    #                 assert False, f"Unknown config option '{attr_name}={param_name}' for {self}"
+
+    #         if not param_name in kwargs:
+    #             continue
+
+    #         param_value = kwargs[param_name]
+    #         param_value = self._prepare_conf(param_value)
+
+
+    #         print ("UPDATE MIXIN ATTR NEW", self, self.get_obj(), attr_name, param_value, f"from {param_name}")
+    #         setattr(self, attr_name, param_value)
+
+
+    # def _update_attrs_conf(self, mixin_conf, creates=False):
+    #     """Update object attributes from a dict. Fail if key does not already exists when create=False
+
+    #     If creates is None, then it skip all not already created attributes.
+    #     """
+
+    #     for key, value in mixin_conf.items():
+
+    #         value = self._prepare_conf(value)
+
+    #         if not creates:
+    #             if not hasattr(self, key):
+    #                 if creates is None:
+    #                     continue
+    #                 assert False, f"Unknown config option '{key}={value}' for {self}"
+
+    #         print ("UPDATE MIXIN ATTR OLD", self, self.get_obj(), key, value)
+    #         setattr(self, key, value)
 
     def _prepare_conf(self, value):
         "Transform some specific parameters"
@@ -245,17 +387,18 @@ class BaseMixin(CaframMixin):
 
         return aliases
 
-    def _register_alias(self, name, value):
+    def _register_alias(self, name, value, undeclared=False, override=False):
         "Method for mixins to register alias into NodeCtrl"
         # alias_map = self.alias_map
 
         if self.mixin_aliases:
-            assert (
-                name in self._mixin_alias_map
-            ), f"Missing undeclared alias for {self}: {name}"
+            if not undeclared:
+                assert (
+                    name in self._mixin_alias_map
+                ), f"Missing undeclared alias for {self}: {name}"
             name = self._mixin_alias_map.get(name, name)
             if name:
-                self.node_ctrl.alias_register(name, value)
+                self.node_ctrl.alias_register(name, value, override=override)
 
     # Troubleshooting
     # -------------------

@@ -180,7 +180,15 @@ def node_class_builder(
     assert isinstance(bases, tuple), f"Got: {bases} (type={type(bases)})"
 
     class _NodeSkeleton(*bases):
-        "Dynamic Node Class"
+        """Dynamic Node Class
+        
+        
+        Node ctrl access:
+        node(): Return Node instance
+        node("MIXIN"): Return mixin instance
+        node.ALIAS: Return requested ALIAS
+        
+        """
 
         if "__init__" in clsmethods:
 
@@ -205,10 +213,21 @@ def node_class_builder(
                 # 2. From decorator attributes
                 param_cls_attrs = getattr(self, f"{prefix}_params__", {})
                 mixin_cls_attrs = getattr(self, f"{prefix}_mixins__", {})
+
+                # print ("PRE DEBUG")
+                # pprint(self)
+                # pprint(self.__dict__)
+                # pprint(self.__class__.__dict__)
+                # pprint(mixin_cls_attrs)
+
                 mixin_cls_attrs = get_mixin_loading_order(mixin_cls_attrs)
+                # print ("AFTER DEBUG")
+                # pprint(mixin_cls_attrs)
+
                 assert isinstance(mixin_cls_attrs, dict)
                 # mixin_cls_attrs = merge_keyed_dicts(mixin_cls_attrs, param_cls_attrs.get("obj_mixins", {}))
                 # V2: Make params obj_conf as default instead of override like in attrs
+                
                 mixin_cls_attrs = merge_keyed_dicts(
                     param_cls_attrs.get("obj_mixins", {}), mixin_cls_attrs
                 )
@@ -227,11 +246,28 @@ def node_class_builder(
                 )
                 node_params2["obj_mixins"] = mixin_conf2
 
-                pprint([mixin_cls_prefix, mixin_cls_attrs, mixin_kwargs])
+                # print ("PRE INIT NODE PARAMS")
+                # pprint([mixin_cls_prefix, mixin_cls_attrs, mixin_kwargs])
+
+
+                # Should we clean the decorator attributes ?
+                # for attr_name in [f"{prefix}_params__", f"{prefix}_mixins__"]:
+                #     if hasattr(self, attr_name):
+                #         setattr(self, attr_name, None)
+                        # tmp = getattr(self, attr_name)
+                        # pprint(tmp)
+                        # delattr(self.__class__, attr_name)
+                # param_cls_attrs = getattr(self, f"{prefix}_params__", {})
+                # mixin_cls_attrs = getattr(self, f"{prefix}_mixins__", {})
+
+
+                # pprint (self.__dict__)
+                # pprint (self.__class__.__dict__)
 
                 tmp = NodeCtrl(
                     self,
                     obj_attr=prefix,
+                    obj_wrapper_class=getattr(self, f"{prefix}_class__"),
                     **node_params2,
                     # Contains:
                     #  obj_conf: {}
@@ -262,10 +298,29 @@ def node_class_builder(
                 """Dunder to foward all unknown attributes to the NodeCtrl instance"""
 
                 if prefix in self.__dict__:
-                    return getattr(self, prefix).mixin_get(name)
+                    return getattr(self, prefix).alias_get(name)
 
                 msg = f"Getattr '{name}' is not available for '{self}' as there is no nodectrl yet"
                 raise errors.CaframAttributeError(msg)
+
+        if "__getattr__" in clsmethods:
+
+            def __setattr__(self, name, value):
+                """Dunder to update things"""
+
+                if prefix in self.__dict__:
+                    try:
+                        return getattr(self, prefix).alias_set(name, value)
+
+                    except errors.CaframAttributeError:
+                        pass
+                
+                self.__dict__[name] = value
+
+
+                # msg = f"Setattr '{name}' is not available for '{self}' as there is no nodectrl yet"
+                # raise errors.CaframAttributeError(msg)
+
 
         if "__getitem__" in clsmethods:
 
@@ -273,7 +328,7 @@ def node_class_builder(
                 "Handle dict notation"
 
                 if hasattr(self, prefix):
-                    return getattr(self, prefix).mixin_get(name)
+                    return getattr(self, prefix).any_get(name)
 
                 msg = (
                     "Getitem is not available as there is no nodectrl yet,"
@@ -286,10 +341,12 @@ def node_class_builder(
             def __call__(self, *args):
                 "Return node or mixin/alias"
 
+                # print ("CALL ATTR EXEC", args)
+
                 if hasattr(self, prefix):
                     count = len(args)
                     if count == 0:
-                        return getattr(self, prefix).mixin_get(name)
+                        return getattr(self, prefix).mixin_get(None)
                     if count == 1:
                         return getattr(self, prefix).mixin_get(args[0])
 
@@ -347,6 +404,12 @@ def node_class_builder(
                     # Cons:
                     #   * Important methods  NOT protected
 
+
+                setattr(obj, f"{prefix}_attrs__", getattr(_NodeSkeleton, f"{prefix}_attrs__"))
+                setattr(obj, f"{prefix}_prefix__", prefix)
+                setattr(obj, f"{prefix}_class__", cls)
+
+
                 return (name, tuple(bases), dct)
             return None
 
@@ -381,6 +444,7 @@ def node_class_builder(
 
             setattr(obj, f"{prefix}_attrs__", node_attrs)
             setattr(obj, f"{prefix}_prefix__", prefix)
+            setattr(obj, f"{prefix}_class__", cls)
 
             return obj
 
@@ -434,6 +498,7 @@ def node_class_builder(
     setattr(_NodeSkeleton, f"{prefix}_prefix__", prefix)
     setattr(_NodeSkeleton, f"{prefix}_params__", {})
     setattr(_NodeSkeleton, f"{prefix}_attrs__", clsmethods)
+    setattr(_NodeSkeleton, f"{prefix}_class__", _NodeSkeleton)
 
     # Prepare Class
     if name:

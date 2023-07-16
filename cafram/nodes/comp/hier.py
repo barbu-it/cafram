@@ -118,27 +118,37 @@ class HierChildrenMixin(HierMixinGroup):
     # In which param to look the children conf
     mixin_param___children = "children"
 
+    _children = None
+
     # This hold the internal children state
-    _children: Any = []
+    _children_type: Any = list
 
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
         # self._super__init__(super(), *args, **kwargs)
 
-        self._children = copy.copy(self._children)
+        self.flush_children()
+
+        # self._children = copy.copy(self._children)
         self._parse_children()
 
     # Additional methods
     # -----------------
 
-    def _parse_children(self):
+    def _parse_children(self, override=False):
         "Add children from config"
 
-        for index, child in self.children.items():
-            self.add_child(child, index=index)
+        if self._children and override is not True:
+            assert False, "Children has already bee parsed"
 
-    def add_child(self, child, index=None, alias=True):
+        
+        self.flush_children()
+        for index, child in self.children.items():
+            self.add_child(child, index=index, override=override)
+
+
+    def add_child(self, child, index=None, alias=True, override=False):
         "Add a new child to mixin"
 
         children = self._children
@@ -152,11 +162,15 @@ class HierChildrenMixin(HierMixinGroup):
             self._children.insert(index, child)
 
         if alias:
-            self.node_ctrl.alias_register(index, child)
+            self.node_ctrl.alias_register(index, child, override=override)
+
+    def flush_children(self, level=0):
+        "Remove all children"
+
+        self._children = self._children_type()
 
     def get_children(self, level=0):
         "Get children"
-
         children = self._children
 
         if level == 0:

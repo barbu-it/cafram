@@ -12,6 +12,7 @@ python = "^3.8"
 jsonschema = "^4.16.0"
 "ruamel.yaml" = "^0.17.21"
 sh = "^1.14.3"
+pyaml = "^23.7.0"
 python-log-indenter = "^0.9"
 
 [tool.poetry.group.dev.dependencies]
