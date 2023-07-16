@@ -6,14 +6,16 @@ Path mixins
 ################################################################
 
 import os
-from typing import Optional
 from pprint import pprint
+from typing import Optional
 
 from ... import errors
-from ...lib.utils import list_parent_dirs
-from ...nodes import Node
+
+# from ...lib.utils import list_parent_dirs
+# from ...nodes import Node
 from . import BaseMixin, LoadingOrder
-from .base import PayloadMixin
+
+# from .base import PayloadMixin
 
 
 # Parent exceptions
@@ -40,7 +42,6 @@ class PathMixin(PathMixinGroup):
     "Conf mixin that manage a path"
 
     mixin_key = "path"
-    
     mixin_order = LoadingOrder.PRE
 
     # Get path
@@ -59,13 +60,11 @@ class PathMixin(PathMixinGroup):
     _enum_mode = ["abs", "rel", None]
 
     # Comp schema
-    _schema ={}
+    _schema = {}
 
     def __init__(self, *args, **kwargs):
 
-        # print (self.__class__.__mro__)
         super().__init__(*args, **kwargs)
-        # pprint (self.__dict__)
 
         if not self.path_mode in self._enum_mode:
             msg = f"Invalid value for mode: {self.path_mode}, must be one of: {self._enum_mode}"
@@ -75,7 +74,6 @@ class PathMixin(PathMixinGroup):
         # self.path_anchor = anchor
         # self.path_dir = path
         # self.path_mode = mode
-
 
     def set_path(self, value, mode=None, anchor=None):
         self.path_dir = value
@@ -105,9 +103,9 @@ class PathMixin(PathMixinGroup):
 
         return ret
 
-
     def get_mode(self, lvl=0):
-        
+        "Return current path mode, abs or rel"
+
         if isinstance(self.path_mode, str):
             ret = self.path_mode
             return ret
@@ -117,10 +115,13 @@ class PathMixin(PathMixinGroup):
             ret = self.path_anchor.get_mode(lvl=lvl)
             return ret
 
+        return None
+
     def get_anchor(self):
+        "Return anchor if any"
         return self.path_anchor
 
-    def get_anchors(self, itself: bool=False):
+    def get_anchors(self, itself: bool = False):
         """_summary_
 
         Args:
@@ -142,7 +143,13 @@ class PathMixin(PathMixinGroup):
             ret = ret[1:]
         return ret
 
-    def get_dir(self, mode: Optional[str]=None, clean: Optional[bool]=True, start: Optional[str]=None, anchor=None):
+    def get_dir(
+        self,
+        mode: Optional[str] = None,
+        clean: Optional[bool] = True,
+        start: Optional[str] = None,
+        anchor=None,
+    ):
         """_summary_
 
         Args:
@@ -157,7 +164,7 @@ class PathMixin(PathMixinGroup):
 
         ret = None
         mode = mode or self.get_mode()
-        start = start or None #os.getcwd()
+        start = start or None  # os.getcwd()
         if start:
             mode = "rel"
 
@@ -180,7 +187,7 @@ class PathMixin(PathMixinGroup):
             if os.path.isabs(ret) or start:
                 ret = os.path.relpath(ret, start=start)
         elif mode == "abs":
-            if (not os.path.isabs(ret)):
+            if not os.path.isabs(ret):
                 ret = os.path.abspath(ret)
         elif mode is None:
             pass

@@ -126,11 +126,8 @@ class HierChildrenMixin(HierMixinGroup):
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
-        # self._super__init__(super(), *args, **kwargs)
 
         self.flush_children()
-
-        # self._children = copy.copy(self._children)
         self._parse_children()
 
     # Additional methods
@@ -142,11 +139,9 @@ class HierChildrenMixin(HierMixinGroup):
         if self._children and override is not True:
             assert False, "Children has already bee parsed"
 
-        
         self.flush_children()
         for index, child in self.children.items():
             self.add_child(child, index=index, override=override)
-
 
     def add_child(self, child, index=None, alias=True, override=False):
         "Add a new child to mixin"

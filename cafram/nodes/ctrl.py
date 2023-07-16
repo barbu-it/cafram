@@ -78,8 +78,6 @@ def _prepare_mixin_conf(mixin_conf, mixin_name=None, mixin_order=None, strict=Fa
     mixin_order = mixin_order or mixin_conf.get("mixin_order", mixin_order_)
 
     # Final configuration
-    # print ("CHECKK HERE")
-    # pprint(mixin_conf)
     final = dict(mixin_conf)
     if mixin_cls:
         final["mixin"] = mixin_cls
@@ -97,8 +95,6 @@ def get_mixin_loading_order(payload, logger=None, strict=False):
 
     if isinstance(payload, dict):
         for mixin_name, mixin_conf in payload.items():
-            # print ("YOPYOP")
-            # pprint(mixin_conf)
             name, conf = _prepare_mixin_conf(mixin_conf, mixin_name, strict=strict)
             mixin_classes[name] = conf
 
@@ -124,7 +120,9 @@ def get_mixin_loading_order(payload, logger=None, strict=False):
 # NodeCtrl Public classe
 ################################################################
 
-class AliasReference():
+
+class AliasReference:
+    """Temporary proxy wrapper"""
 
     def __init__(self, obj, key=None, attr=None, desc=None, updatable=False):
         self.obj = obj
@@ -137,6 +135,7 @@ class AliasReference():
         return f"AliasReference to mixin: {self.desc}[{self.key}]"
 
     def resolve(self):
+        "Method to get the value of the proxied object"
 
         if self.key:
             return self.obj[self.key]
@@ -146,9 +145,10 @@ class AliasReference():
             assert False, "Bug, missing attr or key!"
 
     def update(self, value):
+        "Method to allow to change value (if allowed)"
 
         if not self.updatable:
-            raise errors.CaframMixinException (f"Alias '{self.key}' is not updatable!")
+            raise errors.CaframMixinException(f"Alias '{self.key}' is not updatable!")
 
         if self.key:
             self.obj[self.key] = value
@@ -156,37 +156,6 @@ class AliasReference():
             setattr(self.obj, self.attr, value)
         else:
             assert False, "Bug, missing attr or key!"
-
-    # def __setattr__(self, name, value):
-    #     print ("YOO ALIAS SETATTR", name, value)
-    #     #self.__dict__[name] = value.upper()
-
-    # def __get__(self, instance, owner):
-    #     return 5 * (instance.fahrenheit - 32) / 9
-
-    # def __set__(self, instance, value):
-    #     instance.fahrenheit = 32 + 9 * value / 5
-
-
-    # def __get__(self, instance, owner):
-    #     print "returned from descriptor object"
-    #     return self.value
-    # def __set__(self, instance, value):
-    #     print "set in descriptor object"
-    #     self.value = value
-
-
-    # def __get__(self, obj, objtype=None):
-    #     value = obj.obj[self.key]
-    #     print('Accessing %r giving %r', 'age', value)
-    #     assert False
-    #     return value
-
-    # def __set__(self, obj, value):
-    #     print('Updating %r to %r', 'age', value)
-    #     #obj._age = value
-    #     obj.obj[self.key] = value
-
 
 
 class NodeCtrl(CaframCtrl):
@@ -210,7 +179,7 @@ class NodeCtrl(CaframCtrl):
         obj_mixins=None,  # Provide mixin configurations, should be a dict
         obj_attr="__node__",  # How the NodeCtrl is accessed from object
         obj_clean=False,  # Remove from object configuration settings
-        obj_wrapper_class=None, # Wrapper class to use for children
+        obj_wrapper_class=None,  # Wrapper class to use for children
         # obj_prefix_mixin="n_",
         # obj_prefix_alias="a_",
         **mixin_kwargs,  # Options forwarded to ALL mixins
@@ -250,9 +219,6 @@ class NodeCtrl(CaframCtrl):
         # Parent Obj Manipulation
         # ---------------------
 
-        # print("NEW NODECTRL")
-        # pprint (self.__dict__)
-
         # Autoclean config?
         if obj_clean:
             delattr(self._obj, f"{self._obj_attr}_mixins__")
@@ -281,10 +247,6 @@ class NodeCtrl(CaframCtrl):
             mixin_classes, key=lambda key: mixin_classes[key]["mixin_order"]
         )
 
-        # pprint ("MIXIN CONF")
-        # pprint(mixin_confs)
-        # pprint(mixin_classes)
-
         # Instanciate mixins
         self._log.info(f"Load mixins for {self._obj}: {load_order}")
         for mixin_name in load_order:
@@ -294,7 +256,6 @@ class NodeCtrl(CaframCtrl):
 
             # Instanciate mixin and register
             self._log.info(f"Instanciate mixin '{mixin_name}': {mixin_cls.__name__}")
-            # print (":INSTANCIATE MIXIN:", self._obj, mixin_cls, mixin_conf, "|||", mixin_kwargs)
             mixin_inst = mixin_cls(self, mixin_conf=mixin_conf, **mixin_kwargs)
             self.mixin_register(mixin_inst)
 
@@ -306,8 +267,6 @@ class NodeCtrl(CaframCtrl):
     def alias_register(self, name, value, override=False):
         "Register mixin instance"
 
-        # print ("ALIAS REGGISTER OVERRIDE", override)
-
         # Check overrides TOFIX: ALWAYS FAILURE !
         if not override:
             keys = self.mixin_list(mixin=False, shortcuts=False)
@@ -317,22 +276,6 @@ class NodeCtrl(CaframCtrl):
 
         # Register mixin
         self._log.info(f"Register alias '{name}': {truncate(value)}")
-        # print(f"Register alias '{name}': {truncate(value)}")
-
-        # if name in self._mixin_aliases:
-        #     msg = (
-        #         f"Aliase: '{name}' is already defined for: {self._mixin_aliases[name]}"
-        #     )
-        #     print("ERROR: " + msg)
-        #     print("TOFIX: Currently loaded mixins/aliases:")
-        #     tmp = {
-        #         "__node__": {
-        #             "_mixin_dict": self._mixin_dict,
-        #             "_mixin_aliases": self._mixin_aliases,
-        #         }
-        #     }
-        #     pprint(tmp)
-        #     assert name not in self._mixin_aliases, msg
 
         self._mixin_aliases[name] = value
 
@@ -385,23 +328,19 @@ class NodeCtrl(CaframCtrl):
             return self._mixin_hooks[name]
         return self._mixin_hooks
 
-
     def alias_get(self, name):
         "Get alias instance"
 
         # Forward to nodectrl
         if name in self.__class__.__dict__:
             return getattr(self, name)
-            #return self.__dict__[name]
 
         # Look shortcuts
         if name in self._mixin_aliases:
             val = self._mixin_aliases[name]
-            # print ("GETTER TYPE", type(val), val)
             if isinstance(val, AliasReference):
                 return val.resolve()
             return val
-
 
         # Return error
         msg = f"No such alias '{name}' in {self}"
@@ -411,7 +350,7 @@ class NodeCtrl(CaframCtrl):
         "Get mixin instance"
 
         no_fail = False
-        if len(args) == 1 :
+        if len(args) == 1:
             name = args[0]
         elif len(args) == 2:
             name = args[0]
@@ -419,7 +358,6 @@ class NodeCtrl(CaframCtrl):
             no_fail = True
         else:
             assert False, f"Error on calling get_mixin: {args}"
-
 
         if name is None:
             # Return nodectrl when no args
@@ -432,7 +370,6 @@ class NodeCtrl(CaframCtrl):
         # Forward to nodectrl
         if name in self.__class__.__dict__:
             return getattr(self, name)
-            #return self.__dict__[name]
 
         # Return error
         if no_fail:
@@ -441,10 +378,8 @@ class NodeCtrl(CaframCtrl):
         msg = f"No such mixin '{name}' in {self}"
         raise errors.CaframAttributeError(msg)
 
-
     def any_get(self, name):
         "Get mixin instance"
-
 
         # Execute hooks
         for hook in self._mixin_hooks.get("__getattr__", []):
@@ -459,41 +394,24 @@ class NodeCtrl(CaframCtrl):
         # Look shortcuts
         if name in self._mixin_aliases:
             val = self._mixin_aliases[name]
-            # print ("GETTER TYPE", type(val), val)
             if isinstance(val, AliasReference):
                 return val.resolve()
             return val
 
-        # print(f"SUCCESS: {name}", self, name in self.__dict__)
-
         # Forward to nodectrl
         if name in self.__class__.__dict__:
             return getattr(self, name)
-            #return self.__dict__[name]
-
 
         # Return error
         msg = f"No such attribute '{name}' in {self}"
         raise errors.CaframAttributeError(msg)
 
-
     def alias_set(self, name, value):
         "Get mixin instance"
-
-        # # Execute hooks
-        # for hook in self._mixin_hooks.get("__getattr__", []):
-        #     found, result = hook(name)
-        #     if found is True:
-        #         return result
-
-        # # Look internally
-        # if name in self._mixin_dict:
-        #     return self._mixin_dict[name]
 
         # Look shortcuts
         if name in self._mixin_aliases:
             val = self._mixin_aliases[name]
-            # print ("___SETTER TYPE", type(val), val, value)
             if isinstance(val, AliasReference):
                 return val.update(value)
             return val
@@ -501,7 +419,6 @@ class NodeCtrl(CaframCtrl):
         # Return error
         msg = f"No such mixin '{name}' in {self}"
         raise errors.CaframAttributeError(msg)
-
 
     # Dunders
     # -------------------

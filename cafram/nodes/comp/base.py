@@ -8,12 +8,12 @@ import traceback
 from pprint import pprint
 from typing import Any, Dict, List, Optional, Union
 
+from ... import errors
 from ...common import CaframObj
 
 # from ..nodes import Node
 # from ...lib import logger
 from ...nodes import Node
-from ... import errors
 from ..ctrl import AliasReference
 from . import BaseMixin, LoadingOrder
 
@@ -171,31 +171,17 @@ class PayloadMixin(BaseMixin):
         },
     }
 
-    # def __repr__(self):
-    #     if hasattr(self, "_value"):
-    #         return self.get_value()
-    #     return str(self)
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # self._super__init__(super(), *args, **kwargs)
-
-        # print("PayloadMixin INIT payload", self._payload)
-        # print("PayloadMixin INIT params", args, kwargs)
         self._value = None
         self.set_value(self._payload)
-        # self._register_alias()
 
-        # self._aliases = {
-        #     ""
-        # }
-
-        # self._register_alias("value", self.get_value())
-
-        self._register_alias("value", 
-                    AliasReference(self, attr="_value", 
-                    desc=f"{self.mixin_key}._value", updatable=True),
-                    )
+        self._register_alias(
+            "value",
+            AliasReference(
+                self, attr="_value", desc=f"{self.mixin_key}._value", updatable=True
+            ),
+        )
 
     # def _register_alias(self):
     #     if self.value_alias:
@@ -229,7 +215,6 @@ class PayloadMixin(BaseMixin):
         self._value = value
         return self._value
 
-
     # TODO: This should be a hook, nah ?
     def process_value(self, value):
         "Process value before being saved"
@@ -239,13 +224,6 @@ class PayloadMixin(BaseMixin):
         value = self.validate(value)
         value = self.transform(value)
         return value
-
-
-    # def __repr__(self):
-
-    #     prefix = self.get_ident()
-    #     suffix = f"[{self.mixin_key}]{type(self).__name__}"
-    #     return f"<{prefix}{suffix}>"
 
     # Transformers/Validators
     # ---------------------

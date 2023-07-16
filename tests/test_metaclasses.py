@@ -106,16 +106,10 @@ def test_node_config_parser():
     }
 
     expected_config = {
-        "_obj_mixins": 
-            {
-                'log': {'mixin': LoggerMixin,
-                    'mixin_key': 'Blihh',
-                    'mixin_order': 30},
-                'mixin1': {'mixin': ConfMixin,
-                    'mixin_key': 'mixin1',
-                    'mixin_order': 50}
-            }
-        
+        "_obj_mixins": {
+            "log": {"mixin": LoggerMixin, "mixin_key": "Blihh", "mixin_order": 30},
+            "mixin1": {"mixin": ConfMixin, "mixin_key": "mixin1", "mixin_order": 50},
+        }
     }
 
     pprint(app.__node__._obj_mixins)

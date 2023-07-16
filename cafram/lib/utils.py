@@ -39,7 +39,6 @@ import yaml
 log = logging.getLogger(__name__)
 
 
-
 # =====================================================================
 # String utils
 # =====================================================================
@@ -99,6 +98,7 @@ def merge_dicts(*dicts):
 
     return ret
 
+
 def merge_keyed_dicts(*dicts, skip_invalid=False):
     """Given two keyed dictionaries, merge them into a new dict as a shallow copy.
 
@@ -142,79 +142,8 @@ def merge_keyed_dicts(*dicts, skip_invalid=False):
     assert len(dicts) > 0
 
     ret = {}
-    
+
     for data in dicts:
-
-        if not isinstance(data, dict):
-            if not skip_invalid:
-                assert isinstance(
-                    data, dict
-                ), f"Expected a dict, got {type(data)}: {data}"
-            continue
-
-        for key, val in data.items():
-
-            if not key in ret:
-                ret[key] = {}
-            val = val or {}
-
-            assert isinstance(val, dict), f"Got: {key}={val}"
-            assert isinstance(ret[key], dict), f"Got: {key}={ret[key]}"
-
-            ret[key].update(val)
-
-    return ret
-
-def merge_keyed_dicts_OLD(*dicts, skip_invalid=False):
-    """Given two keyed dictionaries, merge them into a new dict as a shallow copy.
-
-    :Examples:
-        >>> dict1 = {
-                 "key1": {
-                     "subkey1": "val1",
-                     "subkey2": "val2",
-                 },
-                 "key2": {
-                     "subkey1": "val1",
-                     "subkey2": "val2",
-                 },
-             }
-        >>> dict2 = {
-                 "key2": {
-                     "subkey2": "UPDATED",
-                 },
-                 "key3": {
-                     "subkey1": "CREATED",
-                 },
-             }
-        >>> out = {
-                 "key1": {
-                     "subkey1": "val1",
-                     "subkey2": "val2",
-                 },
-                 "key2": {
-                     "subkey1": "val1",
-                     "subkey2": "UPDATED",
-                 },
-                 "key3": {
-                     "subkey1": "CREATED",
-                 },
-             }
-
-
-    Compatibility for Python 3.5 and above"""
-    # Source: https://stackoverflow.com/a/26853961/2352890
-
-    assert False
-    assert len(dicts) > 1
-
-    ret = dicts[0].copy()
-    
-    if not isinstance(ret, dict):
-        if not skip_invalid:
-            assert isinstance(ret, dict), f"Expected a dict, got {type(ret)}: {ret}"
-
-    for data in dicts[1:]:
 
         if not isinstance(data, dict):
             if not skip_invalid:

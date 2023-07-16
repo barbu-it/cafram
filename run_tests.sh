@@ -32,7 +32,10 @@ main ()
 
   # Run code tests
   run_tests
-  run_examples
+  run_examples || {
+    echo "ERROR: Some example tests have failed"
+    exit 1
+  }
 
   # Run Qulity tests
   ./run_qa.sh

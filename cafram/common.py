@@ -195,13 +195,11 @@ class CaframCtrl(CaframInternalsGroup):
     def get_ident(self):
         "Return the class Fully Qualified Name of any object"
 
-        key = self.get_name()
+        name = self.get_name()
         if self._obj_debug:
-            key = self._obj_attr
-        #ident = f"{self.get_obj_fqn()}({key})"
-        ident = f"{self.get_obj_fqn()}[/{key}]"
+            name = self._obj_attr
+        ident = f"{self.get_obj_fqn()}(/{name})"
         return ident
-        # return super().get_fqn()
 
 
 class CaframMixin(CaframInternalsGroup):
@@ -235,17 +233,6 @@ class CaframMixin(CaframInternalsGroup):
     def get_ident(self):
         "Return the class Fully Qualified Name of any object"
 
-        # key = self.get_name()
-        # if self.node_ctrl._obj_debug:
         key = self.mixin_key
-
-        # TODO: Bug below !!!
-        #ident = f"{self.get_obj_fqn()}({key})[{self.get_name()}]"
-        ident = f"{self.get_obj_fqn()}[{key}/{self.get_name()}]"
+        ident = f"{self.get_obj_fqn()}({key}/{self.get_name()})"
         return ident
-        # return super().get_fqn()
-
-
-    # def get_name(self):
-    #     "Retrieve node Name"
-    #     return self.mixin_key

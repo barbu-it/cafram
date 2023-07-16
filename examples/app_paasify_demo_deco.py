@@ -112,7 +112,8 @@ class ConfigKV(BaseAppNode):
         pprint(self)
         pprint(self.__node__.__dict__)
 
-        self.log.info(f"KV config: {self.conf.index}={self.conf.value}")
+        # self.log.info(f"KV config: WORKS")
+        self.log.info(f"KV config: {self('conf').index}={self('conf').value}")
 
 
 class ConfigVars(BaseAppNode):
@@ -209,7 +210,7 @@ class TagList(BaseAppNode):
     }
 
     def __post_init__(self, *args, **kwargs):
-        self.log.debug(f"Tag config: {self.conf.index}={self.conf.value}")
+        self.log.debug(f"Tag config: {self('conf').index}={self('conf').value}")
 
 
 class AppConfig(BaseAppNode):
@@ -345,7 +346,7 @@ class AppSources(BaseAppNode):
 
         print("STARTLOOP")
 
-        for source in self.conf.get_children():
+        for source in self("conf").get_children():
 
             # print ("vvvvvvvvvvvvvvv STARTLOOP")
             # pprint (source)
@@ -457,7 +458,7 @@ class AppStack(BaseAppNode):
     def __post_init__(self, *args, **kwargs):
         self.log.debug(f"Stack initialization complete! {self['name']}")
 
-        self.app = self.conf.get_parent_by_cls(MyApp)
+        self.app = self("conf").get_parent_by_cls(MyApp)
 
         _log.info("YOOOOOOOOOOOOO! STACK MODULE")
         self.log.info("YOOOOOOOOOOOOO! STACK INSTANCE")
@@ -505,7 +506,7 @@ class AppStack(BaseAppNode):
 
         source_name = self.source.value
 
-        app = self.conf.get_parent_by_cls(MyApp)
+        app = self("conf").get_parent_by_cls(MyApp)
         # print ("SEARCH SOURCE: ", source_name, source_name.value)
         # assert False
         # print( app)
@@ -784,7 +785,7 @@ def test2():
 
     app = simple_app()
 
-    for stack in app.stacks.conf.get_children():
+    for stack in app.stacks("conf").get_children():
 
         # print (f"\n\nSTACK: {stack}")
         # pprint (stack.__class__.__mro__)

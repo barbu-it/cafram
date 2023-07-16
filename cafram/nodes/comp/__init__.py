@@ -18,87 +18,6 @@ from ...lib.utils import truncate
 ################################################################
 
 
-# TODO: TO be renamed: remap_classattr_from_kwargs
-def update_classattr_from_dict(obj, kwargs, conf=None, prefix="mixin_param__", bound_methods=True):
-
-    """List args/kwargs parameters
-
-    Scan a given object `obj`, find all its attributes starting with `prefix`,
-    and update all matched attributes from kwargs
-    """
-
-    assert False, "DEPRECATED"
-
-    # Params, left part is constant !
-    # mixin_param__<SOURCE> = <EXPECTED_NAME>
-    assert isinstance(kwargs, dict)
-    conf = conf or {}
-
-    reduced = [item for item in dir(obj) if item.startswith(prefix)]
-    # pprint(reduced)
-    reduced2 = {}
-    for attr in reduced:
-
-        attr_name = attr.replace(prefix, "")
-        if not attr_name:
-            continue
-
-        attr_match = getattr(obj, attr, None) or attr_name
-        if not isinstance(attr_match, str):
-            # print ("Skipped for param:", obj,  attr, attr_match)
-            continue
-
-        reduced2[attr_name] = attr_match
-
-    reduced_conf2 = {key.replace(prefix, ''): val for key, val in conf.items() if key.startswith(prefix)}
-    #reduced_conf2 = {val: key.replace(prefix, '') for key, val in conf.items() if key.startswith(prefix)}
-    reduced2.update(reduced_conf2)
-
-    ret = {}
-    for attr_name, attr_match in reduced2.items():
-
-        if attr_match and attr_match in kwargs:
-            attr_value2 = kwargs[attr_match]
-
-            assert attr_value2 != "preparse", f"{attr_value2}"
-
-            if callable(attr_value2):
-                assert False, "MATCH"
-                attr_value2 = attr_value2.__get__(obj)
-            # print ("Look for param:", obj,  attr, attr_value2)
-
-            ret[attr_name] = attr_value2
-
-    # print ("PARSDE CONF")
-    # pprint(kwargs)
-    # pprint(conf)
-    # print ("---")
-    # pprint(reduced2)
-    # pprint(ret)
-
-    return ret
-
-
-
-def build_init_params(mixin_conf, prefix):
-    "Build param list"
-    assert False, "DEPRECATED"
-
-    ret = {}
-    for key, param in mixin_conf.items():
-
-        if not key.startswith(prefix):
-            continue
-
-        target = key.replace(prefix, "")
-        if not target:
-            continue
-
-        ret[target] = param
-            
-    return ret
-
-
 # Base mixins
 ################################################################
 
@@ -178,10 +97,8 @@ class BaseMixin(CaframMixin):
         # Call generic init for cafram objects
         super().__init__(node_ctrl)
 
-
         # Fetch mixin params and __init__ kwargs
         mixin_conf = mixin_conf or {}
-
 
         # Update local conf
         creates = False
@@ -191,19 +108,13 @@ class BaseMixin(CaframMixin):
                     if creates is None:
                         continue
 
-                    print("\n\n\n\nDUMP FAILURE", self)
-                    pprint (self.__class__.__mro__)
-                    pprint (mixin_conf)
-                    pprint (kwargs)
-                    pprint (self.__dict__)
-                    pprint (self.__class__.__dict__)
-                    assert False, f"Unknown config option '{key}={val}' for {self}"
+            val = self._prepare_conf(val)
+
             setattr(self, key, val)
 
         # Build remap config and assign kwargs to attr
         remap_conf = self.build_remap("mixin_param__")
         self.remap_kwargs(remap_conf, kwargs)
-
 
         # Assign aliases
         self.mixin_conf = mixin_conf
@@ -214,8 +125,6 @@ class BaseMixin(CaframMixin):
         # print ("\n\n================= NEW MIXIN", self)
         # pprint (self.__dict__)
         # print ("=" * 6 + "v" * 10)
-
-
 
     def build_remap(self, prefix):
         "Build param list"
@@ -232,87 +141,28 @@ class BaseMixin(CaframMixin):
 
             param = getattr(self, key)
             ret[target] = param
-                
-        return ret
 
+        return ret
 
     def remap_kwargs(self, remap, kwargs):
 
-        # pprint (self.__dict__)
         for attr_name, param_name in remap.items():
-            
+
             if not param_name in kwargs:
                 continue
 
             param_value = kwargs[param_name]
 
-            # print ("Get PARAM from kwargs", self, f"{param_name}={param_value} (->{attr_name})")
             setattr(self, attr_name, param_value)
-        #pprint (self.__dict__)
-
-
-    # def _update_attrs_conf_v2(self, kwargs, remap=None, creates=False):
-    #     """Update object attributes from a dict. Fail if key does not already exists when create=False
-
-    #     If creates is None, then it skip all not already created attributes.
-    #     """
-    #     assert False, "DEPRECATED"
-
-    #     remap = remap or {}
-
-    #     for attr_name, param_name in remap.items():
-
-    #         if not creates:
-    #             if not hasattr(self, attr_name):
-    #                 if creates is None:
-    #                     continue
-    #                 assert False, f"Unknown config option '{attr_name}={param_name}' for {self}"
-
-    #         if not param_name in kwargs:
-    #             continue
-
-    #         param_value = kwargs[param_name]
-    #         param_value = self._prepare_conf(param_value)
-
-
-    #         print ("UPDATE MIXIN ATTR NEW", self, self.get_obj(), attr_name, param_value, f"from {param_name}")
-    #         setattr(self, attr_name, param_value)
-
-
-    # def _update_attrs_conf(self, mixin_conf, creates=False):
-    #     """Update object attributes from a dict. Fail if key does not already exists when create=False
-
-    #     If creates is None, then it skip all not already created attributes.
-    #     """
-
-    #     for key, value in mixin_conf.items():
-
-    #         value = self._prepare_conf(value)
-
-    #         if not creates:
-    #             if not hasattr(self, key):
-    #                 if creates is None:
-    #                     continue
-    #                 assert False, f"Unknown config option '{key}={value}' for {self}"
-
-    #         print ("UPDATE MIXIN ATTR OLD", self, self.get_obj(), key, value)
-    #         setattr(self, key, value)
 
     def _prepare_conf(self, value):
         "Transform some specific parameters"
-
-        # Check for bound methods
-        # if callable(value) and hasattr(value, "__self__"):
-        # if callable(value):
-
-        # print ("PREPARSE VALUE", value, inspect.isfunction(value), hasattr(value, "__self__"))
 
         # Rewrap/rewrite callables !
         # Look for functions or bound methods
         if inspect.isfunction(value) or (
             callable(value) and hasattr(value, "__self__")
         ):
-            # print ("PREPARSE FUNC ", value)
 
             MODE = "rebind"
             MODE = "wrap"
@@ -336,33 +186,11 @@ class BaseMixin(CaframMixin):
                         try:
                             return _func(self, *args, **kwargs)
                         except TypeError as err:
-                            # print (err)
                             msg = f"{err}, Please ensure {_func} have the folowing signature: def {_func.__name__}(self, mixin, *args, **kwargs)"
-
                             raise errors.BadArguments(msg) from err
                             assert False
 
                     value = _wrapper
-
-                # else:
-                #     print ("DO NOT CHANGE FUNCTION", value)
-                #     # DEPRECATED: self._log.debug(f"Overriden method is now available '{key}': {value}")
-                #     # value = _wrapper
-
-                # # If not a CaframMixin class, add mixin as second param
-                # # pylint: disable=cell-var-from-loop
-                # if not issubclass(cls, CaframMixin):
-                #     _func = value
-
-                #     def wrapper(*args, **kwargs):
-                #         return _func(self, *args, **kwargs)
-
-                #     # DEPRECATED: self._log.debug(f"Overriden method is now available '{key}': {value}")
-                #     value = wrapper
-
-            # assert False, "WIP"
-        # elif inspect.isfunction(value):
-        #     assert False, value
 
         return value
 

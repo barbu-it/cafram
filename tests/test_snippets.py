@@ -478,7 +478,6 @@ def test_mixin_logger1():
     pprint(app.__node__.__dict__)
     pprint(LoggerMixin.__dict__)
     assert hasattr(app, LoggerMixin.mixin_alias__log)
-    # OLDassert hasattr(app, LoggerMixin.mixin_key)
     assert app(LoggerMixin.mixin_key)
 
 
