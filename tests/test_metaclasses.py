@@ -47,10 +47,10 @@ def test_node_config_parser():
         }
 
         # Simple inherited mixin config
-        __node___mixin__log__mixin__ = LoggerMixin
-        __node___mixin__log__mixin_key__ = "logger"
-        # __node___mixin__log__mixin_one__ = "YEAH"
-        __node___mixin__log__override = "SINGLE ATTR"
+        __node____mixin__log__mixin__ = LoggerMixin
+        __node____mixin__log__mixin_key__ = "logger"
+        # __node____mixin__log__mixin_one__ = "YEAH"
+        __node____mixin__log__override = "SINGLE ATTR"
 
         # 2. Decorator attributes
         # =========================
@@ -107,8 +107,8 @@ def test_node_config_parser():
 
     expected_config = {
         "_obj_mixins": {
-            "log": {"mixin": LoggerMixin, "mixin_key": "Blihh", "mixin_order": 30},
-            "mixin1": {"mixin": ConfMixin, "mixin_key": "mixin1", "mixin_order": 50},
+            "log": {"mixin": LoggerMixin, "mixin_key": "Blihh"},
+            "mixin1": {"mixin": ConfMixin},
         }
     }
 

@@ -114,13 +114,15 @@ class BaseMixin(CaframMixin):
 
         # Build remap config and assign kwargs to attr
         remap_conf = self.build_remap("mixin_param__")
+        print ("REMAPPPP")
+        print (remap_conf, kwargs)
         self.remap_kwargs(remap_conf, kwargs)
 
         # Assign aliases
         self.mixin_conf = mixin_conf
         self._mixin_alias_map = self._list_aliases()
 
-        self.received_kwargs = kwargs
+        self.mixin_init_kwargs = kwargs
 
         # print ("\n\n================= NEW MIXIN", self)
         # pprint (self.__dict__)
@@ -145,14 +147,13 @@ class BaseMixin(CaframMixin):
         return ret
 
     def remap_kwargs(self, remap, kwargs):
-
         for attr_name, param_name in remap.items():
 
             if not param_name in kwargs:
                 continue
 
             param_value = kwargs[param_name]
-
+            print ("REMAP", self, attr_name, param_value)
             setattr(self, attr_name, param_value)
 
     def _prepare_conf(self, value):

@@ -11,7 +11,8 @@ from pathlib import Path
 from pprint import pformat, pprint
 from typing import MutableMapping, MutableSequence, MutableSet
 
-from ... import errors
+import cafram.nodes.errors as errors
+
 from ...common import CaframNode
 from ...lib.utils import (  # read_file,
     from_json,
@@ -28,6 +29,7 @@ from .hier import HierChildrenMixin, HierParentMixin
 # from .path import FilePathMixin, PathFinderMixin, PathMixin
 from .path import PathMixin
 
+MIXIN_KEY = "conf"
 
 # Parent exceptions
 class ConfMixinException(errors.CaframMixinException):
@@ -62,6 +64,7 @@ class ExpectedNodeClass(ConfMixinException):
 class ConfMixinGroup(PayloadMixin, HierParentMixin):
     "Conf mixin that group all ConfMixins"
 
+    mixin_key = MIXIN_KEY
     mixin_order = LoadingOrder.NORMAL
 
 
@@ -70,7 +73,6 @@ class ConfMixin(ConfMixinGroup):
 
     # name = "conf"
     # key = "conf"
-    mixin_key = "conf"
 
     # Index management
     index = None
@@ -283,7 +285,9 @@ class ConfListMixin(_ConfContainerMixin):
                     # child_cls = map_node_class(child_value)
 
                     child_cls = child_node_cls
-                    child_args = map_node_class_full2(child_value, self.mixin_key)
+                    child_args = map_node_class(
+                        child_value, self.mixin_key, always=True
+                    )
 
                 else:
                     child_cls = default_cls
@@ -421,7 +425,10 @@ class ConfDictMixin(_ConfContainerMixin):
         children_list = []
         prefix = self.node_ctrl._obj_attr
         child_node_cls = self.node_ctrl._obj_wrapper_class
-        assert child_node_cls, f"Please patch to use parent class ?"
+        # Bug: This is definitely not smart !
+        assert (
+            child_node_cls
+        ), f"Please patch to use parent class or provide yourself children node class ?"
 
         default_conf = {
             "key": None,
@@ -449,7 +456,7 @@ class ConfDictMixin(_ConfContainerMixin):
                 child_order += 1
 
                 child_cls = child_node_cls
-                params = map_node_class_full2(child_value, self.mixin_key)
+                params = map_node_class(child_value, self.mixin_key, always=True)
 
                 conf = dict(default_conf)
                 conf = {
@@ -528,7 +535,8 @@ class ConfDictMixin(_ConfContainerMixin):
 
         return children_list
 
-    def _parse_children(self, payload=None, override=False):
+    def _parse_children(self, override=False):
+        "Parse children config for ConfDictMixin"
 
         if self._children and override is not True:
             assert False, "Children has already bee parsed"
@@ -538,7 +546,7 @@ class ConfDictMixin(_ConfContainerMixin):
 
         # Get data
         value = self.get_value() or {}
-        payload = dict(payload or value)
+        # payload = dict(payload or value)
 
         # Parse children ad get load order
         children_list = self._parse_children_config(self.children, value)
@@ -593,10 +601,10 @@ class ConfDictMixin(_ConfContainerMixin):
 
             self.add_child(child, index=child_key, alias=True, override=override)
 
-            if child_key in payload:
-                del payload[child_key]
+            # if child_key in payload:
+            #     del payload[child_key]
 
-        return payload
+        # return payload
 
 
 class ConfOrderedMixin(ConfDictMixin):
@@ -822,61 +830,11 @@ class ConfPathMixin(ConfMixin, PathMixin):
 #         ConfDictMixin.__init__(self, *args, **kwargs)
 
 
-# Nodes helpers
-################################################################
-
-
-# class NodeConf(NodePayload):
-#     "NodeConf"
-
-#     # _node_conf = [{"mixin": ConfMixin}]
-#     # __node__mixins__ = [{"mixin": ConfMixin}]
-#     # _obj_mixins = [{"mixin": ConfMixin}]
-#     #__node__obj_mixins = [{"mixin": ConfMixin}]
-#     #__node___mixins__ = [{"mixin": ConfMixin}]
-#     __node___mixins__ = [{"mixin": ConfMixin}]
-#     # NEW: {prefix}_mixins__  , prefix =__node__
-
-# class NodeConfDict(NodeConf):
-#     "NodeConfDict"
-
-#     # _node_conf = [{"mixin": ConfDictMixin}]
-#     __node___mixins__ = [{"mixin": ConfDictMixin}]
-
-
-# class NodeConfList(NodeConf):
-#     "NodeConfList"
-
-#     # _node_conf = [{"mixin": ConfListMixin}]
-#     __node___mixins__ = [{"mixin": ConfListMixin}]
-
-
 # Function helpers
 ################################################################
 
 
-def map_node_class_full2(payload, mixin_key):
-    "Map anything to cafram classes"
-
-    if isinstance(payload, dict):
-        mixin_cls = ConfDictMixin
-    elif isinstance(payload, list):
-        mixin_cls = ConfListMixin
-    else:
-        mixin_cls = ConfMixin
-
-    params = {
-        "obj_mixins": {
-            mixin_key: {
-                "mixin": mixin_cls,
-            },
-        }
-    }
-
-    return params
-
-
-def map_node_class2(payload, mixin_key):
+def map_node_class(payload, mixin_key, always=False):
     "Map anything to cafram classes"
 
     if isinstance(payload, dict):
@@ -885,6 +843,9 @@ def map_node_class2(payload, mixin_key):
         mixin_cls = ConfListMixin
     else:
         mixin_cls = None
+
+        if always:
+            mixin_cls = ConfMixin
 
     params = {
         "obj_mixins": {
