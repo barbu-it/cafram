@@ -10,7 +10,7 @@ from pprint import pprint  # noqa: F401
 import pytest
 
 import cafram.errors as errors
-from cafram.nodes import Node, NodeWrapper, addMixin, newNode
+from cafram.nodes import Node, NodeDecorator, addMixin, newNode
 from cafram.nodes.comp import BaseMixin
 from cafram.nodes.comp.base import LoggerMixin, MapAttrMixin, PayloadMixin
 from cafram.nodes.comp.hier import HierChildrenMixin, HierMixin, HierParentMixin
@@ -25,7 +25,7 @@ from cafram.nodes.ctrl import NodeCtrl
 def test_app1_post_init():
     "Test that show how to use __post_init__"
 
-    # node = NodeWrapper(
+    # node = NodeDecorator(
     #     prefix="__node__",
     #     override=False,
     #     name="Node",

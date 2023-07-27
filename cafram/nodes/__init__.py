@@ -7,7 +7,7 @@ from pprint import pprint
 from cafram import errors
 from cafram.common import CaframNode
 from cafram.nodes.ctrl import NodeCtrl
-from cafram.nodes.engine import NodeMetaclass, NodeWrapper
+from cafram.nodes.engine import NodeMetaclass, NodeDecorator
 
 # Globals
 ################################################################
@@ -16,16 +16,6 @@ from cafram.nodes.engine import NodeMetaclass, NodeWrapper
 # Common default instance
 ################################################################
 
-nw = NodeWrapper(
-    prefix="__node__",
-    override=True,  # THIS IS THE DEFAULT BEHVIOR !
-    name="Node",
-)
-
-# nw = NodeWrapper(prefix="__node__")
-
-newNode = nw.newNode
-addMixin = nw.addMixin
 
 
 # Generic default node class with metaclass
@@ -33,31 +23,51 @@ addMixin = nw.addMixin
 # class Node( metaclass=NodeMetaclass, node_prefix="__nodev2__"):
 
 
-class Node(CaframNode, metaclass=NodeMetaclass):
-    # class Node(metaclass=NodeMetaclass):
+#class Node(CaframNode, metaclass=NodeMetaclass):
+class Node(metaclass=NodeMetaclass):
     "Default Cafram Node"
 
-    # ATTR1 = True
-
-    # def node_method(self):
-    #     print("Hello node_method")
-    #     return True
-
-    # def __init__(self):
-    #     print ("NODE INITEDDDDDD")
-
-    #     super().__init__()
 
 
-# Equivalent as above !!!
+# # Equivalent as above !!!
 Node2 = NodeMetaclass(
     "Node",
     (),
-    {"ATTR1": True, "__doc__": "Custom doc"},
-    node_bases=[CaframNode],
-    node_override=True,
-    node_doc="Custom doc",
+    {
+        "__module__":__name__,
+        "__doc__": "Default Cafram Node",
+    },
+    #{}, #{"ATTR1": True, "__doc__": "Custom doc"},
+    # node_bases=[CaframNode],
+    # node_override=True,
+    # node_module="TOTO",
+    # module=__name__,
+    # # node_name="NodeWrapper2",
+    # doc="Default Cafram Node2",
 )
+
+
+
+
+print ("FIRST INIT")
+node_wrapper = NodeDecorator(
+    node_cls=Node,
+
+    # prefix="__node__",
+    # name="Node",
+    override=True,  # THIS IS THE DEFAULT BEHVIOR !
+
+)
+
+print ("FIRST INIT EOF")
+
+
+# nw = NodeDecorator(prefix="__node__")
+
+newNode = node_wrapper.new_node
+addMixin = node_wrapper.add_comp
+
+
 
 # DECORATORS
 ################################################################

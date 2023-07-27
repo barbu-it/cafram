@@ -1,6 +1,6 @@
 from pprint import pprint
 
-from cafram.nodes.engine import NodeMetaclass, NodeWrapper, node_class_builder
+from cafram.nodes.engine import NodeMetaclass, NodeDecorator, node_class_builder
 
 # ===================================================
 # Dynamic Class Creator
@@ -133,19 +133,24 @@ def test_metaclass__with_class():
     # DynCls = Node
 
     # mname = Node.__module__ # Depends on this file, ie: "tests.test_v1"
-    mname = __name__  # Depends on this file, ie: "tests.test_v1"
+    # mname = __name__  # Depends on this file, ie: "tests.test_v1"
+
+    mnameSHORT = f"test_metaclass__with_class.<locals>"
+    mname = f"{__name__}.{mnameSHORT}"
+    mnameFULL = f"{mname}.DynCls"
+
     print("obj", DynCls)
     print("TYPE", type(DynCls))
     print("Dict", DynCls.__dict__)
     print("MNANME", mname)
 
-    assert str(DynCls) == f"<class '{mname}.Node'>"
+    assert str(DynCls) == f"<class '{mnameFULL}'>"
     assert str(type(DynCls)) == f"<class 'cafram.nodes.engine.NodeMetaclass'>"
 
     assert DynCls.__init__
-    assert DynCls.__name__ == "Node"
-    assert DynCls.__qualname__ == "Node"
-    assert DynCls.__module__ == mname
+    assert DynCls.__name__ == "DynCls"
+    assert DynCls.__qualname__ == f"{mnameSHORT}.DynCls"
+    assert DynCls.__module__ == __name__
 
 
 def test_metaclass__with_class_inheritance_onchildren():
@@ -166,19 +171,23 @@ def test_metaclass__with_class_inheritance_onchildren():
         "My DocString"
         ATTR1 = True
 
-    mname = __name__  # Depends on this file, ie: "tests.test_v1"
+    mnameSHORT = f"test_metaclass__with_class_inheritance_onchildren.<locals>"
+    mname = f"{__name__}.{mnameSHORT}"
+    mnameFULL = f"{mname}.DynCls"
+
+    # mname = __name__  # Depends on this file, ie: "tests.test_v1"
     print("obj", DynCls)
     print("TYPE", type(DynCls))
     print("Dict", DynCls.__dict__)
     print("MNANME", mname)
 
-    assert str(DynCls) == f"<class '{mname}.Node'>"
+    assert str(DynCls) == f"<class '{mnameFULL}'>"
     assert str(type(DynCls)) == f"<class 'cafram.nodes.engine.NodeMetaclass'>"
 
     assert DynCls.__init__
-    assert DynCls.__name__ == "Node"
-    assert DynCls.__qualname__ == "Node"
-    assert DynCls.__module__ == mname
+    assert DynCls.__name__ == "DynCls"
+    assert DynCls.__qualname__ == f"{mnameSHORT}.DynCls"
+    assert DynCls.__module__ == __name__
 
 
 def test_metaclass__with_class_inheritance_on_parent():
@@ -186,108 +195,35 @@ def test_metaclass__with_class_inheritance_on_parent():
 
     # assert False, "TODO !"
 
-    class Parent(
+    class ParentNode(
         metaclass=NodeMetaclass,
         node_prefix="__node__",
         node_override=False,
         node_name="Node",
     ):
-        "Parent Class"
+        "ParentNode Class"
 
-    class Node(Parent):
+        toto__module__ = __name__
+
+    class DynCls(ParentNode):
         "My DocString"
         ATTR1 = True
 
-    DynCls = Node
-    mname = __name__  # Depends on this file, ie: "tests.test_v1"
+    # mname = __name__  # Depends on this file, ie: "tests.test_v1"
+    mnameSHORT = f"test_metaclass__with_class_inheritance_on_parent.<locals>"
+    mname = f"{__name__}.{mnameSHORT}"
+    mnameFULL = f"{mname}.DynCls"
+
     print("obj", DynCls)
     print("TYPE", type(DynCls))
     print("Dict", DynCls.__dict__)
     print("MNANME", mname)
 
-    assert str(DynCls) == f"<class '{mname}.Node'>"
+    assert str(DynCls) == f"<class '{mnameFULL}'>"
     assert str(type(DynCls)) == f"<class 'cafram.nodes.engine.NodeMetaclass'>"
 
     assert DynCls.__init__
-    assert DynCls.__name__ == "Node"
-    print("TYOOO", DynCls.__qualname__)
-    assert DynCls.__qualname__ == f"Node"
+    assert DynCls.__name__ == "DynCls"
+    assert DynCls.__qualname__ == f"{mnameSHORT}.DynCls"
     assert DynCls.__module__ == __name__
 
-
-# ===================================================
-# Node MetaClass
-# ===================================================
-
-
-def test_clsbuilder_decorator_base():
-    "Test node creation with decorators"
-
-    def tutu(self, *args):
-        print("YO TUTUT", args)
-
-    node_attrs = {
-        "magic": tutu,
-    }
-
-    print("===" * 20)
-    node = NodeWrapper(
-        prefix="__node__",
-        override=False,
-        name="Node2",
-        attrs=node_attrs,
-    )
-
-    class Normal:
-        "Normal Class"
-
-        ATTR = True
-
-        def method_normal(self):
-            "Yooo"
-
-    @node.newNode()
-    class Parent:
-        "Parent Class"
-
-        ATTR2 = True
-
-        def method_parent(self):
-            "Yooo"
-
-    # @node.newNode()    # Not required because of Parent which is a node
-    class Child1(Parent):
-        "My DocString"
-        ATTR1 = True
-
-        def method_child(self):
-            "Yooo"
-
-    norm = Normal()
-    app = Parent()
-    child1 = Child1()
-
-    pprint(norm)
-    pprint(app)
-    pprint(child1)
-
-    pprint(norm.__dict__)
-    pprint(app.__dict__)
-    pprint(child1.__dict__)
-
-    pprint(Normal.__dict__)
-    pprint(Parent.__dict__)
-    pprint(Child1.__dict__)
-
-    print(node._base_node_cls.__node___attrs__)
-    print(node._base_node_cls.__node___prefix__)
-    print(Parent.__node___attrs__)
-    print(Parent.__node___prefix__)
-    print(Child1.__node___attrs__)
-    print(Child1.__node___prefix__)
-
-    assert "__getitem__" in dir(Parent)
-    assert "__getitem__" in dir(Child1)
-
-    assert "magic" in dir(Parent)
-    assert "magic" in dir(Child1)

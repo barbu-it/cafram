@@ -252,7 +252,6 @@ class PrefixMgr():
 
         self._prefixes = self.get_prefixes(prefix)
         for key, val in self._prefixes.items():
-            print ("YOOO", key, val)
             setattr(self, key, val)
 
         # assert self.prefix, self.prefix
@@ -298,200 +297,6 @@ class PrefixMgr():
 
         return ret2
 
-
-
-class WrapperPatcher(PrefixMgr):
-    "Helpers to patch wrapper config"
-
-    # Methods for class generation
-    # -----------------------------
-
-    @staticmethod
-    def prepare_wrapper_cls(cls, name=None, module=None, doc=None):
-        "Set name, module and documentation of the class"
-
-        # Prepare Class
-        if name:
-            # See: https://answall.com/a/339521/
-            setattr(cls, "__name__", name)
-            setattr(cls, "__qualname__", name)
-        if module:
-            setattr(cls, "__module__", module)
-        if doc:
-            setattr(cls, "__doc__", doc)
-
-
-    def prepare_wrapper_cls_settings(self, cls):
-        "Set name, module and documentation of the class"
-
-        prefix = self.prefix
-
-        # Prepare __node__ attribute
-        setattr(cls, prefix, None)
-        setattr(cls, f"{prefix}_prefix__", prefix)
-        setattr(cls, f"{prefix}_params__", {})
-        setattr(cls, f"{prefix}_param_obj_wrapper_class__", cls)
-        # setattr(_NodeSkeleton, f"{prefix}_class__", _NodeSkeleton)
-
-
-
-    def prepare_wrapper_cls_attrs(self, cls, clsmethods=None,attrs=None):
-        "Set name, module and documentation of the class"
-
-        clsmethods = clsmethods or []
-        attrs = attrs or {}
-
-        prefix = self.prefix
-
-        clsmethods.extend(
-            [
-                prefix,
-                # "node_patch_params",
-                # "node_patch_mixin",
-            ]
-        )
-
-        for key, val in attrs.items():
-            setattr(cls, key, val)
-            clsmethods.append(key)
-
-        # Prepare attributes
-        setattr(cls, f"{prefix}_attrs__", clsmethods)
-
-
-    # Methods for class patching
-    # -----------------------------
-
-    # OLD: node_inherit
-    #@staticmethod
-    def prepare_wrapper_cls_inherit(self, obj, cls, name=None, bases=None, override=True, attrs=None):
-        "Create a new class from any class and make the node as it's ancestors"
-
-        # Assert obj is a class
-
-        # print("CALLL node_inherit", cls, obj, name, attrs)
-
-        dct = attrs or {}
-        bases = list(bases or [])
-        name = name or obj.__qualname__
-        prefix = self.prefix
-
-        # Do not reinject class if already present
-        # base_names = [cls.__name__ for cls in bases]
-        # if not w_name in base_names:
-        if cls not in bases:
-
-            if name:
-                dct["__qualname__"] = name
-
-            if override:
-                # Create a new class WrapperClass that inherit from defined class
-
-                # print("NODE OVERRIDE", name, cls.__qualname__, tuple(bases), dct)
-                bases.insert(0, cls)
-
-                # Pros:
-                #   * Easy and ready to use
-                #   * Important methods are protected
-                # Cons:
-                #   * BREAK standard inheritance model
-                #   * All your attributes disapears on __dir__, unless dct=cls.__dict__
-                #   * HIgh level of magic
-            else:
-                # Append in the end WrapperClass inheritance
-
-                # print("NODE INHERIT", name, cls.__module__, tuple(bases), dct)
-                bases.append(cls)
-
-                # Pros:
-                #   * Respect standard inheritance model
-                #   * All your attributes/methods apears on __dir__
-                #   * Not that magic
-                # Cons:
-                #   * Important methods  NOT protected
-
-            setattr(
-                obj,
-                f"{prefix}_attrs__",
-                getattr(cls, f"{prefix}_attrs__"),
-            )
-            setattr(obj, f"{prefix}_prefix__", prefix)
-            # setattr(obj, f"{prefix}_class__", cls)
-            setattr(obj, f"{prefix}_param_obj_wrapper_class__", cls)
-
-            # 
-
-            return (name, tuple(bases), dct)
-        return None
-
-
-
-    def node_patch_params(self, obj, cls, override=True):
-        "Patch a class to become a node"
-
-        # Patch object if not patched
-        # ------------------------
-        if cls in obj.__mro__:
-            print(f"Skipping Wrapping Node {obj} with {cls}")
-            return obj
-
-
-        # print(f"Wrapping Node {obj} with {cls} (Override={override})")
-        prefix = self.prefix
-        node_attrs = getattr(cls, f"{prefix}_attrs__")
-        for method_name in node_attrs:
-
-            if override is False:
-                if hasattr(obj, method_name):
-                    tot = getattr(obj, method_name)
-                    print("Skip method patch", method_name, tot)
-                    continue
-
-            try:
-                method = getattr(cls, method_name)
-            except AttributeError:
-                method = getattr(obj, method_name)
-
-            setattr(obj, method_name, method)
-
-        setattr(obj, f"{prefix}_attrs__", node_attrs)
-        setattr(obj, f"{prefix}_prefix__", prefix)
-        # setattr(obj, f"{prefix}_class__", cls)
-        setattr(obj, f"{prefix}_param_obj_wrapper_class__", cls)
-
-        return obj
-
-
-    def node_patch_mixin(self, obj, conf):
-        "Add a mixin configuration to class"
-
-        prefix = self.prefix
-
-        # Fetch mixin class
-        assert "mixin" in conf
-
-        mixin = conf["mixin"]
-        if isinstance(mixin, str):
-            mixin_cls = import_module(mixin)
-        else:
-            mixin_cls = mixin
-
-        mixin_key = conf.get("mixin_key", mixin_cls.mixin_key)
-        if mixin_key is True:
-            mixin_key = mixin_cls.mixin_key
-
-        assert isinstance(mixin_key, str)
-
-        mixin_confs = getattr(obj, f"{prefix}_mixins__", {})
-        # mixin_confs2 = getattr(obj, f"{prefix}_mixins2__", [])
-
-        mixin_confs[mixin_key] = conf
-        # mixin_confs2.append(conf)
-
-        setattr(obj, f"{prefix}_mixins__", mixin_confs)
-        # setattr(cls, f"{prefix}_mixins2__", mixin_confs2)
-
-        return obj
 
 
 
@@ -900,6 +705,9 @@ class NodeCtrl(CaframCtrl):
             mixin_classes, key=lambda key: mixin_classes[key]["mixin_order"]
         )
 
+        # print (">>>> LOAD NODE", self.get_obj())
+
+
         # Instanciate mixins
         self._log.info(f"Load mixins for {self._obj}: {load_order}")
         for mixin_name in load_order:
@@ -908,7 +716,10 @@ class NodeCtrl(CaframCtrl):
             mixin_cls = mixin_classes[mixin_name]["mixin"]
 
             # Instanciate mixin and register
+            
             self._log.info(f"Instanciate mixin '{mixin_name}': {mixin_cls.__name__}")
+
+            # print ("========== LOAD MXIN", mixin_cls, mixin_kwargs)
             mixin_inst = mixin_cls(self, mixin_conf=mixin_conf, **mixin_kwargs)
             self.mixin_register(mixin_inst)
 

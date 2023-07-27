@@ -114,8 +114,8 @@ class BaseMixin(CaframMixin):
 
         # Build remap config and assign kwargs to attr
         remap_conf = self.build_remap("mixin_param__")
-        print ("REMAPPPP")
-        print (remap_conf, kwargs)
+        # print ("REMAPPPP")
+        # print (remap_conf, kwargs)
         self.remap_kwargs(remap_conf, kwargs)
 
         # Assign aliases
@@ -153,7 +153,7 @@ class BaseMixin(CaframMixin):
                 continue
 
             param_value = kwargs[param_name]
-            print ("REMAP", self, attr_name, param_value)
+            # print ("REMAP", self, attr_name, param_value)
             setattr(self, attr_name, param_value)
 
     def _prepare_conf(self, value):
@@ -180,7 +180,7 @@ class BaseMixin(CaframMixin):
                 # Wrap method for NodeCtrl view
                 if hasattr(value, "__get__"):
                     _func = value
-                    print("Rewrap function to mixin", value)
+                    # print("Rewrap function to mixin", value)
 
                     def _wrapper(*args, **kwargs):
 
