@@ -6,21 +6,16 @@ from pprint import pprint
 
 from cafram import errors
 from cafram.common import CaframNode
+
 # from cafram.nodes.ctrl import NodeCtrl
-from cafram.nodes.engine import NodeMetaclass, NodeDecorator
-
-
+from cafram.nodes.engine import NodeDecorator, NodeMetaclass
 
 # Common default instance
 ################################################################
 
 
-
-
-
 # Tests
 ################################################################
-
 
 
 # Generic default node class with metaclass
@@ -28,51 +23,45 @@ from cafram.nodes.engine import NodeMetaclass, NodeDecorator
 # class Node( metaclass=NodeMetaclass, node_prefix="__nodev2__"):
 
 
-#class Node(CaframNode, metaclass=NodeMetaclass):
+# class Node(CaframNode, metaclass=NodeMetaclass):
 class Node(metaclass=NodeMetaclass, node_prefix="__node__"):
     "Default Cafram Node"
-
 
 
 # Equivalent as above !!!
 Node2 = NodeMetaclass(
     "Node",
-    (), #(CaframNode, ),
+    (),  # (CaframNode, ),
     {
-        "__module__":__name__,
+        "__module__": __name__,
         "__doc__": "Default Cafram Node",
     },
-    #{}, #{"ATTR1": True, "__doc__": "Custom doc"},
+    # {}, #{"ATTR1": True, "__doc__": "Custom doc"},
     # node_bases=[CaframNode],
     # node_override=True,
     # node_module="TOTO",
     # module=__name__,
     # # node_name="NodeWrapper2",
     # doc="Default Cafram Node2",
-    node_prefix="__NODE__"
+    node_prefix="__NODE__",
 )
 
 
-
-
-print ("FIRST INIT")
+print("FIRST INIT")
 node_wrapper = NodeDecorator(
     node_cls=Node,
-
     # prefix="__node__",
     # name="Node",
     override=True,  # THIS IS THE DEFAULT BEHVIOR !
-
 )
 
-print ("FIRST INIT EOF")
+print("FIRST INIT EOF")
 
 
 # nw = NodeDecorator(prefix="__node__")
 
 newNode = node_wrapper.new_node
 addMixin = node_wrapper.add_comp
-
 
 
 # DECORATORS

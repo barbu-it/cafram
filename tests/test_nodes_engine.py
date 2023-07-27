@@ -1,10 +1,9 @@
 from pprint import pprint
 
-from cafram.nodes.engine import NodeMetaclass, NodeDecorator, NodeFactory
-
+from cafram.nodes.engine import NodeDecorator, NodeFactory, NodeMetaclass
 
 # wp = NodeFactory()
-# node_class_builder = 
+# node_class_builder =
 
 # ===================================================
 # Dynamic Class Creator
@@ -16,7 +15,7 @@ def test_nodeclassbuilder__basic():
 
     _prefix = "__node__"
     wp = NodeFactory(_prefix)
-    out_cls = wp.node_class_builder2()  # , name=_name)
+    out_cls = wp.node_class_builder()  # , name=_name)
 
     assert getattr(out_cls, f"{_prefix}_prefix__") == _prefix
     assert getattr(out_cls, f"{_prefix}") is None
@@ -30,7 +29,7 @@ def test_nodeclassbuilder__named():
     _module = "MyModule"
 
     wp = NodeFactory(_prefix)
-    out_cls = wp.node_class_builder2(name=_name, module=_module)
+    out_cls = wp.node_class_builder(name=_name, module=_module)
 
     assert f"{_module}.{_name}" in str(out_cls)
 
@@ -41,7 +40,7 @@ def test_nodeclassbuilder__other_prefix():
     _prefix = "__MYNODE__"
 
     wp = NodeFactory(_prefix)
-    out_cls = wp.node_class_builder2()
+    out_cls = wp.node_class_builder()
 
     assert getattr(out_cls, f"{_prefix}_prefix__") == _prefix
     assert getattr(out_cls, f"{_prefix}") is None
@@ -57,12 +56,10 @@ def test_nodeclassbuilder__extra_attr():
     }
 
     wp = NodeFactory(_prefix)
-    out_cls = wp.node_class_builder2(attrs=_attr)
+    out_cls = wp.node_class_builder(attrs=_attr)
 
     assert out_cls.attr1 == "value1"
     assert out_cls.fn1("YEPP") == "It works with function: YEPP"
-
-
 
 
 def test_nodeclassbuilder__cls_methods():
@@ -75,7 +72,7 @@ def test_nodeclassbuilder__cls_methods():
     }
 
     wp = NodeFactory(_prefix)
-    out_cls = wp.node_class_builder2(clsmethods=[])
+    out_cls = wp.node_class_builder(clsmethods=[])
 
     # No class methods
     # out_cls = node_class_builder(_prefix, clsmethods=[])
@@ -87,7 +84,7 @@ def test_nodeclassbuilder__cls_methods():
 
     # Few class methods
     # out_cls = node_class_builder(_prefix, clsmethods=["__call__", "__getitem__"])
-    out_cls = wp.node_class_builder2(clsmethods=["__call__", "__getitem__"])
+    out_cls = wp.node_class_builder(clsmethods=["__call__", "__getitem__"])
     assert "__init__" not in out_cls.__dict__
     assert "__getattr__" not in out_cls.__dict__
     assert hasattr(out_cls, "__getitem__")
@@ -219,4 +216,3 @@ def test_metaclass__with_class_inheritance_on_parent():
     assert DynCls.__name__ == "DynCls"
     assert DynCls.__qualname__ == f"{mnameSHORT}.DynCls"
     assert DynCls.__module__ == __name__
-

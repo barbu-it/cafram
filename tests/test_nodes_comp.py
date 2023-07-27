@@ -32,7 +32,7 @@ def test_nodecomp__basic():
     assert mixin.mixin == ExampleMixin
     assert isinstance(mixin.mixin_conf, dict)
     assert isinstance(mixin.node_ctrl, NodeCtrl)
-    pprint (mixin.__dict__)
+    pprint(mixin.__dict__)
     assert mixin.mixin_init_kwargs == {"blih": "BLIHH"}
 
     for attr in ["mixin", "mixin_conf", "mixin_key", "mixin_order"]:
@@ -62,12 +62,11 @@ def test_nodecomp__with_kwargs():
 
     node = NodeCtrl(_obj, obj_mixins=_obj_mixins, other_param="BLOH")
 
-
     assert node.mixin_get("key").my_Param is None
     assert not hasattr(node.mixin_get("key"), "other_param")
     assert "other_param" in node.mixin_get("key").mixin_init_kwargs
 
-    assert node.mixin_get("key").mixin_init_kwargs == {'other_param': 'BLOH'}
+    assert node.mixin_get("key").mixin_init_kwargs == {"other_param": "BLOH"}
 
     node = NodeCtrl(_obj, obj_mixins=_obj_mixins, my_param="BLIHH", other_param="BLOH")
     assert node.mixin_get("key").my_Param == "BLIHH"
@@ -86,7 +85,7 @@ def test_nodecomp__with_kwargs_custom():
     class ExampleMixin(BaseMixin):
         "My Example Mixin"
 
-        #my_param = None
+        # my_param = None
         my_Param = None
 
     _obj_mixins = {"key": {"mixin": ExampleMixin, "mixin_param__my_Param": "my_param"}}
@@ -99,7 +98,7 @@ def test_nodecomp__with_kwargs_custom():
     assert not hasattr(node.mixin_get("key"), "other_param")
     assert "other_param" in node.mixin_get("key").mixin_init_kwargs
 
-    assert node.mixin_get("key").mixin_init_kwargs == {'other_param': 'BLOH'}
+    assert node.mixin_get("key").mixin_init_kwargs == {"other_param": "BLOH"}
 
     node = NodeCtrl(_obj, obj_mixins=_obj_mixins, my_param="BLIHH", other_param="BLOH")
     assert node.mixin_get("key").my_Param == "BLIHH"

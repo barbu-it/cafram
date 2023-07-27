@@ -10,6 +10,7 @@ from pprint import pprint  # noqa: F401
 import pytest
 
 import cafram.errors as errors
+import cafram.nodes.errors as node_errors
 from cafram.nodes import Node, NodeDecorator, addMixin, newNode
 from cafram.nodes.comp import BaseMixin
 from cafram.nodes.comp.base import LoggerMixin, MapAttrMixin, PayloadMixin
@@ -143,7 +144,7 @@ def test_app2_post_init_args():
     # Should throuh BadArguments exception if passed with no parameter
     try:
         app2 = MyApp()
-    except errors.BadArguments as err:
+    except node_errors.BadArguments as err:
         pass
 
     # On its shortest form

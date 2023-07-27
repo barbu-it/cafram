@@ -1,12 +1,14 @@
 # Import the whole parent library in way to prevent user to add all exception
 # pylint: disable=unused-wildcard-import, wildcard-import
-from cafram.errors import *
+# from cafram.errors import *
+
+import cafram.errors as errors
 
 # NodeCtrl Exceptions
 # ====================
 
 
-class CaframCtrlException(CaframException):
+class CaframCtrlException(errors.CaframException):
     """Generic Controller cafram exception"""
 
 
@@ -15,7 +17,7 @@ class CaframCtrlException(CaframException):
 # Mixin exceptions
 
 
-class AlreadyDefinedMixin(CaframCtrlException):
+class AlreadyDefinedMixin(errors.CaframCtrlException):
     """Raised when trying to define an already existing Mixin"""
 
 
@@ -51,9 +53,13 @@ class MissingCtrlAttr(CaframCtrlException):
     """Raised when trying to access an unknown key"""
 
 
+class BadArguments(CaframCtrlException):
+    "Raised when calling a function wihtout proper args/kwargs"
+
+
 # Mixin Exceptions
 # ====================
 
 
-class CaframMixinException(CaframException):
+class CaframMixinException(errors.CaframException):
     """Generic Mixin cafram exception"""

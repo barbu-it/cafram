@@ -1,10 +1,8 @@
-
-
 from pprint import pprint
+
 
 class MyMeta(type):
     "MetaClass"
-
 
     def __new__(mcs, name, bases, dct, prefix="DEFAULT"):
         "Create new metaclass"
@@ -16,13 +14,10 @@ class MyMeta(type):
 
         return super().__new__(mcs, name, bases, dct)
 
-
     def simple_method(self):
         "Simple method"
 
-        print ("YEAHHH", self, self.prefix)
-
-
+        print("YEAHHH", self, self.prefix)
 
 
 class Node1(metaclass=MyMeta, prefix="TUTU"):
@@ -34,6 +29,7 @@ class Node2(metaclass=MyMeta, prefix="TATA"):
 
     def __call__(self):
         "Call wrapper"
+
 
 # cls1 = Node1()
 # pprint(Node1.__dict__)
@@ -48,4 +44,4 @@ pprint(Node2.__dict__)
 pprint(cls1)
 pprint(str(cls1))
 pprint(cls1.__dict__)
-pprint(cls1.simple_method())
+# pprint(cls1.simple_method())

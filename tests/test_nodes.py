@@ -1,18 +1,11 @@
-
 from pprint import pprint
 
-
 from cafram.nodes import Node, node_wrapper
-from cafram.nodes.engine import NodeMetaclass, NodeDecorator
-
-
-
-
+from cafram.nodes.engine import NodeDecorator, NodeMetaclass
 
 # ===================================================
 # Node Instanciation
 # ===================================================
-
 
 
 def test_metaclass_simple():
@@ -24,35 +17,31 @@ def test_metaclass_simple():
         custom_attr = "MyAttr"
 
         def custom_method(self):
-            print ("Hey", self)
+            print("Hey", self)
 
     # Equivalent as above !!!
     Node2 = NodeMetaclass(
         "Node2",
         (),
         {
-            "__module__":__name__,
+            "__module__": __name__,
             "__doc__": "Default Cafram Node",
-
             "custom_attr": "MyAttr",
-            "custom_method": lambda self: print ("Hey", self)
+            "custom_method": lambda self: print("Hey", self),
         },
     )
 
     # Checks
     assert dir(Node1) == dir(Node2)
-    assert Node1.custom_attr == Node2.custom_attr 
-
+    assert Node1.custom_attr == Node2.custom_attr
 
 
 def test_metaclass_simple_inheritance():
     "Test node creation with metaclass inheritance"
 
-    class BaseCls():
-
+    class BaseCls:
         def base_method(self):
-            print ("Hey", self)
-
+            print("Hey", self)
 
     class Node1(BaseCls, metaclass=NodeMetaclass):
         "Default Cafram Node"
@@ -60,39 +49,35 @@ def test_metaclass_simple_inheritance():
         custom_attr = "MyAttr"
 
         def custom_method(self):
-            print ("Hey", self)
+            print("Hey", self)
 
     # Equivalent as above !!!
     Node2 = NodeMetaclass(
         "Node2",
         (BaseCls,),
         {
-            "__module__":__name__,
+            "__module__": __name__,
             "__doc__": "Default Cafram Node",
-
             "custom_attr": "MyAttr",
-            "custom_method": lambda self: print ("Hey", self)
+            "custom_method": lambda self: print("Hey", self),
         },
     )
 
     # Checks
     assert dir(Node1) == dir(Node2)
-    assert Node1.custom_attr == Node2.custom_attr 
-    assert Node1.custom_method != Node2.custom_method 
-    assert Node1.base_method == Node2.base_method 
+    assert Node1.custom_attr == Node2.custom_attr
+    assert Node1.custom_method != Node2.custom_method
+    assert Node1.base_method == Node2.base_method
 
     assert Node1.__mro__[1:] == Node2.__mro__[1:]
-
 
 
 def test_metaclass_prefix():
     "Test node creation with metaclass inheritance"
 
-    class BaseCls():
-
+    class BaseCls:
         def base_method(self):
-            print ("Hey", self)
-
+            print("Hey", self)
 
     class Node1(BaseCls, metaclass=NodeMetaclass, node_prefix="__NODE__"):
         "Default Cafram Node"
@@ -100,35 +85,33 @@ def test_metaclass_prefix():
         custom_attr = "MyAttr"
 
         def custom_method(self):
-            print ("Hey", self)
-
+            print("Hey", self)
 
     # Equivalent as above !!!
     Node2 = NodeMetaclass(
         "Node2",
         (BaseCls,),
         {
-            "__module__":__name__,
+            "__module__": __name__,
             "__doc__": "Default Cafram Node",
-
             "custom_attr": "MyAttr",
-            "custom_method": lambda self: print ("Hey", self)
+            "custom_method": lambda self: print("Hey", self),
         },
         node_prefix="__NODE__",
     )
 
     # Checks
     assert dir(Node1) == dir(Node2)
-    assert Node1.custom_attr == Node2.custom_attr 
-    assert Node1.custom_method != Node2.custom_method 
-    assert Node1.base_method == Node2.base_method 
+    assert Node1.custom_attr == Node2.custom_attr
+    assert Node1.custom_method != Node2.custom_method
+    assert Node1.base_method == Node2.base_method
 
-    assert Node1.__NODE__ == Node2.__NODE__ 
+    assert Node1.__NODE__ == Node2.__NODE__
     assert not hasattr(Node1, "__node__")
     assert not hasattr(Node2, "__node__")
 
-
     # assert False
+
 
 # ===================================================
 # Node MetaClass
@@ -148,10 +131,10 @@ def test_clsbuilder_decorator_base():
     print("===" * 20)
     node = NodeDecorator(
         # prefix="__node__",
-        node_cls = Node,
+        node_cls=Node,
         override=False,
         # name="Node2",
-        #attrs=node_attrs,
+        # attrs=node_attrs,
     )
 
     class Normal:
@@ -195,8 +178,7 @@ def test_clsbuilder_decorator_base():
     pprint(Parent.__dict__)
     pprint(Child1.__dict__)
 
-    pprint (node.__dict__)
-
+    pprint(node.__dict__)
 
     # print(node._base_node_cls.__node___attrs__)
     # print(node._base_node_cls.__node___prefix__)
@@ -205,7 +187,7 @@ def test_clsbuilder_decorator_base():
     print(Child1.__node_attrs__)
     print(Child1.__node_prefix__)
 
-    pprint (dir(Parent))
+    pprint(dir(Parent))
     assert "__getitem__" in dir(Parent)
     assert "__getitem__" in dir(Child1)
 

@@ -113,7 +113,7 @@ class ConfigKV(BaseAppNode):
         pprint(self.__node__.__dict__)
 
         # self.log.info(f"KV config: WORKS")
-        self.log.info(f"KV config: {self('conf').index}={self('conf').value}")
+        # self.log.info(f"KV config: {self('conf').index}={self('conf').value}")
 
 
 class ConfigVars(BaseAppNode):
@@ -210,7 +210,8 @@ class TagList(BaseAppNode):
     }
 
     def __post_init__(self, *args, **kwargs):
-        self.log.debug(f"Tag config: {self('conf').index}={self('conf').value}")
+        "PASS"
+        # self.log.debug(f"Tag config: {self('conf').index}={self('conf').value}")
 
 
 class AppConfig(BaseAppNode):
@@ -304,7 +305,7 @@ class AppSource(BaseAppNode):
         pprint(self.__node__.__dict__)
         pprint(self.__class__.__dict__)
 
-        self.log.info(f"New source: {self['name']}->{self['remote']}")
+        # self.log.info(f"New source: {self['name']}->{self['remote']}")
 
     @staticmethod
     def test_toto(payload):
@@ -345,6 +346,8 @@ class AppSources(BaseAppNode):
     def get_by_name(self, name):
 
         print("STARTLOOP")
+
+        return
 
         for source in self("conf").get_children():
 
@@ -456,12 +459,12 @@ class AppStack(BaseAppNode):
     # -------------------------
 
     def __post_init__(self, *args, **kwargs):
-        self.log.debug(f"Stack initialization complete! {self['name']}")
+        # self.log.debug(f"Stack initialization complete! {self['name']}")
 
         self.app = self("conf").get_parent_by_cls(MyApp)
 
         _log.info("YOOOOOOOOOOOOO! STACK MODULE")
-        self.log.info("YOOOOOOOOOOOOO! STACK INSTANCE")
+        # self.log.info("YOOOOOOOOOOOOO! STACK INSTANCE")
 
         # Prepare paths
 
@@ -519,14 +522,14 @@ class AppStack(BaseAppNode):
 
         src = app.sources.get_by_name(source_name)
 
-        if not src:
-            tutu = app.sources.conf.get_children()
-            valid = [item.name.value for item in tutu]
-            raise Exception(
-                f"No sources matching name: {source_name}, valid sources: {valid}"
-            )
-        assert src, source_name
-        return src
+        # if not src:
+        #     tutu = app.sources.conf.get_children()
+        #     valid = [item.name.value for item in tutu]
+        #     raise Exception(
+        #         f"No sources matching name: {source_name}, valid sources: {valid}"
+        #     )
+        # assert src, source_name
+        # return src
 
 
 class AppStacks(BaseAppNode):
@@ -550,7 +553,7 @@ class AppStacks(BaseAppNode):
         # print("App initialization complete!", self.log.name, self.log.level)
 
         _log.info("YOOOOOOOOOOOOO! MODULE")
-        self.log.info("YOOOOOOOOOOOOO! INSTANCE")
+        # self.log.info("YOOOOOOOOOOOOO! INSTANCE")
 
         # pprint (self._node.conf.__dict__)
 
@@ -679,9 +682,9 @@ class MyApp(BaseAppNode):
         # print("App initialization complete!", self.log.name, self.log.level)
 
         _log.error("App initialization complete! MODULE")
-        self.log.error("App initialization complete! INSTANCE")
+        # self.log.error("App initialization complete! INSTANCE")
 
-        self.log_demo()
+        # self.log_demo()
 
     def log_demo(self):
 
@@ -730,7 +733,7 @@ app_config = {
             "name": "my_repo5",
             "branches": ["main", "develop"],
         },
-        "my_repo6",
+        # "my_repo6",
     ],
     "stacks": [
         {
