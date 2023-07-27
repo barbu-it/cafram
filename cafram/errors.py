@@ -39,9 +39,5 @@ class ListExpected(CaframException):
     "Raised when a list was expected"
 
 
-class BadArguments(CaframException):
-    "Raised when calling a function wihtout proper args/kwargs"
-
-
 class CaframAttributeError(AttributeError, CaframException):
     "Raised when an attribute can't be found"

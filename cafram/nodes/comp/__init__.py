@@ -9,10 +9,10 @@ from enum import IntEnum
 from pprint import pformat, pprint
 from typing import List, Optional, Union
 
-from ... import errors
-from ...common import CaframCtrl, CaframMixin, CaframObj
-from ...lib.sprint import SPrint
-from ...lib.utils import truncate
+import cafram.nodes.errors as errors
+from cafram.common import CaframCtrl, CaframMixin, CaframObj
+from cafram.lib.sprint import SPrint
+from cafram.lib.utils import truncate
 
 # Helpers
 ################################################################
