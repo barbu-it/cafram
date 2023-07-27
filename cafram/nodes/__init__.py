@@ -6,14 +6,19 @@ from pprint import pprint
 
 from cafram import errors
 from cafram.common import CaframNode
-from cafram.nodes.ctrl import NodeCtrl
+# from cafram.nodes.ctrl import NodeCtrl
 from cafram.nodes.engine import NodeMetaclass, NodeDecorator
 
-# Globals
-################################################################
 
 
 # Common default instance
+################################################################
+
+
+
+
+
+# Tests
 ################################################################
 
 
@@ -24,15 +29,15 @@ from cafram.nodes.engine import NodeMetaclass, NodeDecorator
 
 
 #class Node(CaframNode, metaclass=NodeMetaclass):
-class Node(metaclass=NodeMetaclass):
+class Node(metaclass=NodeMetaclass, node_prefix="__node__"):
     "Default Cafram Node"
 
 
 
-# # Equivalent as above !!!
+# Equivalent as above !!!
 Node2 = NodeMetaclass(
     "Node",
-    (),
+    (), #(CaframNode, ),
     {
         "__module__":__name__,
         "__doc__": "Default Cafram Node",
@@ -44,6 +49,7 @@ Node2 = NodeMetaclass(
     # module=__name__,
     # # node_name="NodeWrapper2",
     # doc="Default Cafram Node2",
+    node_prefix="__NODE__"
 )
 
 

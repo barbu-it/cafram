@@ -244,9 +244,7 @@ class PrefixMgr():
     _prefixes = None
 
     def __init__(self, prefix="__node__"):
-
-        # self.prefix = prefix
-        # assert prefix, prefix
+ 
 
         self.prefix = prefix
 
