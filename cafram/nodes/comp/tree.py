@@ -263,7 +263,9 @@ class ConfListMixin(_ConfContainerMixin):
         value = self.get_value()
         children_conf = self.children
 
+        prefix = self.node_ctrl._obj_attr
         child_node_cls = self.node_ctrl._obj_wrapper_class
+
 
         if children_conf is False:
             pass
@@ -277,12 +279,31 @@ class ConfListMixin(_ConfContainerMixin):
 
         elif children_conf:
 
+            if isinstance(children_conf, str):
+                children_conf = import_module(children_conf)
             default_cls = children_conf if inspect.isclass(children_conf) else None
+
+            children_params = {}
+            if inspect.isclass(children_conf):
+                default_cls = children_conf
+
+                if issubclass(default_cls, BaseMixin):
+                    children_params = {
+                        "obj_mixins": {
+                            self.mixin_key: {
+                                "mixin": default_cls,
+                            },
+                        }
+                    }
+                    default_cls = child_node_cls
+            else:
+                default_cls = None
 
             self._log.debug("Children configs is automatic")
             for child_key, child_value in enumerate(value):
 
                 child_args = {}
+                child_args.update(children_params)
                 if default_cls is None:
                     # child_cls = map_node_class(child_value)
 
@@ -316,7 +337,6 @@ class ConfListMixin(_ConfContainerMixin):
 
                     msg = f"Create child '{child_key}': {child_cls.__name__}({child_args})"
                     self._log.info(msg)
-                    # print ("CREATE LIST CHILD", child_args)
 
                     # Unecessary??? TODO: assert issubclass(child_cls, CaframNode)
                     child = child_cls(self, **child_args)
