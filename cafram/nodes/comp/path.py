@@ -147,6 +147,7 @@ class PathMixin(PathMixinGroup):
         self,
         mode: Optional[str] = None,
         clean: Optional[bool] = True,
+        expand: Optional[bool] = True,
         start: Optional[str] = None,
         anchor=None,
     ):
@@ -168,15 +169,21 @@ class PathMixin(PathMixinGroup):
         if start:
             mode = "rel"
 
+        # Prepare result
+        path_dir = self.path_dir
+        if expand:
+            path_dir = os.path.expanduser(path_dir)
+            path_dir = os.path.expandvars(path_dir)
+
         # Resolve name
-        if os.path.isabs(self.path_dir):
-            ret = self.path_dir
+        if os.path.isabs(path_dir):
+            ret = path_dir
         else:
             anchor = anchor or self.path_anchor
             if anchor:
-                ret = os.path.join(anchor.path_dir, self.path_dir)
+                ret = os.path.join(anchor.path_dir, path_dir)
             else:
-                ret = self.path_dir
+                ret = path_dir
 
         # Clean
         if clean:
