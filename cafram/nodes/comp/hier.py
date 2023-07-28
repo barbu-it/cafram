@@ -137,7 +137,7 @@ class HierChildrenMixin(HierMixinGroup):
         "Add children from config"
 
         if self._children and override is not True:
-            assert False, "Children has already bee parsed"
+            assert False, "Children has already been parsed"
 
         self.flush_children()
         for index, child in self.children.items():

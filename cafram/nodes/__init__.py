@@ -4,11 +4,12 @@ Cafram Default Nodes
 
 from pprint import pprint
 
+# from cafram.nodes.ctrl import NodeCtrl
+from cafram.nodes.engine import NodeDecorator, NodeMetaclass
+
 # from cafram import errors
 # from cafram.common import CaframNode
 
-# from cafram.nodes.ctrl import NodeCtrl
-from cafram.nodes.engine import NodeDecorator, NodeMetaclass
 
 # Common default instance
 ################################################################

@@ -172,6 +172,7 @@ class PayloadMixin(BaseMixin):
     }
 
     def __init__(self, *args, **kwargs):
+
         super().__init__(*args, **kwargs)
         self._value = None
         self.set_value(self._payload)

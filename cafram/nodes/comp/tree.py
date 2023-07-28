@@ -31,6 +31,7 @@ from .path import PathMixin
 
 MIXIN_KEY = "conf"
 
+
 # Parent exceptions
 class ConfMixinException(errors.CaframMixinException):
     """Mixin Exceptions"""
@@ -109,11 +110,9 @@ class ConfMixin(ConfMixinGroup):
         },
     }
 
-    # @mixin_init
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
-        # self._super__init__(super(), *args, **kwargs)
 
         # Value check
         value = self.get_value()
@@ -196,8 +195,11 @@ class _ConfContainerMixin(HierChildrenMixin, ConfMixin):
         },
     }
 
-    # def get_name(self):
-    #     return self.index or super().get_name()
+    def __init__(self, *args, **kwargs):
+
+        # We don't use regular hier __init__ method as we overrided
+        # the set value that call the parse_children method
+        super(ConfMixin, self).__init__(*args, **kwargs)
 
     def set_value(self, value, process=True):
         "Remove some children dict keys from payload"
