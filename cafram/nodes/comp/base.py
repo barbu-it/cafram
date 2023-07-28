@@ -216,6 +216,10 @@ class PayloadMixin(BaseMixin):
         self._value = value
         return self._value
 
+    def get_payload(self):
+        "Get original value"
+        return self._payload
+
     # TODO: This should be a hook, nah ?
     def process_value(self, value):
         "Process value before being saved"

@@ -79,7 +79,9 @@ def test_metaclass_prefix():
         def base_method(self):
             print("Hey", self)
 
-    class Node1(BaseCls, metaclass=NodeMetaclass, node_prefix="__NODE__"):
+    class Node1(
+        BaseCls, metaclass=NodeMetaclass, node_prefix="__NODE__", node_root=True
+    ):
         "Default Cafram Node"
 
         custom_attr = "MyAttr"
@@ -106,7 +108,11 @@ def test_metaclass_prefix():
     assert Node1.custom_method != Node2.custom_method
     assert Node1.base_method == Node2.base_method
 
+    # pprint (Node1.__dict__)
     assert Node1.__NODE__ == Node2.__NODE__
+    assert Node1.__NODE__ is None
+    assert Node2.__NODE__ is None
+
     assert not hasattr(Node1, "__node__")
     assert not hasattr(Node2, "__node__")
 

@@ -17,7 +17,7 @@ def test_nodeclassbuilder__basic():
     wp = NodeFactory(_prefix)
     out_cls = wp.node_class_builder()  # , name=_name)
 
-    assert getattr(out_cls, f"{_prefix}_prefix__") == _prefix
+    assert getattr(out_cls, f"__node_prefix__") == _prefix
     assert getattr(out_cls, f"{_prefix}") is None
 
 
@@ -42,7 +42,7 @@ def test_nodeclassbuilder__other_prefix():
     wp = NodeFactory(_prefix)
     out_cls = wp.node_class_builder()
 
-    assert getattr(out_cls, f"{_prefix}_prefix__") == _prefix
+    assert getattr(out_cls, f"__node_prefix__") == _prefix
     assert getattr(out_cls, f"{_prefix}") is None
 
 

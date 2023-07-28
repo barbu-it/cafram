@@ -61,7 +61,7 @@ class BaseApp(Node):
     # log = FakeLogger()
     # log = _log
 
-    __node___mixin__logger__mixin__ = LoggerMixin
+    __node__logger__mixin__ = LoggerMixin
     # __node___mixin__logger__mixin_key__ = "logger"
 
 
@@ -98,7 +98,7 @@ class ConfigKV(BaseAppNode):
 
     _node_debug = False
 
-    __node___mixins__ = {
+    __node_mixins__ = {
         # "logger": {
         #     "mixin": LoggerMixin,
         # },
@@ -118,7 +118,7 @@ class ConfigKV(BaseAppNode):
 
 class ConfigVars(BaseAppNode):
 
-    __node___mixins__ = {
+    __node_mixins__ = {
         # "logger": {
         #     "mixin": LoggerMixin,
         #     "log_sformat": "struct",
@@ -147,7 +147,7 @@ class ConfigVars(BaseAppNode):
 
 class ConfigPath(BaseAppNode):
 
-    __node___mixins__ = {
+    __node_mixins__ = {
         # "logger": {
         #     "mixin": LoggerMixin,
         # },
@@ -203,7 +203,7 @@ class TagList(BaseAppNode):
     # _node__logger__mixin = LoggerMixin
     # _node__conf__mixin = ConfDictMixin
 
-    __node___mixins__ = {
+    __node_mixins__ = {
         "conf": {
             "mixin": ConfListMixin,
         },
@@ -216,7 +216,7 @@ class TagList(BaseAppNode):
 
 class AppConfig(BaseAppNode):
 
-    __node___mixins__ = {
+    __node_mixins__ = {
         # "logger": {
         #     "mixin": LoggerMixin,
         #     "log_sformat": "struct",
@@ -251,7 +251,7 @@ class AppSource(BaseAppNode):
     # Node Configuration
     # -------------------------
 
-    __node___mixins__ = {
+    __node_mixins__ = {
         "logger": {
             "mixin": LoggerMixin,
         },
@@ -265,13 +265,13 @@ class AppSource(BaseAppNode):
         },
     }
 
-    __node__conf__default = {
-        "name": "BUG HERE",
-        "remote": None,
-        "ref": "",
-    }
+    # __node_mixins__ = {
+    #     "name": "BUG HERE",
+    #     "remote": None,
+    #     "ref": "",
+    # }
 
-    def __node___mixin__conf__preparse__(self, mixin, payload):  # MODE=wrap
+    def __node__conf__preparse__(self, mixin, payload):  # MODE=wrap
         # print ("YEEEEEHHH", self, mixin, payload)
         # assert False, "OKKK VALIDATED"
         # old_val = copy.copy(payload)
@@ -314,7 +314,7 @@ class AppSource(BaseAppNode):
 
 class AppSources(BaseAppNode):
 
-    __node___mixins__ = {
+    __node_mixins__ = {
         "logger": {
             "mixin_key": "logger",
             "mixin": LoggerMixin,
@@ -404,7 +404,7 @@ class AppStack(BaseAppNode):
     # Node Configuration
     # -------------------------
 
-    __node___mixins__ = {
+    __node_mixins__ = {
         # "logger": {
         #     "mixin": LoggerMixin,
         # },
@@ -448,7 +448,7 @@ class AppStack(BaseAppNode):
     #         payload = npayload
     #     return payload
 
-    def __node___mixin__conf__transform__(self, mixin, payload):  # MODE=wrap
+    def __node__conf__transform__(self, mixin, payload):  # MODE=wrap
         assert payload["name"], f"Got: {payload}"
 
         payload["dir"] = payload.get("dir") or payload["name"]
@@ -537,7 +537,7 @@ class AppStacks(BaseAppNode):
     # Node Configuration
     # -------------------------
 
-    __node___mixins__ = {
+    __node_mixins__ = {
         "conf": {
             "mixin": ConfListMixin,
             "mixin_logger_impersonate": False,  # BROKEN ?
@@ -644,7 +644,7 @@ class MyApp(BaseAppNode):
     # Node Configuration
     # -------------------------
 
-    __node___mixins__ = [
+    __node_mixins__ = [
         # {
         #     "mixin_key": "logger",
         #     "mixin": LoggerMixin,

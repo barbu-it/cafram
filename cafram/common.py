@@ -217,6 +217,11 @@ class CaframMixin(CaframInternalsGroup):
         "Return current object"
         return self.get_ctrl().get_obj()
 
+        # ctrl = self.get_ctrl()
+        # if ctrl:
+        #     return ctrl.get_obj()
+        # return None
+
     def __init__(self, node_ctrl, debug=None, impersonate=None, log_level=None):
         "Create new mixin. Ensure nodectrl is always registered and logger ready to be used"
 

@@ -7,7 +7,7 @@ from pprint import pprint
 from typing import List, Optional, Union
 
 import cafram.nodes.errors as errors
-from cafram.lib.utils import import_module  # , merge_dicts, merge_keyed_dicts
+from cafram.lib.utils import import_module
 from cafram.nodes.ctrl import NodeCtrl, PrefixMgr
 
 # Node NodeFactory
@@ -214,18 +214,16 @@ class NodeFactory(PrefixMgr):
         if doc:
             setattr(cls, "__doc__", doc)
 
-        # Prepare __node__ attribute
-        # prefix = self.prefix
+        # Prepare __node__ attributes
         prefix = cls.__node_prefix__
         if prefix:
 
             # NodeCtrl attrs
-            # setattr(cls, prefix, None)
-            setattr(cls, f"{prefix}_prefix__", prefix)
+            setattr(cls, prefix, None)
 
             # Decorator attrs
-            setattr(cls, f"{prefix}_params__", {})
-            setattr(cls, f"{prefix}_mixins__", {})
+            setattr(cls, self.decorator_param, {})
+            setattr(cls, self.decorator_mixin, {})
 
     # Methods for class patching
     # -----------------------------
@@ -240,8 +238,6 @@ class NodeFactory(PrefixMgr):
             return cls
 
         # print(f"Wrapping Node {cls} with {node_cls} (Override={override})")
-        prefix = self.prefix
-        node_prefix = getattr(node_cls, "__node_prefix__")
         node_attrs = getattr(node_cls, "__node_attrs__")
 
         for attr_name in node_attrs:
@@ -260,7 +256,7 @@ class NodeFactory(PrefixMgr):
     def node_patch_mixin(self, cls, conf):
         "Add a mixin configuration to class"
 
-        prefix = self.prefix
+        decorator_mixin = self.decorator_mixin
 
         # Fetch mixin class
         assert "mixin" in conf
@@ -277,14 +273,11 @@ class NodeFactory(PrefixMgr):
 
         assert isinstance(mixin_key, str)
 
-        mixin_confs = getattr(cls, f"{prefix}_mixins__", {})
-        # mixin_confs2 = getattr(cls, f"{prefix}_mixins2__", [])
+        mixin_confs = getattr(cls, decorator_mixin, {})
 
         mixin_confs[mixin_key] = conf
-        # mixin_confs2.append(conf)
 
-        setattr(cls, f"{prefix}_mixins__", mixin_confs)
-        # setattr(cls, f"{prefix}_mixins2__", mixin_confs2)
+        setattr(cls, decorator_mixin, mixin_confs)
 
         return cls
 
@@ -361,8 +354,8 @@ NODE_PREFIX = "__node__"
 class NodeMetaclass(type):
     """NodeMetaClass"""
 
-    # node_prefix = "__node__"
     node_prefix = NODE_PREFIX
+    node_prefix_default = NODE_PREFIX
     node_cls = None
 
     def __new__(
@@ -380,17 +373,15 @@ class NodeMetaclass(type):
         node_attrs=None,
         node_override=True,
         node_doc=None,
+        node_root=False,
     ):
 
-        node_prefix = node_prefix or mcs.node_prefix
+        node_prefix = node_prefix or mcs.node_prefix_default
         clsbuilder = NodeFactory(prefix=node_prefix)
 
-        # Create a root Node if not provided
-        if not node_cls:
-
+        if node_root:
             node_name = node_name or name
             node_attrs = node_attrs or {}
-
             node_cls = clsbuilder.node_class_builder(
                 name=node_name,
                 module=node_module,
@@ -399,6 +390,11 @@ class NodeMetaclass(type):
                 attrs=node_attrs,
                 doc=node_doc,
             )
+            mcs.node_cls = node_cls
+        else:
+            node_cls = mcs.node_cls
+
+        assert node_cls, "ERROR HERE"
 
         cls = super().__new__(mcs, name, tuple(bases), dct)
         return clsbuilder.node_patch_params(cls, node_cls, override=node_override)
@@ -411,7 +407,6 @@ class NodeMetaclass(type):
 class NodeDecorator:
     "Wrap any object"
 
-    # node_prefix = "__node__"
     node_prefix = NODE_PREFIX
 
     def __init__(

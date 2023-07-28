@@ -131,8 +131,13 @@ class Bunch(dict):
 class PrefixMgr:
     "Prefix Manager/Resolver"
 
-    prefix = None
     _prefixes = None
+
+    prefix = None
+    config_param = None
+    config_mixin = None
+    decorator_param = None
+    decorator_mixin = None
 
     def __init__(self, prefix="__node__"):
 
@@ -158,27 +163,18 @@ class PrefixMgr:
             )
             return ret
 
-        # BETA
         oprefix = prefix
-        if strip:
-            prefix = prefix.rstrip("_")
 
-        # Future !!!
-        # ====================
-        # ret2 = Bunch(
-        #     prefix=oprefix,
-        #     config_param = f"{prefix}_",
-        #     config_mixin = f"{prefix}__",
-        #     decorator_param = f"{prefix}_params",
-        #     decorator_mixin = f"{prefix}_mixins",
-        # )
+        name_suffix = prefix.lstrip("_")
+        name_prefix = prefix.rstrip("_")
+        enclose = prefix[len(name_suffix) :]
 
         ret2 = Bunch(
             prefix=oprefix,
-            config_param=f"{prefix}_param_",
-            config_mixin=f"{prefix}__mixin__",
-            decorator_param=f"{prefix}_params__",
-            decorator_mixin=f"{prefix}_mixins__",
+            config_param=f"{name_prefix}_param_",
+            config_mixin=f"{name_prefix}__",
+            decorator_param=f"{name_prefix}_params{enclose}",
+            decorator_mixin=f"{name_prefix}_mixins{enclose}",
         )
 
         return ret2
@@ -288,7 +284,7 @@ class ConfigParser(PrefixMgr):
     ):
         "Return object vonfig from prefixes"
 
-        prefixes = prefixes or self.get_prefixes(self.prefix)
+        prefixes = prefixes or self._prefixes
 
         kwargs = kwargs or {}
         assert isinstance(prefixes, dict)
