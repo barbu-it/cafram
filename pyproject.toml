@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cafram"
-version = "0.2.0a1"
+version = "0.2.0a2"
 description = "Config as Framework"
 authors = ["mrjk"]
 license = "GPL"
