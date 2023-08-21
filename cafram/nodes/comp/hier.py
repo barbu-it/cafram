@@ -61,7 +61,7 @@ class HierParentMixin(HierMixinGroup):
                 # print ("COMPARE", type(parent).__name__ , cls)
                 # pprint(parent.__dict__)
                 # pprint(parent.__class__)
-                
+
                 # Probably a thing to fix ... because of waekrefs
                 if cls in parent.__class__.__name__:
                     if first:

@@ -266,7 +266,6 @@ class ConfListMixin(_ConfContainerMixin):
         prefix = self.node_ctrl._obj_attr
         child_node_cls = self.node_ctrl._obj_wrapper_class
 
-
         if children_conf is False:
             pass
         elif children_conf is None:
