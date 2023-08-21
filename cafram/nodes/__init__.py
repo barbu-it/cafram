@@ -4,86 +4,34 @@ Cafram Default Nodes
 
 from pprint import pprint
 
-from cafram import errors
-from cafram.common import CaframNode
-from cafram.nodes.ctrl import NodeCtrl
-from cafram.nodes.engine import NodeMetaclass, NodeWrapper
-
-# Globals
-################################################################
-
+from cafram.nodes.engine import NodeDecorator, NodeFactory, NodeMetaclass
 
 # Common default instance
 ################################################################
 
-nw = NodeWrapper(
-    prefix="__node__",
-    override=True,  # THIS IS THE DEFAULT BEHVIOR !
-    name="Node",
-)
 
-# nw = NodeWrapper(prefix="__node__")
-
-newNode = nw.newNode
-addMixin = nw.addMixin
-
-
-# Generic default node class with metaclass
-# class NodeV2(Node, metaclass=NodeMetaclass, node_prefix="__nodev2__"):
-# class Node( metaclass=NodeMetaclass, node_prefix="__nodev2__"):
-
-
-class Node(CaframNode, metaclass=NodeMetaclass):
-    # class Node(metaclass=NodeMetaclass):
+# class Node(CaframNode, metaclass=NodeMetaclass):
+class Node(metaclass=NodeMetaclass, node_prefix="__node__", node_root=True):
     "Default Cafram Node"
 
-    # ATTR1 = True
 
-    # def node_method(self):
-    #     print("Hello node_method")
-    #     return True
+# Test v1 -- OK
+# Node = NodeMetaclass("Node", (), {}, node_prefix="__node__")
 
-    # def __init__(self):
-    #     print ("NODE INITEDDDDDD")
+# Test v2 -- FAIL
+# Node = NodeFactory(prefix="__node__").node_class_builder(name="Node")
 
-    #     super().__init__()
+# Test v3 -- OK
+
+# Node2 = NodeFactory(prefix="__node__").node_class_builder(name="Node")
+
+# class Node(metaclass=NodeMetaclass, node_prefix="__node__", node_cls=Node2):
+#     "Default Cafram Node"
 
 
-# Equivalent as above !!!
-Node2 = NodeMetaclass(
-    "Node",
-    (),
-    {"ATTR1": True, "__doc__": "Custom doc"},
-    node_bases=[CaframNode],
-    node_override=True,
-    node_doc="Custom doc",
+node_wrapper = NodeDecorator(
+    node_cls=Node,
+    override=True,  # THIS IS THE DEFAULT BEHAVIOR !
 )
-
-# DECORATORS
-################################################################
-
-
-# print ("============== RECAP")
-# pprint (Node)
-# #pprint (Node.__mro__)
-# pprint (Node.__dict__)
-# print ("==============")
-
-
-# Node2 = None
-# Node = NodeMetaclass.dyn_class("__nodev2__", name="TOTO", package="TITI")
-# Node = NodeMetaclass.dyn_class("__nodev2__", name="Node2")
-# Node = node_class_builder("__nodev2__", name="Node2", doc="Default Cafram Nodev2", module="faked")
-
-# Node = node_class_builder("__nodev2__", name="Node2", doc="Default Cafram Nodev2", bases=)
-
-
-# CaframNode
-# CaframNode
-
-# print ("==============")
-# pprint (Node2)
-# pprint (Node2.__mro__)
-# pprint (Node2.__dict__)
-
-# print ("==============")
+newNode = node_wrapper.new_node
+addMixin = node_wrapper.add_comp

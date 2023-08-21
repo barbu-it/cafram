@@ -7,23 +7,29 @@ Tree mixins
 ################################################################
 
 import inspect
+from pathlib import Path
 from pprint import pformat, pprint
 from typing import MutableMapping, MutableSequence, MutableSet
 
-from ... import errors
+import cafram.nodes.errors as errors
+
 from ...common import CaframNode
-from ...lib.utils import (
+from ...lib.utils import (  # read_file,
     from_json,
     from_yaml,
     import_module,
-    read_file,
     to_json,
     to_yaml,
 )
+from ..ctrl import AliasReference
 from . import BaseMixin, LoadingOrder
 from .base import PayloadMixin
 from .hier import HierChildrenMixin, HierParentMixin
-from .path import FilePathMixin, PathFinderMixin, PathMixin
+
+# from .path import FilePathMixin, PathFinderMixin, PathMixin
+from .path import PathMixin
+
+MIXIN_KEY = "conf"
 
 
 # Parent exceptions
@@ -59,6 +65,7 @@ class ExpectedNodeClass(ConfMixinException):
 class ConfMixinGroup(PayloadMixin, HierParentMixin):
     "Conf mixin that group all ConfMixins"
 
+    mixin_key = MIXIN_KEY
     mixin_order = LoadingOrder.NORMAL
 
 
@@ -67,12 +74,14 @@ class ConfMixin(ConfMixinGroup):
 
     # name = "conf"
     # key = "conf"
-    mixin_key = "conf"
 
     # Index management
     index = None
     mixin_param__index = "index"
     _index_enable = True
+
+    # Allowed_types
+    allowed_types: tuple = (str, bool, dict, list, int, float, type(None))
 
     # pylint: disable=line-too-long
     _schema = {
@@ -101,16 +110,13 @@ class ConfMixin(ConfMixinGroup):
         },
     }
 
-    # @mixin_init
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
-        # self._super__init__(super(), *args, **kwargs)
 
         # Value check
         value = self.get_value()
-        valid = (str, bool, dict, list, int, float, type(None))
-        if not isinstance(value, valid):
+        if not isinstance(value, self.allowed_types):
             assert False, f"TYPE ERROR, got: {type(value)}"
 
     # Converter methods
@@ -189,8 +195,19 @@ class _ConfContainerMixin(HierChildrenMixin, ConfMixin):
         },
     }
 
-    # def get_name(self):
-    #     return self.index or super().get_name()
+    def __init__(self, *args, **kwargs):
+
+        # We don't use regular hier __init__ method as we overrided
+        # the set value that call the parse_children method
+        super(ConfMixin, self).__init__(*args, **kwargs)
+
+    def set_value(self, value, process=True):
+        "Remove some children dict keys from payload"
+
+        value = super().set_value(value, process=process)
+        self._parse_children(override=True)
+
+        return value
 
 
 # List Container
@@ -207,7 +224,7 @@ class ConfListMixin(_ConfContainerMixin):
     """
 
     default = []
-    _children = []
+    _children_type = list
 
     def set_default(self, payload):
         "Update defaults"
@@ -223,7 +240,6 @@ class ConfListMixin(_ConfContainerMixin):
 
         default = list(self.default)
         if not isinstance(default, list):
-            # pprint(self.__dict__)
             msg = (
                 f"Invalid default config for {self}. "
                 "Expected a List, got "
@@ -231,19 +247,24 @@ class ConfListMixin(_ConfContainerMixin):
             )
             raise ExpectedList(msg)
 
-        # ret = default
-        # ret.update(payload)
+        ret = payload or default
+        assert isinstance(ret, list)
+        return ret
 
-        return payload or default
+    def _parse_children(self, override=False):
 
-    def _parse_children(self):
+        if self._children and override is not True:
+            assert False, "Children has already bee parsed"
+
+        # Reset children
+        self.flush_children()
 
         # Get data
         value = self.get_value()
-        # self._children = []
         children_conf = self.children
 
-        child_node_cls = self.node_ctrl._obj.__class__
+        prefix = self.node_ctrl._obj_attr
+        child_node_cls = self.node_ctrl._obj_wrapper_class
 
         if children_conf is False:
             pass
@@ -257,17 +278,38 @@ class ConfListMixin(_ConfContainerMixin):
 
         elif children_conf:
 
+            if isinstance(children_conf, str):
+                children_conf = import_module(children_conf)
             default_cls = children_conf if inspect.isclass(children_conf) else None
+
+            children_params = {}
+            if inspect.isclass(children_conf):
+                default_cls = children_conf
+
+                if issubclass(default_cls, BaseMixin):
+                    children_params = {
+                        "obj_mixins": {
+                            self.mixin_key: {
+                                "mixin": default_cls,
+                            },
+                        }
+                    }
+                    default_cls = child_node_cls
+            else:
+                default_cls = None
 
             self._log.debug("Children configs is automatic")
             for child_key, child_value in enumerate(value):
 
                 child_args = {}
+                child_args.update(children_params)
                 if default_cls is None:
                     # child_cls = map_node_class(child_value)
 
                     child_cls = child_node_cls
-                    child_args = map_node_class_full2(child_value, self.mixin_key)
+                    child_args = map_node_class(
+                        child_value, self.mixin_key, always=True
+                    )
 
                 else:
                     child_cls = default_cls
@@ -289,12 +331,11 @@ class ConfListMixin(_ConfContainerMixin):
                         }
                     )
 
-                    if self._index_enable == True:
+                    if self._index_enable is True:
                         child_args[self.mixin_param__index] = child_key
 
                     msg = f"Create child '{child_key}': {child_cls.__name__}({child_args})"
                     self._log.info(msg)
-                    # print ("CREATE LIST CHILD", child_args)
 
                     # Unecessary??? TODO: assert issubclass(child_cls, CaframNode)
                     child = child_cls(self, **child_args)
@@ -365,7 +406,7 @@ class ConfDictMixin(_ConfContainerMixin):
     """
 
     default = {}
-    _children: dict = {}
+    _children_type = dict
 
     def set_default(self, payload):
         "Update defaults"
@@ -404,7 +445,12 @@ class ConfDictMixin(_ConfContainerMixin):
         # Value based config
         children_list = []
         prefix = self.node_ctrl._obj_attr
-        child_node_cls = self.node_ctrl._obj.__class__
+        child_node_cls = self.node_ctrl._obj_wrapper_class
+        # Bug: This is definitely not smart !
+        assert (
+            child_node_cls
+        ), f"Please patch to use parent class or provide yourself children node class ?"
+
         default_conf = {
             "key": None,
             "cls": None,
@@ -412,7 +458,16 @@ class ConfDictMixin(_ConfContainerMixin):
         }
 
         if children_conf is False or children_conf == "NONE":
-            pass
+
+            # Register aliases proxy
+            for child_key, child_value in value.items():
+                alias = AliasReference(
+                    self._value,
+                    child_key,
+                    desc=f"{self.mixin_key}._value",
+                    updatable=True,
+                )
+                self._register_alias(child_key, alias, undeclared=True)
 
         elif children_conf is True or children_conf == "AUTO":
             self._log.debug("Children configs is automatic")
@@ -422,7 +477,7 @@ class ConfDictMixin(_ConfContainerMixin):
                 child_order += 1
 
                 child_cls = child_node_cls
-                params = map_node_class_full2(child_value, self.mixin_key)
+                params = map_node_class(child_value, self.mixin_key, always=True)
 
                 conf = dict(default_conf)
                 conf = {
@@ -501,14 +556,21 @@ class ConfDictMixin(_ConfContainerMixin):
 
         return children_list
 
-    def _parse_children(self):
+    def _parse_children(self, override=False):
+        "Parse children config for ConfDictMixin"
+
+        if self._children and override is not True:
+            assert False, "Children has already bee parsed"
+
+        # Reset children
+        self.flush_children()
 
         # Get data
         value = self.get_value() or {}
-        # Parse children
-        children_list = self._parse_children_config(self.children, value)
+        # payload = dict(payload or value)
 
-        # Get load order
+        # Parse children ad get load order
+        children_list = self._parse_children_config(self.children, value)
         load_order = sorted(children_list, key=lambda item: item["order"])
 
         # print ("CHILDREN LIST")
@@ -543,10 +605,6 @@ class ConfDictMixin(_ConfContainerMixin):
                 if self._index_enable == True:
                     child_args[self.mixin_param__index] = child_key
 
-                self._log.info(
-                    f"Create Node child '{child_key}': {child_cls.__name__} => {child_args}"
-                )
-
                 if not issubclass(child_cls, (CaframNode)) and not hasattr(
                     child_cls, prefix
                 ):
@@ -556,9 +614,18 @@ class ConfDictMixin(_ConfContainerMixin):
                         f"{child_cls.__name__}: {child_cls}"
                     )
                     raise ExpectedNodeClass(msg)
+
+                self._log.info(
+                    f"Create Node child '{child_key}': {child_cls.__name__} => {child_args}"
+                )
                 child = child_cls(self, **child_args)
 
-            self.add_child(child, index=child_key, alias=True)
+            self.add_child(child, index=child_key, alias=True, override=override)
+
+            # if child_key in payload:
+            #     del payload[child_key]
+
+        # return payload
 
 
 class ConfOrderedMixin(ConfDictMixin):
@@ -618,6 +685,8 @@ class ConfOrderedMixin(ConfDictMixin):
     def _parse_children_config(self, children_conf, value):
         "Parse complex config"
 
+        child_node_cls = self.node_ctrl._obj_wrapper_class
+
         children_list = []
         if isinstance(children_conf, dict):
             child_index = 0
@@ -635,8 +704,6 @@ class ConfOrderedMixin(ConfDictMixin):
                 if isinstance(child_def, dict):
                     child_def.pop("key", None)
                     conf.update(child_def)
-                elif isinstance(child_def, str):
-                    conf["cls"] = import_module(child_def)
                 else:
                     conf["cls"] = child_def
 
@@ -655,8 +722,6 @@ class ConfOrderedMixin(ConfDictMixin):
                 if isinstance(child_def, dict):
                     child_def.pop("order", None)
                     conf.update(child_def)
-                elif isinstance(child_def, str):
-                    conf["cls"] = import_module(child_def)
                 else:
                     conf["cls"] = child_def
 
@@ -672,6 +737,26 @@ class ConfOrderedMixin(ConfDictMixin):
 
             raise ExpectedListOrDict(msg)
 
+        # Adjust mixin config and resolve classes
+        for conf in children_list:
+            children_cls = conf["cls"]
+
+            if isinstance(children_cls, str):
+                children_cls = import_module(children_cls)
+
+            if inspect.isclass(children_cls) and issubclass(children_cls, BaseMixin):
+                children_params = {
+                    "obj_mixins": {
+                        self.mixin_key: {
+                            "mixin": children_cls,
+                        },
+                    }
+                }
+                conf["params"] = children_params
+                children_cls = child_node_cls
+
+            conf["cls"] = children_cls
+
         return children_list
 
 
@@ -679,120 +764,98 @@ class ConfOrderedMixin(ConfDictMixin):
 ################################################################
 
 
-class ConfPathMixin(PathMixin, ConfMixin):
+class ConfPathMixin(ConfMixin, PathMixin):
     "Conf mixin that manage a basic serializable value"
 
-    # OLD: mixin_param__raw = "payload"
-    mixin_param__payload = "raw"
+    # Cross over modules data
+    mixin_param__path_dir = ConfMixin.mixin_param___payload
+
+    auto_anchor = True
+    mixin_param__auto_anchor = "auto_anchor"
+
+    default = "."
+    allowed_types = (str, type(None), Path)
+
+    def set_value(self, value, mode=None, anchor=None):
+
+        if anchor is None and self.auto_anchor:
+
+            anchor_key = anchor
+            if not isinstance(anchor_key, str):
+                anchor_key = PathMixin.mixin_key
+
+            ret = self.get_parents(target="ctrl")
+            anchor_match = None
+
+            for ctrl in ret:
+                match = ctrl.mixin_get(anchor_key, None)
+                if match:
+                    anchor_match = match
+                    break
+
+            anchor = anchor_match
+
+        value = super().set_value(value)
+        self.set_path(value, mode=mode, anchor=anchor)
 
 
-class ConfFileMixin(PathFinderMixin, ConfDictMixin):
-    "Conf mixin that manage a basic serializable value"
+# class ConfFileMixin(PathFinderMixin, ConfDictMixin):
+#     "Conf mixin that manage a basic serializable value"
 
-    # OLD: mixin_param__raw = "payload"
-    mixin_param__payload = "raw"
+#     # OLD: mixin_param__raw = "payload"
+#     mixin_param__payload = "raw"
 
-    conf_format = None
+#     conf_format = None
 
-    mapping_parser = {
-        ".yaml": from_yaml,
-        ".yml": from_yaml,
-        ".json": from_json,
-        # toml
-        # ini
-    }
+#     mapping_parser = {
+#         ".yaml": from_yaml,
+#         ".yml": from_yaml,
+#         ".json": from_json,
+#         # toml
+#         # ini
+#     }
 
-    def __init__(self, *args, **kwargs):
-        # super().__init__(*args, **kwargs)
+#     def __init__(self, *args, **kwargs):
+#         # super().__init__(*args, **kwargs)
 
-        PathFinderMixin.__init__(self, *args, **kwargs)
+#         PathFinderMixin.__init__(self, *args, **kwargs)
 
-        # print("INIT CONF FILEMIXIN")
-        fpath = self.get_path()
-        # pprint (fpath)
-        content = read_file(fpath)
+#         # print("INIT CONF FILEMIXIN")
+#         fpath = self.get_path()
+#         # pprint (fpath)
+#         content = read_file(fpath)
 
-        # print (content)
-        conf_format = self.conf_format or self.get_ext()
-        # print ("FORMAT", conf_format)
+#         # print (content)
+#         conf_format = self.conf_format or self.get_ext()
+#         # print ("FORMAT", conf_format)
 
-        if conf_format not in self.mapping_parser:
-            msg = "Missing format support"
-            raise Exception(msg)
+#         if conf_format not in self.mapping_parser:
+#             msg = "Missing format support"
+#             raise Exception(msg)
 
-        conv = self.mapping_parser[conf_format]
+#         conv = self.mapping_parser[conf_format]
 
-        ret = conv(content)
-        # print (to_json(dict(ret)))
-        # print (to_yaml(ret))
+#         ret = conv(content)
+#         # print (to_json(dict(ret)))
+#         # print (to_yaml(ret))
 
-        # self._payload = ret
-        # self.set_value(self._payload)
-        # kwargs["payload"] = ret
-        kwargs[self.mixin_param___payload] = dict(ret)
-        # kwargs[self.mixin_param___children] = self.children
-        # print("PARENT CALL")
-        # pprint(kwargs)
+#         # self._payload = ret
+#         # self.set_value(self._payload)
+#         # kwargs["payload"] = ret
+#         kwargs[self.mixin_param___payload] = dict(ret)
+#         # kwargs[self.mixin_param___children] = self.children
+#         # print("PARENT CALL")
+#         # pprint(kwargs)
 
-        # print("INSERT CONFIG INTO PAYLOAD")
-        ConfDictMixin.__init__(self, *args, **kwargs)
-
-
-# Nodes helpers
-################################################################
-
-
-# class NodeConf(NodePayload):
-#     "NodeConf"
-
-#     # _node_conf = [{"mixin": ConfMixin}]
-#     # __node__mixins__ = [{"mixin": ConfMixin}]
-#     # _obj_mixins = [{"mixin": ConfMixin}]
-#     #__node__obj_mixins = [{"mixin": ConfMixin}]
-#     #__node___mixins__ = [{"mixin": ConfMixin}]
-#     __node___mixins__ = [{"mixin": ConfMixin}]
-#     # NEW: {prefix}_mixins__  , prefix =__node__
-
-# class NodeConfDict(NodeConf):
-#     "NodeConfDict"
-
-#     # _node_conf = [{"mixin": ConfDictMixin}]
-#     __node___mixins__ = [{"mixin": ConfDictMixin}]
-
-
-# class NodeConfList(NodeConf):
-#     "NodeConfList"
-
-#     # _node_conf = [{"mixin": ConfListMixin}]
-#     __node___mixins__ = [{"mixin": ConfListMixin}]
+#         # print("INSERT CONFIG INTO PAYLOAD")
+#         ConfDictMixin.__init__(self, *args, **kwargs)
 
 
 # Function helpers
 ################################################################
 
 
-def map_node_class_full2(payload, mixin_key):
-    "Map anything to cafram classes"
-
-    if isinstance(payload, dict):
-        mixin_cls = ConfDictMixin
-    elif isinstance(payload, list):
-        mixin_cls = ConfListMixin
-    else:
-        mixin_cls = ConfMixin
-
-    params = {
-        "obj_mixins": {
-            mixin_key: {
-                "mixin": mixin_cls,
-            },
-        }
-    }
-
-    return params
-
-
-def map_node_class2(payload, mixin_key):
+def map_node_class(payload, mixin_key, always=False):
     "Map anything to cafram classes"
 
     if isinstance(payload, dict):
@@ -801,6 +864,9 @@ def map_node_class2(payload, mixin_key):
         mixin_cls = ConfListMixin
     else:
         mixin_cls = None
+
+        if always:
+            mixin_cls = ConfMixin
 
     params = {
         "obj_mixins": {

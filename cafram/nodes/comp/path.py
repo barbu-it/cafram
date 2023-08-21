@@ -7,37 +7,15 @@ Path mixins
 
 import os
 from pprint import pprint
+from typing import Optional
 
 from ... import errors
-from ...lib.utils import list_parent_dirs
-from ...nodes import Node
+
+# from ...lib.utils import list_parent_dirs
+# from ...nodes import Node
 from . import BaseMixin, LoadingOrder
-from .base import PayloadMixin
 
-# class FileReference:
-#     """A FileReference Object
-
-#     Useful for managing project paths
-
-#     The path, once created is immutable, you choose how it behave one time
-#     and done forever. They act a immutable local variable.
-
-
-#     path: The path you want to manage
-#     root: The root of your project, CWD else
-#     keep: Returned path will be returned as absolute
-#         True: Return default path from origin abs/rel
-#         False: Return default path from root_path abs/rel
-
-#     """
-
-#     def __init__(self, path, root=None, keep=False):
-
-#         assert isinstance(path, str), f"Got: {type(path)}"
-#         root = root or os.getcwd()
-#         self.raw = path
-#         self.root = root
-#         self.keep = keep
+# from .base import PayloadMixin
 
 
 # Parent exceptions
@@ -66,362 +44,164 @@ class PathMixin(PathMixinGroup):
     mixin_key = "path"
     mixin_order = LoadingOrder.PRE
 
-    # Param to store raw path
-    raw = "."
-    mixin_param__raw = "path"
+    # Get path
+    path_dir = "."
+    mixin_param__path_dir = "path"
 
-    # Root (aka CWD) of path
-    root = "."
-    mixin_param__root = "path_root"
+    # Get default mode
+    path_mode = None
+    mixin_param__path_mode = "path_mode"
+
+    # Get default anchor
+    path_anchor = None
+    mixin_param__path_anchor = "path_anchor"
 
     # Mode can be: abs, rel or auto
-    _enum_mode = ["abs", "rel", "auto"]
-    mode = "auto"
+    _enum_mode = ["abs", "rel", None]
 
-    # Keep tells if get_path should return original path or not
-    keep = True
-
-    # pylint: disable=line-too-long
-    _schema = {
-        # "$defs": {
-        #     "AppProject": PaasifyProject.conf_schema,
-        # },
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "type": "object",
-        "title": "Mixin: ConfMixin",
-        "description": "ConfMixin Configuration",
-        "default": {},
-        "properties": {
-            "index": {
-                "title": "Index",
-                "description": "Name of the index key",
-                # "default": index,
-                "oneOf": [
-                    {
-                        "type": "string",
-                    },
-                    {
-                        "type": "null",
-                    },
-                ],
-            },
-        },
-    }
+    # Comp schema
+    _schema = {}
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # self._super__init__(super(), *args, **kwargs)
 
-        if not self.mode in self._enum_mode:
-            msg = f"Invalid value for mode: {self.mode}, must be one of: {self._enum_mode}"
+        super().__init__(*args, **kwargs)
+
+        if not self.path_mode in self._enum_mode:
+            msg = f"Invalid value for mode: {self.path_mode}, must be one of: {self._enum_mode}"
             raise errors.CaframException(msg)
 
-        # Ensure default values are OK
+        # Autoinit attrs:
+        # self.path_anchor = anchor
+        # self.path_dir = path
+        # self.path_mode = mode
 
-        self.raw = self.raw or "."
-        self.root = self.root or self.set_root_path()
+    def set_path(self, value, mode=None, anchor=None):
+        self.path_dir = value
+        if mode:
+            self.path_mode = mode
+        if anchor:
+            self.path_anchor = anchor
 
     # Path helpers
     # -----------------
-    # def __str__(self):
-    #     return self.get_path()
+    def __repr__(self):
+        "Represent itself"
 
-    def set_path(self, value):
-        "Set the path"
-        self.raw = value
+        name = self.__class__.__name__
+        ret = f"<{name} {self.get_path()}"
 
-    def set_root_path(self, value=None):
-        "Set the root path"
-        if value is None:
-            if self.is_abs():
-                value = os.getcwd()
-            else:
-                value = "."
-        self.root = value
+        # Change if anchored
+        anchor = self.path_anchor
+        if anchor:
+            ret = f"<{name} [{anchor.get_dir()}]{self.get_path()}"
 
-    def is_abs(self):
-        "Return true if the path is absolute"
-        return os.path.isabs(self.raw)
+        # Add suffix
+        suffix = ">"
+        if self.path_mode:
+            suffix = f" (mode={self.path_mode})>"
+        ret = ret + suffix
 
-    def is_root_abs(self):
-        "Return true if the root path is absolute"
-        return os.path.isabs(self.root)
-
-    # Path methods
-    # -----------------
-    def get_path(self, start=None):
-        "Return the absolute or relative path from root depending if root is absolute or not"
-
-        if self.keep:
-            if self.is_abs():
-                return self.get_abs(start=start)
-            return self.get_rel(start=start)
-        else:
-            if self.is_root_abs():
-                return self.get_abs(start=start)
-            return self.get_rel(start=start)
-
-    def get_abs(self, start=None):
-        "Return the absolute path from root"
-
-        if self.is_abs():
-            result = self.raw
-        else:
-            start = start or self.root
-            real_path = os.path.join(start, self.raw)
-            result = os.path.abspath(real_path) or "."
-        return result
-
-    def get_rel(self, start=None):
-        "Return the relative path from root"
-
-        if self.is_abs():
-            start = start or self.root
-            result = os.path.relpath(self.raw, start=start)
-        else:
-            start = start or self.root
-            real_path = os.path.join(start, self.raw)
-            result = os.path.relpath(real_path) or "."
-        return result
-
-    # Path extended methods
-    # -----------------
-    def get_dir(self):
-        "Return directory name"
-        return os.path.dirname(self.get_path())
-
-    def get_name(self):
-        "Return filename"
-        return os.path.basename(self.get_path())
-
-    def get_ext(self):
-        "Return filename extensions, or empty string if not found"
-
-        split = os.path.splitext(self.get_path())
-        ret = ".".join(split[1:])
         return ret
 
+    def get_mode(self, lvl=0):
+        "Return current path mode, abs or rel"
 
-class FilePathMixin(PathMixin):
-    "Conf mixin that manage a file"
+        if isinstance(self.path_mode, str):
+            ret = self.path_mode
+            return ret
 
+        if self.path_anchor:
+            lvl += 1
+            ret = self.path_anchor.get_mode(lvl=lvl)
+            return ret
 
-#     mixin_key = "file"
+        return None
 
-#     # # Param to store raw path
-#     # raw = "."
-#     # mixin_param__raw = "path"
+    def get_anchor(self):
+        "Return anchor if any"
+        return self.path_anchor
 
-#     # # Root (aka CWD) of path
-#     # root = "."
-#     # mixin_param__root = "path_root"
+    def get_anchors(self, itself: bool = False):
+        """_summary_
 
-#     # # Mode can be: abs, rel or auto
-#     # _enum_mode = ["abs", "rel", "auto"]
-#     # mode = "auto"
+        Args:
+            itself (bool, optional): Leave current node in result if True. Defaults to True.
 
-#     # # Keep tells if get_path should return original path or not
-#     # keep = True
+        Returns:
+            _type_: _description_
+        """
 
-#     file = "my_super_file.toto.yml"
-#     file_prefix = "docker-compose"
-#     file_suffix = ["yml", "yaml", "toml", "json"]
-#     file_location = "current/up/down"
+        ret = []
 
-#     # mixin_param__raw = "path"
+        ret.append(self)
 
+        if self.path_anchor:
+            tmp = self.path_anchor.get_anchors(itself=True)
+            ret.extend(tmp)
 
-#     # pylint: disable=line-too-long
-#     _schema = {
-#         # "$defs": {
-#         #     "AppProject": PaasifyProject.conf_schema,
-#         # },
-#         "$schema": "http://json-schema.org/draft-07/schema#",
-#         "type": "object",
-#         "title": "Mixin: ConfMixin",
-#         "description": "ConfMixin Configuration",
-#         "default": {},
-#         "properties": {
-#             "index": {
-#                 "title": "Index",
-#                 "description": "Name of the index key",
-#                 # "default": index,
-#                 "oneOf": [
-#                     {
-#                         "type": "string",
-#                     },
-#                     {
-#                         "type": "null",
-#                     },
-#                 ],
-#             },
-#         },
-#     }
+        if not itself:
+            ret = ret[1:]
+        return ret
 
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         # self._super__init__(super(), *args, **kwargs)
+    def get_dir(
+        self,
+        mode: Optional[str] = None,
+        clean: Optional[bool] = True,
+        expand: Optional[bool] = True,
+        start: Optional[str] = None,
+        anchor=None,
+    ):
+        """_summary_
 
-#         if not self.mode in self._enum_mode:
-#             msg = f"Invalid value for mode: {self.mode}, must be one of: {self._enum_mode}"
-#             raise errors.CaframException(msg)
+        Args:
+            mode (Optional[str], optional): Can be 'abs' or 'rel'. If None, do not change. Defaults to None.
+            clean (Optional[bool], optional): Clean the path, aka clean dir1/dir2/../../ . Defaults to False.
+            start (Optional[str], optional): Enable 'rel' mode automatically, get relative path from a different dir that cwd. Defaults to None.
+            anchor (_type_, optional): Anchor to use. Defaults to None.
 
-#         # Ensure default values are OK
+        Returns:
+            _type_: path
+        """
 
-#         self.raw = self.raw or "."
-#         self.root = self.root or self.set_root_path()
+        ret = None
+        mode = mode or self.get_mode()
+        start = start or None  # os.getcwd()
+        if start:
+            mode = "rel"
 
+        # Prepare result
+        path_dir = self.path_dir
+        if expand:
+            path_dir = os.path.expanduser(path_dir)
+            path_dir = os.path.expandvars(path_dir)
 
-class PathFinderMixin(PathMixin):
-    "Conf mixin that search files in paths"
-
-    mixin_key = "file"
-
-    # # Param to store raw path
-    # raw = "."
-    # mixin_param__raw = "path"
-
-    # # Root (aka CWD) of path
-    # root = "."
-    # mixin_param__root = "path_root"
-
-    # # Mode can be: abs, rel or auto
-    # _enum_mode = ["abs", "rel", "auto"]
-    # mode = "auto"
-
-    # # Keep tells if get_path should return original path or not
-    # keep = True
-
-    file_name = None  # "my_super_file.toto.yml"
-    file_prefix = None  # "docker-compose"
-    file_suffix = None  # ["yml", "yaml", "toml", "json"]
-    # file_location = "current/up/down"
-    file_location = None
-    file_type = "file"
-    # file_type = "file|symlink|dir"
-
-    # file_match = "first|last|all"
-    file_match = "first"
-
-    # mixin_param__raw = "path"
-
-    # pylint: disable=line-too-long
-    _schema = {
-        # "$defs": {
-        #     "AppProject": PaasifyProject.conf_schema,
-        # },
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "type": "object",
-        "title": "Mixin: ConfMixin",
-        "description": "ConfMixin Configuration",
-        "default": {},
-        "properties": {
-            "index": {
-                "title": "Index",
-                "description": "Name of the index key",
-                # "default": index,
-                "oneOf": [
-                    {
-                        "type": "string",
-                    },
-                    {
-                        "type": "null",
-                    },
-                ],
-            },
-        },
-    }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.set_path(self.find_files())
-
-    def find_files(self, file_name=None, file_match=None, file_location=None):
-        "Find files"
-
-        search_paths = None
-        file_name = file_name or self.file_name
-        file_match = file_match or self.file_match
-        file_location = file_location or self.file_location
-
-        search_path = self.get_path()
-
-        if file_location is None:
-            search_paths = [self.get_path()]
-        elif file_location == "up":
-            search_paths = list_parent_dirs(self.get_path())
+        # Resolve name
+        if os.path.isabs(path_dir):
+            ret = path_dir
         else:
-            assert False, "Not supported"
-
-        if not search_paths:
-            return None
-
-        files = []
-
-        if isinstance(file_name, list):
-            files = file_name
-        elif file_name is None:
-
-            # Get prefix and suffix
-            file_prefix = self.file_prefix or []
-            file_suffix = self.file_suffix or []
-            if not isinstance(file_prefix, list):
-                file_prefix = [file_prefix]
-            if not isinstance(file_suffix, list):
-                file_suffix = [file_suffix]
-
-            # Assemble
-            files = []
-            if file_prefix and file_suffix:
-                for prefix in file_prefix:
-                    for suffix in file_suffix:
-                        fpath = f"{prefix}.{suffix}"
-                        files.append(fpath)
-            elif not file_suffix:
-                files = file_prefix
+            anchor = anchor or self.path_anchor
+            if anchor:
+                ret = os.path.join(anchor.path_dir, path_dir)
             else:
-                assert False, "Extension search is not supported yet"
+                ret = path_dir
 
+        # Clean
+        if clean:
+            ret = os.path.normpath(ret)
+
+        # Ensure output format
+        if mode == "rel":
+            if os.path.isabs(ret) or start:
+                ret = os.path.relpath(ret, start=start)
+        elif mode == "abs":
+            if not os.path.isabs(ret):
+                ret = os.path.abspath(ret)
+        elif mode is None:
+            pass
         else:
-            files = [file_name]
+            assert False, f"Bug Here, got;;: {mode}"
 
-        print("SEARCH FILE in", self.get_path())
-        print("SEARCH FOR FILES", files)
+        return ret
 
-        matches = []
-        for i in search_paths:
-            if self.file_type == "file":
-                for file_ in files:
-                    fpath = os.path.join(i, file_)
-                    if os.path.isfile(fpath):
-                        matches.append(os.path.join(i, file_))
-                        if file_match == "first":
-                            break
-
-        if not matches:
-            msg = f"Can't find any files matching: {self.file_name}/{self.file_prefix}.{self.file_suffix}"
-            raise FileNotFound(msg)
-
-        if file_match == "last":
-            matches = matches[-1]
-        elif file_match == "first":
-            matches = matches[0]
-        elif file_match != "all":
-            msg = f"Invalid config file_match: {file_match}"
-            raise FileNotFound(msg)
-
-        # print ("MATCHES")
-        # pprint(matches)
-        return matches
-
-        # # self._super__init__(super(), *args, **kwargs)
-
-        # if not self.mode in self._enum_mode:
-        #     msg = f"Invalid value for mode: {self.mode}, must be one of: {self._enum_mode}"
-        #     raise errors.CaframException(msg)
-
-        # # Ensure default values are OK
-
-        # self.raw = self.raw or "."
-        # self.root = self.root or self.set_root_path()
+    def get_path(self, **kwargs):
+        return self.get_dir(**kwargs)

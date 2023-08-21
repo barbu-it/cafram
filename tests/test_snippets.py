@@ -10,7 +10,8 @@ from pprint import pprint  # noqa: F401
 import pytest
 
 import cafram.errors as errors
-from cafram.nodes import Node, NodeWrapper, addMixin, newNode
+import cafram.nodes.errors as node_errors
+from cafram.nodes import Node, NodeDecorator, addMixin, newNode
 from cafram.nodes.comp import BaseMixin
 from cafram.nodes.comp.base import LoggerMixin, MapAttrMixin, PayloadMixin
 from cafram.nodes.comp.hier import HierChildrenMixin, HierMixin, HierParentMixin
@@ -25,7 +26,7 @@ from cafram.nodes.ctrl import NodeCtrl
 def test_app1_post_init():
     "Test that show how to use __post_init__"
 
-    # node = NodeWrapper(
+    # node = NodeDecorator(
     #     prefix="__node__",
     #     override=False,
     #     name="Node",
@@ -143,7 +144,7 @@ def test_app2_post_init_args():
     # Should throuh BadArguments exception if passed with no parameter
     try:
         app2 = MyApp()
-    except errors.BadArguments as err:
+    except node_errors.BadArguments as err:
         pass
 
     # On its shortest form
@@ -478,7 +479,7 @@ def test_mixin_logger1():
     pprint(app.__node__.__dict__)
     pprint(LoggerMixin.__dict__)
     assert hasattr(app, LoggerMixin.mixin_alias__log)
-    assert hasattr(app, LoggerMixin.mixin_key)
+    assert app(LoggerMixin.mixin_key)
 
 
 # Config
@@ -540,8 +541,11 @@ def test_mixin_confdict1_children_true():
     pprint(app.__class__.__mro__)
     pprint(app.__node__.__dict__)
     # Test for aliases
-    for attr in ["config", "repos", "value", "conf"]:
+    for attr in ["config", "repos", "value"]:
         assert hasattr(app, attr)
+    # Test for aliases
+    for attr in ["conf"]:
+        assert app(attr)
 
     # Assert config is OK
     assert app["conf"].value == app_config
@@ -549,12 +553,12 @@ def test_mixin_confdict1_children_true():
     # Launch without init config and load after
     app2 = MyApp()
 
-    assert app2.conf.get_value() == {}
-    app2.conf.set_value(app_config)
+    assert app2("conf").get_value() == {}
+    app2("conf").set_value(app_config)
     # Then it should be equal
-    assert app2.conf.value == app_config
+    assert app2("conf").value == app_config
 
-    app2.conf.set_value({})
+    app2("conf").set_value({})
     assert app2.value == {}
 
     # Test other form of config access via value attribute alias
@@ -562,14 +566,14 @@ def test_mixin_confdict1_children_true():
     assert app2.value == app_config
 
     # Test config json/yaml methods
-    _yaml_conf = app2.conf.to_yaml()
-    _json_conf = app2.conf.to_json()
+    _yaml_conf = app2("conf").to_yaml()
+    _json_conf = app2("conf").to_json()
 
     assert isinstance(_yaml_conf, str)
     assert isinstance(_json_conf, str)
 
-    app2.conf.from_yaml(_yaml_conf)
-    app2.conf.from_json(_json_conf)
+    app2("conf").from_yaml(_yaml_conf)
+    app2("conf").from_json(_json_conf)
 
 
 def test_mixin_confdict2_children_false():
@@ -588,13 +592,13 @@ def test_mixin_confdict2_children_false():
     # Launch with config in init
     app = MyApp(payload=app_config)
 
-    # Internal attributes are present
-    for attr in ["value", "conf"]:
+    # Check aliases
+    for attr in ["config", "repos", "value"]:
         assert hasattr(app, attr)
 
-    # Children attributes are not present
-    for attr in ["config", "repos"]:
-        assert not hasattr(app, attr)
+    # Check mixin
+    for attr in ["conf"]:
+        assert app(attr)
 
     # Assert config is OK
     assert app["conf"].value == app_config
@@ -616,13 +620,13 @@ def test_mixin_confdict3_children_none():
     # Launch with config in init
     app = MyApp(payload=app_config)
 
-    # Internal attributes are present
-    for attr in ["value", "conf"]:
+    # Check aliases
+    for attr in ["config", "repos", "value"]:
         assert hasattr(app, attr)
 
-    # Children attributes are not present
-    for attr in ["config", "repos"]:
-        assert hasattr(app, attr)
+    # Check mixin
+    for attr in ["conf"]:
+        assert app(attr)
 
     # Assert config is OK
     assert app["conf"].value == app_config
@@ -646,13 +650,13 @@ def test_mixin_confdict4_children_nodeconf_cls():
     # Launch with config in init
     app = MyApp(payload=app_config)
 
-    # Internal attributes are present
-    for attr in ["value", "conf"]:
+    # Check aliases
+    for attr in ["config", "repos", "value"]:
         assert hasattr(app, attr)
 
-    # Children attributes are not present
-    for attr in ["config", "repos"]:
-        assert hasattr(app, attr)
+    # Check mixin
+    for attr in ["conf"]:
+        assert app(attr)
 
     # Assert config is OK
     assert app["conf"].value == app_config
@@ -677,13 +681,13 @@ def test_mixin_confdict5_children_nodeconf_str():
     # Launch with config in init
     app = MyApp(payload=app_config)
 
-    # Internal attributes are present
-    for attr in ["value", "conf"]:
+    # Check aliases
+    for attr in ["config", "repos", "value"]:
         assert hasattr(app, attr)
 
-    # Children attributes are not present
-    for attr in ["config", "repos"]:
-        assert hasattr(app, attr)
+    # Check mixin
+    for attr in ["conf"]:
+        assert app(attr)
 
     # Assert config is OK
     assert app["conf"].value == app_config

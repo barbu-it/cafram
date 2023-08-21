@@ -9,41 +9,13 @@ from enum import IntEnum
 from pprint import pformat, pprint
 from typing import List, Optional, Union
 
-from ... import errors
-from ...common import CaframCtrl, CaframMixin, CaframObj
-from ...lib.sprint import SPrint
-from ...lib.utils import truncate, update_classattr_from_dict
+import cafram.nodes.errors as errors
+from cafram.common import CaframCtrl, CaframMixin, CaframObj
+from cafram.lib.sprint import SPrint
+from cafram.lib.utils import truncate
 
 # Helpers
 ################################################################
-
-# def _list_parameters_from_argsV2(self, obj, kwargs, prefix="mixin_param__"):
-
-# def update_classattr_from_dict(obj, kwargs, prefix="mixin_param__"):
-#     """List args/kwargs parameters
-
-#     Loop over each key/value of kwargs,
-
-#     Scan a given object `obj`, find all its attributes starting with `prefix`,
-#     and update all matched attributes from kwargs
-#     """
-
-#     # Params, left part is constant !
-#     # mixin_param__<SOURCE> = <EXPECTED_NAME>
-
-#     ret = {}
-#     for key, val in kwargs.items():
-
-#         attr_name = f"{prefix}{key}"
-#         print ("YOOOO", hasattr(obj, attr_name), key, attr_name)
-#         if not hasattr(obj, attr_name):
-#             continue
-
-#         # Fetch new name from config
-#         new_name = getattr(obj, attr_name)
-#         ret[new_name] = val
-
-#     return ret
 
 
 # Base mixins
@@ -127,50 +99,71 @@ class BaseMixin(CaframMixin):
 
         # Fetch mixin params and __init__ kwargs
         mixin_conf = mixin_conf or {}
-        param_conf = update_classattr_from_dict(self, kwargs, prefix="mixin_param__")
 
-        # Update mixin with gathered configs
-        # self._update_attrs_conf(mixin_conf, creates=False) # TODO: What to do of unparsed items ???
-        self._update_attrs_conf(mixin_conf, creates=None)
-        self._update_attrs_conf(param_conf, creates=True)
+        # Update local conf
+        creates = False
+        for key, val in mixin_conf.items():
+            if not creates:
+                if not hasattr(self, key):
+                    if creates is None:
+                        continue
+
+            val = self._prepare_conf(val)
+
+            setattr(self, key, val)
+
+        # Build remap config and assign kwargs to attr
+        remap_conf = self.build_remap("mixin_param__")
+        # print ("REMAPPPP")
+        # print (remap_conf, kwargs)
+        self.remap_kwargs(remap_conf, kwargs)
 
         # Assign aliases
         self.mixin_conf = mixin_conf
         self._mixin_alias_map = self._list_aliases()
 
-    def _update_attrs_conf(self, mixin_conf, creates=False):
-        """Update object attributes from a dict. Fail if key does not already exists when create=False
+        self.mixin_init_kwargs = kwargs
 
-        If creates is None, then it skip all not already created attributes.
-        """
+        # print ("\n\n================= NEW MIXIN", self)
+        # pprint (self.__dict__)
+        # print ("=" * 6 + "v" * 10)
 
-        for key, value in mixin_conf.items():
+    def build_remap(self, prefix):
+        "Build param list"
 
-            value = self._prepare_conf(value)
+        ret = {}
+        for key in dir(self):
 
-            if not creates:
-                if not hasattr(self, key):
-                    if creates is None:
-                        continue
-                    assert False, f"Unknown config option '{key}={value}' for {self}"
+            if not key.startswith(prefix):
+                continue
 
-            setattr(self, key, value)
+            target = key.replace(prefix, "")
+            if not target:
+                continue
+
+            param = getattr(self, key)
+            ret[target] = param
+
+        return ret
+
+    def remap_kwargs(self, remap, kwargs):
+        for attr_name, param_name in remap.items():
+
+            if not param_name in kwargs:
+                continue
+
+            param_value = kwargs[param_name]
+            # print ("REMAP", self, attr_name, param_value)
+            setattr(self, attr_name, param_value)
 
     def _prepare_conf(self, value):
         "Transform some specific parameters"
-
-        # Check for bound methods
-        # if callable(value) and hasattr(value, "__self__"):
-        # if callable(value):
-
-        # print ("PREPARSE VALUE", value, inspect.isfunction(value), hasattr(value, "__self__"))
 
         # Rewrap/rewrite callables !
         # Look for functions or bound methods
         if inspect.isfunction(value) or (
             callable(value) and hasattr(value, "__self__")
         ):
-            # print ("PREPARSE FUNC ", value)
 
             MODE = "rebind"
             MODE = "wrap"
@@ -187,40 +180,18 @@ class BaseMixin(CaframMixin):
                 # Wrap method for NodeCtrl view
                 if hasattr(value, "__get__"):
                     _func = value
-                    print("Rewrap function to mixin", value)
+                    # print("Rewrap function to mixin", value)
 
                     def _wrapper(*args, **kwargs):
 
                         try:
                             return _func(self, *args, **kwargs)
                         except TypeError as err:
-                            # print (err)
                             msg = f"{err}, Please ensure {_func} have the folowing signature: def {_func.__name__}(self, mixin, *args, **kwargs)"
-
                             raise errors.BadArguments(msg) from err
                             assert False
 
                     value = _wrapper
-
-                # else:
-                #     print ("DO NOT CHANGE FUNCTION", value)
-                #     # DEPRECATED: self._log.debug(f"Overriden method is now available '{key}': {value}")
-                #     # value = _wrapper
-
-                # # If not a CaframMixin class, add mixin as second param
-                # # pylint: disable=cell-var-from-loop
-                # if not issubclass(cls, CaframMixin):
-                #     _func = value
-
-                #     def wrapper(*args, **kwargs):
-                #         return _func(self, *args, **kwargs)
-
-                #     # DEPRECATED: self._log.debug(f"Overriden method is now available '{key}': {value}")
-                #     value = wrapper
-
-            # assert False, "WIP"
-        # elif inspect.isfunction(value):
-        #     assert False, value
 
         return value
 
@@ -245,17 +216,18 @@ class BaseMixin(CaframMixin):
 
         return aliases
 
-    def _register_alias(self, name, value):
+    def _register_alias(self, name, value, undeclared=False, override=False):
         "Method for mixins to register alias into NodeCtrl"
         # alias_map = self.alias_map
 
         if self.mixin_aliases:
-            assert (
-                name in self._mixin_alias_map
-            ), f"Missing undeclared alias for {self}: {name}"
+            if not undeclared:
+                assert (
+                    name in self._mixin_alias_map
+                ), f"Missing undeclared alias for {self}: {name}"
             name = self._mixin_alias_map.get(name, name)
             if name:
-                self.node_ctrl.alias_register(name, value)
+                self.node_ctrl.alias_register(name, value, override=override)
 
     # Troubleshooting
     # -------------------

@@ -61,7 +61,7 @@ class BaseApp(Node):
     # log = FakeLogger()
     # log = _log
 
-    __node___mixin__logger__mixin__ = LoggerMixin
+    __node__logger__mixin__ = LoggerMixin
     # __node___mixin__logger__mixin_key__ = "logger"
 
 
@@ -98,7 +98,7 @@ class ConfigKV(BaseAppNode):
 
     _node_debug = False
 
-    __node___mixins__ = {
+    __node_mixins__ = {
         # "logger": {
         #     "mixin": LoggerMixin,
         # },
@@ -112,12 +112,13 @@ class ConfigKV(BaseAppNode):
         pprint(self)
         pprint(self.__node__.__dict__)
 
-        self.log.info(f"KV config: {self.conf.index}={self.conf.value}")
+        # self.log.info(f"KV config: WORKS")
+        # self.log.info(f"KV config: {self('conf').index}={self('conf').value}")
 
 
 class ConfigVars(BaseAppNode):
 
-    __node___mixins__ = {
+    __node_mixins__ = {
         # "logger": {
         #     "mixin": LoggerMixin,
         #     "log_sformat": "struct",
@@ -146,7 +147,7 @@ class ConfigVars(BaseAppNode):
 
 class ConfigPath(BaseAppNode):
 
-    __node___mixins__ = {
+    __node_mixins__ = {
         # "logger": {
         #     "mixin": LoggerMixin,
         # },
@@ -202,19 +203,20 @@ class TagList(BaseAppNode):
     # _node__logger__mixin = LoggerMixin
     # _node__conf__mixin = ConfDictMixin
 
-    __node___mixins__ = {
+    __node_mixins__ = {
         "conf": {
             "mixin": ConfListMixin,
         },
     }
 
     def __post_init__(self, *args, **kwargs):
-        self.log.debug(f"Tag config: {self.conf.index}={self.conf.value}")
+        "PASS"
+        # self.log.debug(f"Tag config: {self('conf').index}={self('conf').value}")
 
 
 class AppConfig(BaseAppNode):
 
-    __node___mixins__ = {
+    __node_mixins__ = {
         # "logger": {
         #     "mixin": LoggerMixin,
         #     "log_sformat": "struct",
@@ -249,7 +251,7 @@ class AppSource(BaseAppNode):
     # Node Configuration
     # -------------------------
 
-    __node___mixins__ = {
+    __node_mixins__ = {
         "logger": {
             "mixin": LoggerMixin,
         },
@@ -263,13 +265,13 @@ class AppSource(BaseAppNode):
         },
     }
 
-    __node__conf__default = {
-        "name": "BUG HERE",
-        "remote": None,
-        "ref": "",
-    }
+    # __node_mixins__ = {
+    #     "name": "BUG HERE",
+    #     "remote": None,
+    #     "ref": "",
+    # }
 
-    def __node___mixin__conf__preparse__(self, mixin, payload):  # MODE=wrap
+    def __node__conf__preparse__(self, mixin, payload):  # MODE=wrap
         # print ("YEEEEEHHH", self, mixin, payload)
         # assert False, "OKKK VALIDATED"
         # old_val = copy.copy(payload)
@@ -303,7 +305,7 @@ class AppSource(BaseAppNode):
         pprint(self.__node__.__dict__)
         pprint(self.__class__.__dict__)
 
-        self.log.info(f"New source: {self['name']}->{self['remote']}")
+        # self.log.info(f"New source: {self['name']}->{self['remote']}")
 
     @staticmethod
     def test_toto(payload):
@@ -312,7 +314,7 @@ class AppSource(BaseAppNode):
 
 class AppSources(BaseAppNode):
 
-    __node___mixins__ = {
+    __node_mixins__ = {
         "logger": {
             "mixin_key": "logger",
             "mixin": LoggerMixin,
@@ -345,7 +347,9 @@ class AppSources(BaseAppNode):
 
         print("STARTLOOP")
 
-        for source in self.conf.get_children():
+        return
+
+        for source in self("conf").get_children():
 
             # print ("vvvvvvvvvvvvvvv STARTLOOP")
             # pprint (source)
@@ -400,7 +404,7 @@ class AppStack(BaseAppNode):
     # Node Configuration
     # -------------------------
 
-    __node___mixins__ = {
+    __node_mixins__ = {
         # "logger": {
         #     "mixin": LoggerMixin,
         # },
@@ -444,7 +448,7 @@ class AppStack(BaseAppNode):
     #         payload = npayload
     #     return payload
 
-    def __node___mixin__conf__transform__(self, mixin, payload):  # MODE=wrap
+    def __node__conf__transform__(self, mixin, payload):  # MODE=wrap
         assert payload["name"], f"Got: {payload}"
 
         payload["dir"] = payload.get("dir") or payload["name"]
@@ -455,12 +459,12 @@ class AppStack(BaseAppNode):
     # -------------------------
 
     def __post_init__(self, *args, **kwargs):
-        self.log.debug(f"Stack initialization complete! {self['name']}")
+        # self.log.debug(f"Stack initialization complete! {self['name']}")
 
-        self.app = self.conf.get_parent_by_cls(MyApp)
+        self.app = self("conf").get_parent_by_cls(MyApp)
 
         _log.info("YOOOOOOOOOOOOO! STACK MODULE")
-        self.log.info("YOOOOOOOOOOOOO! STACK INSTANCE")
+        # self.log.info("YOOOOOOOOOOOOO! STACK INSTANCE")
 
         # Prepare paths
 
@@ -505,7 +509,7 @@ class AppStack(BaseAppNode):
 
         source_name = self.source.value
 
-        app = self.conf.get_parent_by_cls(MyApp)
+        app = self("conf").get_parent_by_cls(MyApp)
         # print ("SEARCH SOURCE: ", source_name, source_name.value)
         # assert False
         # print( app)
@@ -518,14 +522,14 @@ class AppStack(BaseAppNode):
 
         src = app.sources.get_by_name(source_name)
 
-        if not src:
-            tutu = app.sources.conf.get_children()
-            valid = [item.name.value for item in tutu]
-            raise Exception(
-                f"No sources matching name: {source_name}, valid sources: {valid}"
-            )
-        assert src, source_name
-        return src
+        # if not src:
+        #     tutu = app.sources.conf.get_children()
+        #     valid = [item.name.value for item in tutu]
+        #     raise Exception(
+        #         f"No sources matching name: {source_name}, valid sources: {valid}"
+        #     )
+        # assert src, source_name
+        # return src
 
 
 class AppStacks(BaseAppNode):
@@ -533,7 +537,7 @@ class AppStacks(BaseAppNode):
     # Node Configuration
     # -------------------------
 
-    __node___mixins__ = {
+    __node_mixins__ = {
         "conf": {
             "mixin": ConfListMixin,
             "mixin_logger_impersonate": False,  # BROKEN ?
@@ -549,7 +553,7 @@ class AppStacks(BaseAppNode):
         # print("App initialization complete!", self.log.name, self.log.level)
 
         _log.info("YOOOOOOOOOOOOO! MODULE")
-        self.log.info("YOOOOOOOOOOOOO! INSTANCE")
+        # self.log.info("YOOOOOOOOOOOOO! INSTANCE")
 
         # pprint (self._node.conf.__dict__)
 
@@ -640,7 +644,7 @@ class MyApp(BaseAppNode):
     # Node Configuration
     # -------------------------
 
-    __node___mixins__ = [
+    __node_mixins__ = [
         # {
         #     "mixin_key": "logger",
         #     "mixin": LoggerMixin,
@@ -678,9 +682,9 @@ class MyApp(BaseAppNode):
         # print("App initialization complete!", self.log.name, self.log.level)
 
         _log.error("App initialization complete! MODULE")
-        self.log.error("App initialization complete! INSTANCE")
+        # self.log.error("App initialization complete! INSTANCE")
 
-        self.log_demo()
+        # self.log_demo()
 
     def log_demo(self):
 
@@ -729,7 +733,7 @@ app_config = {
             "name": "my_repo5",
             "branches": ["main", "develop"],
         },
-        "my_repo6",
+        # "my_repo6",
     ],
     "stacks": [
         {
@@ -784,7 +788,7 @@ def test2():
 
     app = simple_app()
 
-    for stack in app.stacks.conf.get_children():
+    for stack in app.stacks("conf").get_children():
 
         # print (f"\n\nSTACK: {stack}")
         # pprint (stack.__class__.__mro__)
