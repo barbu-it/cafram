@@ -99,23 +99,23 @@ def _prepare_mixin_conf(mixin_conf, mixin_name=None, mixin_order=None, lazy=Fals
     return mixin_name, final
 
 
-def mixin_get_loading_order(payload, logger=None):
-    "Instanciate all mixins"
+# def mixin_get_loading_order(payload, logger=None):
+#     "Instanciate all mixins"
 
-    assert isinstance(payload, dict)
+#     assert isinstance(payload, dict)
 
-    mixin_classes = {}
-    for mixin_name, mixin_conf in payload.items():
-        name, conf = _prepare_mixin_conf(mixin_conf, mixin_name, lazy=False)
-        mixin_classes[name] = conf
+#     mixin_classes = {}
+#     for mixin_name, mixin_conf in payload.items():
+#         name, conf = _prepare_mixin_conf(mixin_conf, mixin_name, lazy=False)
+#         mixin_classes[name] = conf
 
-    # Sanity Checks
-    if None in mixin_classes:
-        pprint(payload)
-        pprint(mixin_classes)
-        assert False, f"BUG, found None Key"
+#     # Sanity Checks
+#     if None in mixin_classes:
+#         pprint(payload)
+#         pprint(mixin_classes)
+#         assert False, f"BUG, found None Key"
 
-    return mixin_classes
+#     return mixin_classes
 
 
 # NodeCtrl Config Parser classe
@@ -513,7 +513,9 @@ class NodeCtrl(CaframCtrl):
         # --------------------------
         # print ("MIXIN CONF", self._obj, mixin_kwargs)
         # pprint(self._obj_mixins)
-        self._load_mixins(self._obj_mixins, mixin_kwargs)
+
+        _obj_mixins = oconf.mixin_get_loading_order(self._obj_mixins, logger=self._log)
+        self._load_mixins(_obj_mixins, mixin_kwargs)
         self._log.debug(f"NodeCtrl {self} initialization is over: {self._obj_mixins}")
         # print(f"NodeCtrl {self} initialization is over: {self._obj_mixins}")
 
@@ -535,17 +537,18 @@ class NodeCtrl(CaframCtrl):
 
                 raise errors.BadArguments(msg) from err
 
-    def _load_mixins(self, mixin_confs, mixin_kwargs):
+    def _load_mixins(self, mixin_classes, mixin_kwargs):
         "Load mixins from requested configuration"
 
-        assert isinstance(mixin_confs, dict)
+        assert isinstance(mixin_classes, dict)
 
         # mixin_classes = {}
         # for mixin_name, mixin_conf in mixin_confs.items():
         #     name, conf = _prepare_mixin_conf(mixin_conf, mixin_name, lazy=False)
         #     mixin_classes[name] = conf
 
-        mixin_classes = mixin_get_loading_order(mixin_confs, logger=self._log)
+        # mixin_classes = mixin_get_loading_order(mixin_confs, logger=self._log)
+
         load_order = sorted(
             mixin_classes, key=lambda key: mixin_classes[key]["mixin_order"]
         )

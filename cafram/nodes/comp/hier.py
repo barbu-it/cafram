@@ -57,11 +57,23 @@ class HierParentMixin(HierMixinGroup):
         ret = []
         for parent in self.get_parents(target=target):
 
-            if isinstance(parent, cls):
-                if first:
-                    return parent
+            if isinstance(cls, str):
+                # print ("COMPARE", type(parent).__name__ , cls)
+                # pprint(parent.__dict__)
+                # pprint(parent.__class__)
+                
+                # Probably a thing to fix ... because of waekrefs
+                if cls in parent.__class__.__name__:
+                    if first:
+                        return parent
 
-                ret.append(parent)
+                    # ret.append(parent)
+            else:
+                if isinstance(parent, cls):
+                    if first:
+                        return parent
+
+            ret.append(parent)
 
         if first:
             return None
